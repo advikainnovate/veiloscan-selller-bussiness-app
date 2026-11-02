@@ -1,4 +1,4 @@
-package com.veilocanbussiness
+package com.veiloscan.business
 
 import android.app.Application
 import com.facebook.react.PackageList

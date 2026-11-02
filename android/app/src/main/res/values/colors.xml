@@ -1,0 +1,4 @@
+<resources>
+    <!-- VeiloScan navy: shown before the app draws its animated splash. -->
+    <color name="splash_background">#03172F</color>
+</resources>

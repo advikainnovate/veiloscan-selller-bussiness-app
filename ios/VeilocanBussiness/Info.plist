@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>VeilocanBussiness</string>
+	<string>VeiloScan Business</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -55,6 +55,18 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of your products to add them to your store.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose product photos from your library to add them to your store.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Geist-Regular.ttf</string>
+		<string>Geist-Medium.ttf</string>
+		<string>Geist-SemiBold.ttf</string>
+		<string>Geist-Bold.ttf</string>
+		<string>Geist-ExtraBold.ttf</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

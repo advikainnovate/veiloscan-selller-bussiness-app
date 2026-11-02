@@ -1,0 +1,64 @@
+# VeiloScan Business — module roadmap
+
+The app brings the Seller Panel (`veiloscan-eshop-seller-panel`) to phones, one
+module at a time. Every module uses the same backend endpoints and permissions
+as the panel; pages a seller's role can't open are hidden from the menu.
+
+Modules not built yet open a "Coming soon" page from the menu
+(`src/screens/ModuleScreen.tsx`). When a module lands, give it its own screen
+and route in `src/navigation/` and mark it done here.
+
+Status: ✅ done · 🚧 in progress · ⬜ not started
+
+## Built
+
+| Module | App screens | Backend | Permission |
+| --- | --- | --- | --- |
+| Sign in, OTP sign in, password reset | Splash, Get Started, Login, Forgot / Reset Password | `/auth/*` | — |
+| Navigation | Drawer menu, header, bottom tabs | — | per menu item |
+| Home | Banner, today's figures, Quick Access | `GET /reports/overview`, `GET /customers`, `GET /notifications` | per card |
+| Orders ✅ | List (summary, search, status filters, sort, payment methods), detail, accept → ready → collect payment (split methods) or Customer Credit with reminder terms → picked up, cancel with reason, credit requests, invoice and receipt PDFs | `/orders`, `/orders/:id/*` (pickup-status, payments, invoices, receipts) | `orders:manage` (credit: `customer-credit:manage`) |
+| Self orders ✅ | New order: products (search, categories, weighed items, quantity slabs, line discounts, coupon, stock check) → Quick Sale / existing / new customer → pay now (single or split, change due) or Customer Credit; order discount, hand over now or later | `/orders/for-customer/*` | `orders:manage` |
+| Order Requests ✅ | List (status counts, search), detail (availability, edit items, status changes with reasons), final bill through the self-order flow | `/order-requests/*` | `orders:manage` |
+| New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
+
+## Next, in order
+
+Ordered by how often a seller needs it on the go.
+
+| # | Module | Panel page | Backend | Permission |
+| --- | --- | --- | --- | --- |
+| 1 | Notifications | header bell | `/notifications`, `/notifications/:id/read`, `/notifications/read-all` | — |
+| 2 | Products (list, detail, status) | `/dashboard/products-master` | `/products-master` | `products-master:manage` |
+| 3 | Inventory: stock, low stock, ledger, reservations | `/dashboard/product-inventory/*` | `/inventory`, `/inventory/ledger` | `product-inventory:manage` |
+| 4 | Customers | `/dashboard/customers` | `/customers`, `/customers/:id/*` | `customers:manage` |
+| 5 | Customer Credit | `/dashboard/customer-credit` | `/customer-credit/*` | `customer-credit:manage` |
+| 6 | Sales Reports, Business Overview, Daily Business | `/dashboard/operations/*` | `/reports/*`, store operations | `store-operations:manage` |
+| 7 | Expenses, Notes | `/dashboard/operations/expenses`, `/notes` | store operations | `store-expenses:view`, `store-notes:view` |
+| 8 | Stock Health, Pending Stock | `/dashboard/operations/*` | store operations | `store-operations:manage`, `pending-stock:manage` |
+| 9 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
+| 10 | Coupons, Freebies, Gift Cards, Promotions | `/dashboard/coupons-master` … | `/coupons-master`, `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
+| 11 | Pricing & Discounts (quantity slabs) | `/dashboard/pricing-discounts/*` | `/quantity-discounts` | `quantity-discounts:manage` |
+| 12 | Shipping | `/dashboard/shipping` | shipping methods / zones | `shipping:manage` |
+| 13 | Product create / edit wizard | `/dashboard/products-master/create` | product builder | `products-master:manage` |
+| 14 | Variants, Business Variants, Product Specs, Brand Approvals | catalog pages | catalog endpoints | catalog permissions |
+| 15 | Warehouses, Inventory Ledger (transactions) | `/dashboard/warehouse-master`, `/inventory-transactions` | `/warehouse-master`, `/inventory-transactions` | `*:manage` |
+| 16 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
+| 17 | Store Settings, Store QR Tag, Subscription, All Stores | settings pages | `/settings`, `/subscriptions/me`, `/reports/multi-store/overview` | `stores:view` / none |
+| 18 | My Profile | account menu | `/auth/me` (PATCH) | — |
+
+## Not for sellers
+
+Platform-admin pages in the panel's code (Categories, Brands master, Tax,
+Global Charges, CMS, FAQs, Roles, Designations, Companies, Base Values,
+Platform Settings, Reviews, User Bonuses, Store approvals) are never shown to
+sellers — their permissions are stripped by `src/lib/access-policy.ts` — so
+the app leaves them out.
+
+## Known gaps
+
+- New-order alerts work while the app is open. Alerts with the app closed need
+  push notifications (Firebase Cloud Messaging / APNs) — a backend and
+  app-store setup task.
+- The Seller Panel plays a chime (and can read the order aloud); the app
+  vibrates. A sound needs an audio library.

@@ -9,24 +9,34 @@
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-VeilocanBussiness.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-VeilocanBussiness.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		44C2A1830B37ECDD634B30B3 /* Geist-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 11783CC104DB62849B22818C /* Geist-ExtraBold.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		761780EF2CA45674006654EF /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EE2CA45674006654EF /* SceneDelegate.swift */; };
+		7CF85D34D4D712BF9ADBB90B /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F982AA56C77A8614E1211CB1 /* Geist-Regular.ttf */; };
+		7E7CD1B60550B314037B4CEF /* Geist-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 21EB1BD68CD312EDA7AF020A /* Geist-Bold.ttf */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		826D2F2E77B3C39E21225325 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		E2BDEAFC3B9CCAD353F12CA4 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DC1905CC7AB167B1D2C3BC71 /* Geist-SemiBold.ttf */; };
+		E4296011E6818D4213E27D2B /* Geist-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 717620E2870AE24AC0F93E9D /* Geist-Medium.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		11783CC104DB62849B22818C /* Geist-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-ExtraBold.ttf"; path = "../src/assets/fonts/Geist-ExtraBold.ttf"; sourceTree = SOURCE_ROOT; };
 		13B07F961A680F5B00A75B9A /* VeilocanBussiness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VeilocanBussiness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = VeilocanBussiness/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VeilocanBussiness/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = VeilocanBussiness/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		21EB1BD68CD312EDA7AF020A /* Geist-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Bold.ttf"; path = "../src/assets/fonts/Geist-Bold.ttf"; sourceTree = SOURCE_ROOT; };
 		3B4392A12AC88292D35C810B /* Pods-VeilocanBussiness.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VeilocanBussiness.debug.xcconfig"; path = "Target Support Files/Pods-VeilocanBussiness/Pods-VeilocanBussiness.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-VeilocanBussiness.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VeilocanBussiness.release.xcconfig"; path = "Target Support Files/Pods-VeilocanBussiness/Pods-VeilocanBussiness.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-VeilocanBussiness.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-VeilocanBussiness.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		717620E2870AE24AC0F93E9D /* Geist-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Medium.ttf"; path = "../src/assets/fonts/Geist-Medium.ttf"; sourceTree = SOURCE_ROOT; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = VeilocanBussiness/AppDelegate.swift; sourceTree = "<group>"; };
 		761780EE2CA45674006654EF /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = VeilocanBussiness/SceneDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = VeilocanBussiness/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		DC1905CC7AB167B1D2C3BC71 /* Geist-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-SemiBold.ttf"; path = "../src/assets/fonts/Geist-SemiBold.ttf"; sourceTree = SOURCE_ROOT; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F982AA56C77A8614E1211CB1 /* Geist-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Geist-Regular.ttf"; path = "../src/assets/fonts/Geist-Regular.ttf"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +59,11 @@
 				761780EE2CA45674006654EF /* SceneDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
+				F982AA56C77A8614E1211CB1 /* Geist-Regular.ttf */,
+				717620E2870AE24AC0F93E9D /* Geist-Medium.ttf */,
+				DC1905CC7AB167B1D2C3BC71 /* Geist-SemiBold.ttf */,
+				21EB1BD68CD312EDA7AF020A /* Geist-Bold.ttf */,
+				11783CC104DB62849B22818C /* Geist-ExtraBold.ttf */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
 			name = VeilocanBussiness;
@@ -163,6 +178,11 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				7CF85D34D4D712BF9ADBB90B /* Geist-Regular.ttf in Resources */,
+				E4296011E6818D4213E27D2B /* Geist-Medium.ttf in Resources */,
+				E2BDEAFC3B9CCAD353F12CA4 /* Geist-SemiBold.ttf in Resources */,
+				7E7CD1B60550B314037B4CEF /* Geist-Bold.ttf in Resources */,
+				44C2A1830B37ECDD634B30B3 /* Geist-ExtraBold.ttf in Resources */,
 				826D2F2E77B3C39E21225325 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -277,7 +297,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.veiloscan.business;
 				PRODUCT_NAME = VeilocanBussiness;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -306,7 +326,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.veiloscan.business;
 				PRODUCT_NAME = VeilocanBussiness;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;

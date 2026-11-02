@@ -30,5 +30,16 @@ target 'VeilocanBussiness' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Some pods' resource bundles (e.g. AsyncStorage) default to iOS 13,
+    # which current Xcode refuses; raise them to the app's minimum.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        current = build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if current.nil? || current.to_f < min_ios_version_supported.to_f
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
+        end
+      end
+    end
   end
 end

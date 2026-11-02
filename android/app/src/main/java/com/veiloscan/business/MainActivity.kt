@@ -1,4 +1,4 @@
-package com.veilocanbussiness
+package com.veiloscan.business
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
