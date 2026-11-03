@@ -2,7 +2,12 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_URL } from '../config/env';
 import { clearSession, getAccessToken, getRefreshToken, updateTokens, type SessionTokens } from './session';
 
-export const api = axios.create({ baseURL: API_URL, timeout: 20000 });
+// The app names itself, so the API skips the web forms' Cloudflare Turnstile
+// check (a browser widget the app can't show) for its sign-in requests.
+export const CLIENT_APP_HEADER = 'X-Client-App';
+export const CLIENT_APP = 'veiloscan-business';
+
+export const api = axios.create({ baseURL: API_URL, timeout: 20000, headers: { [CLIENT_APP_HEADER]: CLIENT_APP } });
 
 // The store picked in the header (as the Seller Panel's store switcher):
 // store-linked lists (orders, customers, products, reports…) are narrowed

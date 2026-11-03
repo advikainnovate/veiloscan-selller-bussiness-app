@@ -86,6 +86,20 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    buildFeatures {
+        buildConfig true
+    }
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            buildConfigField "String", "API_BASE_URL", '"https://asapi.advikainnovate.cloud"'
+        }
+        prod {
+            dimension "environment"
+            buildConfigField "String", "API_BASE_URL", '"https://api.veiloscan.com"'
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')

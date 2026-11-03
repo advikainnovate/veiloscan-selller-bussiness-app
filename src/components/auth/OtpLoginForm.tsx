@@ -17,13 +17,7 @@ const RESEND_SECONDS = 30;
  * email or mobile number, then the code sent to its email and phone. Errors
  * go to the login card, which knows how to show "onboarding pending".
  */
-export function OtpLoginForm({
-  onError,
-  onClearError,
-}: {
-  onError: (error: unknown) => void;
-  onClearError: () => void;
-}) {
+export function OtpLoginForm({ onError, onClearError }: { onError: (error: unknown) => void; onClearError: () => void }) {
   const { loginWithOtp } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [codeSent, setCodeSent] = useState(false);

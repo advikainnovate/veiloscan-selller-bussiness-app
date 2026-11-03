@@ -28,6 +28,11 @@ jest.mock('../src/services/dashboard-service', () => ({
 }));
 
 jest.mock('../src/services/inventory-ledger-service', () => ({ inventoryLedgerService: { list: jest.fn(async () => []) } }));
+// The stock record an entry links to: never a real request (a 401 would sign the next test out).
+jest.mock('../src/services/stock-service', () => ({
+  ...jest.requireActual('../src/services/stock-service'),
+  stockService: { get: jest.fn(() => new Promise(() => {})) },
+}));
 
 const { act } = ReactTestRenderer;
 const list = inventoryLedgerService.list as jest.Mock;

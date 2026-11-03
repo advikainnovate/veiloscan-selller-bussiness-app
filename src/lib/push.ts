@@ -2,7 +2,7 @@
 // each notification rule on the PUSH channel to every active device of the
 // user (eshop-backend src/modules/notifications, POST /notifications/devices).
 // Android only for now: iOS needs its GoogleService-Info.plist and APNs key.
-import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
+import { Linking, NativeModules, PermissionsAndroid, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   deleteToken,
@@ -24,12 +24,31 @@ const DEVICE_KEY = 'app.pushDeviceId';
 const APP_VERSION: string = require('../../package.json').version;
 export const pushSupported = Platform.OS === 'android';
 
-function playForegroundNotificationSound() {
+// Taps on the notifications the app posts itself (pushes that came while it was open).
+const TAP_PREFIX = 'veiloscan-business://push';
+
+/** With the app open Android shows nothing for a push: post it ourselves (sound included). */
+function showForegroundNotification(m: RemoteMessage) {
+  const data = (m.data ?? {}) as Record<string, string>;
   try {
-    NativeModules.NotificationSound?.play();
+    const native = NativeModules.NotificationSound;
+    if (native?.show) native.show(m.notification?.title ?? 'VeiloScan Business', m.notification?.body ?? '', data.link ?? null, data.notificationId ?? null);
+    else native?.play?.();
   } catch {
-    // Sound is best-effort; a native audio issue must not block push handling.
+    // Best-effort; a native issue must not block push handling.
   }
+}
+
+/** The push behind a tapped veiloscan-business://push?id=…&link=… URL. */
+function tappedPush(url: string | null | undefined): RemoteMessage | null {
+  if (!url || !url.startsWith(TAP_PREFIX)) return null;
+  const query = url.split('?')[1] ?? '';
+  const data: Record<string, string> = {};
+  for (const pair of query.split('&')) {
+    const [k, v] = pair.split('=');
+    if (k) data[decodeURIComponent(k)] = decodeURIComponent(v ?? '');
+  }
+  return { data: { notificationId: data.id ?? '', link: data.link ?? '' } } as unknown as RemoteMessage;
 }
 
 /** This install's id, so the backend keeps one token per phone. */
@@ -49,6 +68,8 @@ async function allowed() {
 }
 
 async function register(token: string) {
+  // Dev builds only: lets a test push be sent to this phone from the Firebase console.
+  if (__DEV__) console.log('[push] FCM token', token);
   await notificationService.registerDevice({
     deviceId: await deviceId(),
     fcmToken: token,
@@ -61,9 +82,16 @@ async function register(token: string) {
 /** The notification a push is about, in the shape the notification list opens. */
 function toNotification(m: RemoteMessage): AppNotification {
   const data = (m.data ?? {}) as Record<string, string>;
+  // The backend sends eventType (ORDER_CREATED); the notification list uses
+  // the legacy type names (NEW_ORDER). Map them so openNotification works.
+  const TYPE_MAP: Record<string, string> = {
+    ORDER_CREATED: 'NEW_ORDER',
+    ORDER_REQUEST_CREATED: 'NEW_ORDER_REQUEST',
+  };
+  const rawType = data.type ?? '';
   return {
     id: data.notificationId ?? m.messageId ?? '',
-    type: data.type ?? '',
+    type: TYPE_MAP[rawType] ?? rawType,
     title: m.notification?.title ?? '',
     message: m.notification?.body ?? '',
     link: data.link ?? null,
@@ -105,18 +133,26 @@ export function startPush({ onReceived }: { onReceived: () => void }): () => voi
   })();
   const subs = [
     onTokenRefresh(messaging, token => register(token).catch(() => {})),
-    // With the app open Android shows nothing: the in-app banner and bell do.
-    onMessage(messaging, () => {
-      playForegroundNotificationSound();
+    onMessage(messaging, m => {
+      showForegroundNotification(m);
       onReceived();
     }),
     onNotificationOpenedApp(messaging, m => openPush(m, onReceived)),
   ];
-  // Opened from a push while the app was closed.
+  const tapped = Linking.addEventListener('url', ({ url }) => {
+    const m = tappedPush(url);
+    if (m) openPush(m, onReceived);
+  });
+  // Opened from a push (or one of our own notifications) while the app was closed.
   getInitialNotification(messaging).then(m => m && !stopped && openPush(m, onReceived), () => {});
+  Linking.getInitialURL().then(url => {
+    const m = tappedPush(url);
+    if (m && !stopped) openPush(m, onReceived);
+  }, () => {});
   return () => {
     stopped = true;
     subs.forEach(unsubscribe => unsubscribe());
+    tapped.remove();
   };
 }
 
