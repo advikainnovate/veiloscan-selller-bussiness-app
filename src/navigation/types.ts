@@ -50,6 +50,11 @@ export type RootStackParamList = {
   Inventory: { tab?: InventoryTab } | undefined;
   StockDetail: { id: string };
   InventoryLedger: undefined;
+  SupportTickets: undefined;
+  SupportTicket: { id: string };
+  /** A new ticket; with relatedTo, a follow-up of that one. */
+  SupportTicketForm: { relatedTo?: { id: string; ticketNumber: string; subject: string; storeId?: string } } | undefined;
+  SupportDashboard: undefined;
   /** A store's page (the current store without `storeId`), on one of its tabs (Overview by default). */
   StoreSettings: { tab?: StoreSettingsTab; storeId?: string } | undefined;
   /** Every store the seller holds. */

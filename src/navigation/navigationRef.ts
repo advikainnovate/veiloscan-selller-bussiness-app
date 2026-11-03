@@ -7,9 +7,11 @@ import { OFFER_KINDS, type OfferKind } from '../lib/offers';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'InventoryLedger' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
+type ModuleRoute = 'InventoryLedger' | 'SupportTickets' | 'SupportDashboard' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'inventory-transactions': 'InventoryLedger',
+  'support-tickets': 'SupportTickets',
+  'support-dashboard': 'SupportDashboard',
   'order-requests': 'OrderRequests',
   'customer-credit': 'CustomerCredit',
   coupons: 'Coupons',
@@ -69,6 +71,11 @@ export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> 
   StockHealth: 'stock-health',
   PendingStock: 'pending-stock',
   Shipping: 'shipping',
+  InventoryLedger: 'inventory-transactions',
+  SupportTickets: 'support-tickets',
+  SupportTicket: 'support-tickets',
+  SupportTicketForm: 'support-tickets',
+  SupportDashboard: 'support-dashboard',
   ShippingZone: 'shipping',
   ShippingZoneForm: 'shipping',
   StockOrderDetail: 'pending-stock',

@@ -124,10 +124,12 @@ export function openNotification(n: AppNotification): boolean {
   const brand = id(/\/brand-approvals\/([\w-]+)/);
   const warehouse = id(/\/warehouse-master\/([\w-]+)/);
   const store = id(/\/stores\/([\w-]+)/);
+  const ticket = id(/\/support\/tickets\/([\w-]+)/) ?? (n.data?.ticketId as string | undefined);
   if (n.type === 'NEW_ORDER_REQUEST' || request) {
     if (request) navigationRef.navigate('OrderRequestDetail', { id: request });
     else navigationRef.navigate('OrderRequests');
-  } else if (order) navigationRef.navigate('OrderDetail', { id: order });
+  } else if (ticket) navigationRef.navigate('SupportTicket', { id: ticket });
+  else if (order) navigationRef.navigate('OrderDetail', { id: order });
   else if (n.type === 'NOTE_REMINDER' || /\/operations\/notes/.test(link)) navigationRef.navigate('Notes');
   else if (credit) navigationRef.navigate('CreditDetail', { id: credit });
   else if (expense) navigationRef.navigate('ExpenseDetail', { id: expense });

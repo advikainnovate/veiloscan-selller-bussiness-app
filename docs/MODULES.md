@@ -47,6 +47,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Shipping ✅ | Zones list (zones / active / inactive / methods tiles, search, covered states, method count, activate / deactivate, delete); zone page (details, its methods with rate, free-above value and delivery days; add / edit in a sheet with slug from the title, fixed / per-kg / % of order, activate / deactivate, delete); create / edit zone (slug from the title, covered states picked from the Indian states and UTs) | `/shipping-zones`, `/shipping-methods` | `shipping:manage` |
 | Freebies, Gift Cards, Promotions ✅ | One list per kind (total / active / inactive tiles plus expired, or total face value for gift cards; search; promotion type or gift card category chips; activate / deactivate, delete); detail page by section; create / edit with the panel's checks (required fields, amounts, order value range, dates, % discount ≤ 100, gift card image upload) | `/freebie-master`, `/gift-cards`, `/my-promotions` | `freebie-master:manage`, `gift-cards:manage`, `my-promotions:manage` |
 | Inventory Ledger ✅ | Every stock movement, newest first (movements / stock in / stock out / holds tiles, search by product, SKU, reference or lot, movement type and warehouse filters); an entry's sheet shows on hand / reserved / blocked changes and balances, quantity, lot, cost, reason, reference, notes, who and when, with links to its stock record and order. Read only: entries come from stock operations and orders | `/inventory-transactions` | `inventory-transactions:manage` |
+| Support Tickets ✅ | Ticket queue (open / unassigned / SLA breached / due-in-2h figures, queues — active, mine, unassigned, overdue, urgent, escalated — search, status / priority / type / category filters, this store or all stores, load more); ticket page (report, conversation with reply / internal note and photo attachments, edit own messages, status changes and resolve with a summary, take / assign, escalate and work escalations, details, SLA, files, linked tickets, feedback, audit trail); new ticket or follow-up (store request, customer with an account and their order, or guest; type, store, category, source, priority, earlier ticket) | `/support/tickets` | `support-tickets:view` to read, `support-tickets:manage` to work them |
+| Support Dashboard ✅ | Totals, performance (first response, resolution, on-time rate, reopened, CSAT), breakdowns by status / priority / type / category (and store), agent workload, how figures are counted; period and store scope | `/support/dashboard` | `support-reports:view` |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -55,8 +57,7 @@ Ordered by how often a seller needs it on the go.
 
 | # | Module | Panel page | Backend | Permission |
 | --- | --- | --- | --- | --- |
-| 1 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
-| 2 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
+| 1 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
 
 ## Not for sellers
 
@@ -73,6 +74,9 @@ the app leaves them out.
 
 - Freebies: picking the specific categories, brands or products for a
   "Selected" eligibility is done on the Seller Panel.
+
+- Support: attachments are photos only (the panel also takes PDF, Word and
+  Excel files), and a guest's order is linked on the Seller Panel.
 
 - Catalog pages: no CSV export or multi-select bulk actions (Product
   Variants); brand approval documents are photos (PDFs on the Seller Panel);

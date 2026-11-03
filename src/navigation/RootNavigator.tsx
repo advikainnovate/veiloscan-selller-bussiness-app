@@ -61,6 +61,10 @@ import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { ShippingScreen } from '../screens/shipping/ShippingScreen';
 import { ShippingZoneScreen } from '../screens/shipping/ShippingZoneScreen';
 import { ShippingZoneFormScreen } from '../screens/shipping/ShippingZoneFormScreen';
+import { SupportTicketsScreen } from '../screens/support/SupportTicketsScreen';
+import { SupportTicketScreen } from '../screens/support/SupportTicketScreen';
+import { SupportTicketFormScreen } from '../screens/support/SupportTicketFormScreen';
+import { SupportDashboardScreen } from '../screens/support/SupportDashboardScreen';
 import { InventoryLedgerScreen } from '../screens/inventory/InventoryLedgerScreen';
 import { OffersScreen } from '../screens/offers/OffersScreen';
 import { OfferDetailScreen } from '../screens/offers/OfferDetailScreen';
@@ -387,6 +391,26 @@ export function RootNavigator() {
                   name="ShippingZoneForm"
                   component={ShippingZoneFormScreen}
                   options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="SupportTickets"
+                  component={SupportTicketsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="SupportTicket"
+                  component={SupportTicketScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="SupportTicketForm"
+                  component={SupportTicketFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="SupportDashboard"
+                  component={SupportDashboardScreen}
+                  options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="InventoryLedger"
