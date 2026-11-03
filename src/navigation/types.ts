@@ -53,6 +53,10 @@ export type RootStackParamList = {
   StoreSettings: { tab?: StoreSettingsTab; storeId?: string } | undefined;
   /** Every store the seller holds. */
   Stores: undefined;
+  /** Sales › Freebies / Gift Cards / Promotions: list, one record, create (no id) / edit. */
+  Offers: { kind: OfferKind };
+  OfferDetail: { kind: OfferKind; id: string };
+  OfferForm: { kind: OfferKind; id?: string };
   /** Sales › Shipping: delivery zones, one zone with its methods, create (no id) / edit a zone. */
   Shipping: undefined;
   ShippingZone: { id: string };
@@ -97,6 +101,9 @@ export type RootStackParamList = {
 };
 
 export type StoreSettingsTab = 'overview' | 'setup' | 'operations' | 'gst' | 'categories' | 'qr-tag' | 'info' | 'activity';
+
+export type { OfferKind } from '../lib/offers';
+import type { OfferKind } from '../lib/offers';
 
 export type InventoryTab = 'stock' | 'ledger' | 'reservations' | 'low';
 
