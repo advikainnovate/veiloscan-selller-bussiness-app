@@ -3,7 +3,7 @@ import { api, STORE_HEADER } from '../lib/api';
 // The seller's plan (eshop-backend src/modules/subscriptions, GET
 // /subscriptions/me). Presentation only: the API enforces the same gates.
 export interface MySubscription {
-  plan: { name?: string } | null;
+  plan: { planName?: string } | null;
   /** The plan includes All Stores (the consolidated dashboard). */
   consolidatedDashboard: boolean;
 }

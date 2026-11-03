@@ -14,6 +14,9 @@ function toFiles(res: ImagePickerResponse): PickedFile[] {
       uri: a.uri!,
       name: a.fileName ?? `photo-${Date.now()}-${i}.jpg`,
       type: a.type ?? 'image/jpeg',
+      fileSize: a.fileSize,
+      width: a.width,
+      height: a.height,
     }));
 }
 

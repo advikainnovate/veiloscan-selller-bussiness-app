@@ -35,7 +35,29 @@ export type RootStackParamList = {
   CouponDetail: { id: string };
   /** Create (no id) or edit a coupon. */
   CouponForm: { id?: string };
+  AllStores: undefined;
+  BusinessOverview: undefined;
+  DailyBusiness: undefined;
+  /** Expenses, on one of its tabs (Dashboard by default); `status` / `search` open All Expenses filtered. */
+  Expenses: { tab?: ExpenseTab; status?: string; search?: string; supplierId?: string; sort?: string } | undefined;
+  /** `action` opens the Add Payment / Record Return sheet straight away. */
+  ExpenseDetail: { id: string; action?: 'pay' | 'return' };
+  /** New (no id), edit (id), or a copy dated today (copyOf). */
+  ExpenseForm: { id?: string; copyOf?: string; supplierId?: string } | undefined;
+  SupplierLedger: { id: string };
+  Notes: undefined;
+  /** Inventory, on Stock / Ledger / Reservations / Low Stock. */
+  Inventory: { tab?: InventoryTab } | undefined;
+  StockDetail: { id: string };
+  /** The current store's page, on one of its tabs (Overview by default). */
+  StoreSettings: { tab?: StoreSettingsTab } | undefined;
 };
+
+export type StoreSettingsTab = 'overview' | 'setup' | 'operations' | 'gst' | 'qr-tag' | 'info' | 'activity';
+
+export type InventoryTab = 'stock' | 'ledger' | 'reservations' | 'low';
+
+export type ExpenseTab = 'dashboard' | 'list' | 'suppliers' | 'recurring' | 'reports' | 'categories';
 
 export type ScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;
 

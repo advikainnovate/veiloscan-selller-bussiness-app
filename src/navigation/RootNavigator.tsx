@@ -26,8 +26,19 @@ import { AppDrawer } from '../components/layout/AppDrawer';
 import { OrderAlerts } from '../components/orders/OrderAlerts';
 import { MainTabs } from './MainTabs';
 import { menuKeyForTab } from './menu';
-import { navigationRef, ROUTE_MENU_KEYS } from './navigationRef';
+import { INVENTORY_TAB_KEYS, navigationRef, ROUTE_MENU_KEYS } from './navigationRef';
 import type { RootStackParamList, TabParamList } from './types';
+import { AllStoresScreen } from '../screens/operations/AllStoresScreen';
+import { BusinessOverviewScreen } from '../screens/operations/BusinessOverviewScreen';
+import { DailyBusinessScreen } from '../screens/operations/DailyBusinessScreen';
+import { NotesScreen } from '../screens/operations/NotesScreen';
+import { ExpensesScreen } from '../screens/expenses/ExpensesScreen';
+import { ExpenseDetailScreen } from '../screens/expenses/ExpenseDetailScreen';
+import { ExpenseFormScreen } from '../screens/expenses/ExpenseFormScreen';
+import { SupplierLedgerScreen } from '../screens/expenses/SupplierLedgerScreen';
+import { InventoryScreen } from '../screens/inventory/InventoryScreen';
+import { StockDetailScreen } from '../screens/inventory/StockDetailScreen';
+import { StoreSettingsScreen } from '../screens/store/StoreSettingsScreen';
 import { CustomerCreditScreen } from '../screens/credit/CustomerCreditScreen';
 import { CreditDetailScreen } from '../screens/credit/CreditDetailScreen';
 import { CouponsScreen } from '../screens/coupons/CouponsScreen';
@@ -62,6 +73,14 @@ export function RootNavigator() {
   const trackActivePage = useCallback(() => {
     const route = navigationRef.getCurrentRoute();
     if (!route) return setActiveKey(null);
+    // Inventory highlights the child for its tab.
+    if (route.name === 'Inventory') {
+      return setActiveKey(INVENTORY_TAB_KEYS[(route.params as { tab?: keyof typeof INVENTORY_TAB_KEYS } | undefined)?.tab ?? 'stock']);
+    }
+    // The QR tag has its own menu item.
+    if (route.name === 'StoreSettings') {
+      return setActiveKey((route.params as { tab?: string } | undefined)?.tab === 'qr-tag' ? 'store-qr-tag' : 'store-settings');
+    }
     // Detail pages highlight their module in the menu.
     const moduleKey =
       ROUTE_MENU_KEYS[route.name as keyof typeof ROUTE_MENU_KEYS];
@@ -168,6 +187,61 @@ export function RootNavigator() {
                   name="CouponForm"
                   component={CouponFormScreen}
                   options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="AllStores"
+                  component={AllStoresScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="BusinessOverview"
+                  component={BusinessOverviewScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="DailyBusiness"
+                  component={DailyBusinessScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Expenses"
+                  component={ExpensesScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ExpenseDetail"
+                  component={ExpenseDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ExpenseForm"
+                  component={ExpenseFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="SupplierLedger"
+                  component={SupplierLedgerScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Notes"
+                  component={NotesScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Inventory"
+                  component={InventoryScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="StockDetail"
+                  component={StockDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="StoreSettings"
+                  component={StoreSettingsScreen}
+                  options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="ProductEditor"

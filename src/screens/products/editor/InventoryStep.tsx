@@ -313,7 +313,7 @@ export function InventoryStep({
       {settingsOpen ? (
         <StockSettingsSheet
           productId={productId}
-          skus={saved}
+          skus={saved.map(s => ({ id: String(s.id), label: Object.values(s.combo).map(c => c.variantDataValue).join(' / ') || s.skuItemNumber }))}
           uoms={uoms.data ?? []}
           onClose={() => setSettingsOpen(false)}
           onSaved={view => {
@@ -340,21 +340,25 @@ const PIECES: SettingsDraft = {
 };
 
 /** How the product's (or one SKU's) stock is counted, as the Seller Panel's stock settings. */
-function StockSettingsSheet({
+export function StockSettingsSheet({
   productId,
   skus,
   uoms,
+  initialScope = '',
   onClose,
   onSaved,
 }: {
   productId: string;
-  skus: BusinessVariantRow[];
+  /** The SKUs that can have their own settings. */
+  skus: { id: string; label: string }[];
   uoms: Uom[];
+  /** Opens on this SKU's settings. */
+  initialScope?: string;
   onClose: () => void;
   onSaved: (view: { configs: StockConfig[] }) => void;
 }) {
   const [configs, setConfigs] = useState<StockConfig[] | null>(null);
-  const [scope, setScope] = useState('');
+  const [scope, setScope] = useState(initialScope);
   const [draft, setDraft] = useState<SettingsDraft>(PIECES);
   const [packFactor, setPackFactor] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -373,10 +377,12 @@ function StockSettingsSheet({
     inventoryService.stockConfig(productId).then(
       view => {
         setConfigs(view.configs);
-        loadScope(view.configs, '');
+        loadScope(view.configs, initialScope);
       },
       err => setError(extractErrorMessage(err)),
     );
+    // Loaded once per product.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   const ofType = uoms.filter(u => u.stockType === draft.stockType);
@@ -415,7 +421,7 @@ function StockSettingsSheet({
           label="For"
           value={scope}
           allowClear="The whole product"
-          options={skus.map(s => ({ value: String(s.id), label: `Only ${Object.values(s.combo).map(c => c.variantDataValue).join(' / ') || s.skuItemNumber}` }))}
+          options={skus.map(s => ({ value: s.id, label: `Only ${s.label}` }))}
           onChange={v => {
             setScope(v);
             if (configs) loadScope(configs, v);

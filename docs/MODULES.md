@@ -24,6 +24,13 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Sales Reports ✅ | Reports tab: store picker, date presets, KPIs vs the previous period (sales, orders, average order, gross profit, expenses, margin), sales & profit trend (daily / weekly / monthly), sales by payment method, top categories, sales list (all orders or by date / category / product / payment mode / customer / staff; search, payment filter, 10 a page) | `GET /stores`, `/stores/:id/operations/{overview,trend,sales,sales/breakdown}` | `store-operations:manage` (profit: `store-profit:view`) |
 | Customer Credit ✅ | List (six totals, status tabs with counts, search, 20 a page, Collect), detail (amounts, payment history with receipts, customer, order, reminders, send a reminder now), receive payment (checked against what's owed, confirm step), edit due date / reminders / notes, cancel an unpaid credit | `/customer-credit/*` | `customer-credit:manage` |
 | Coupons ✅ | List (totals, search, type and status filters), detail (activate / deactivate, delete), create and edit with the panel's fields and the backend's limits | `/coupons-master` | `coupons-master:manage` |
+| All Stores ✅ | Every store combined (sales, expenses, cost of goods, net profit, orders, collection), store-wise share — tap to switch to it, combined stock alerts; the panel's locked view when the plan doesn't include it | `GET /reports/multi-store/overview`, `/subscriptions/me` | `store-operations:manage` + plan |
+| Business Overview ✅ | Date presets + custom range, five KPIs vs the previous period, sales & profit chart (daily / weekly / monthly; series), sales by category, top products, recent orders, stock alerts and pending / delayed stock orders | `/stores/:id/operations/{overview,trend,sales,sales/breakdown,stock-health}` | `store-operations:manage` (profit: `store-profit:view`) |
+| Daily Business ✅ | Any day (previous / next / pick), 12 figures (sales, profit, expenses, orders, collection, cash / online, credit given / outstanding, stock received / adjusted), activity timeline linking to orders, credits and expenses | `/stores/:id/operations/daily` | `store-operations:manage` |
+| Expenses ✅ | Dashboard (period totals, owed now, 12-month chart, by category, upcoming), All Expenses (range, search, status / type / sort, filters sheet, PDF export), detail (payments with void, returns with approve / cancel, attachments, credit, reminders, audit trail; edit, duplicate, cancel, delete), add / edit / copy form with GST, credit terms and new supplier, Suppliers + ledger, Recurring, Reports (periods, custom range, PDF), Categories | `/stores/:id/operations/expense*` | `store-expenses:view` / `create` / `edit` / `delete` |
+| Notes ✅ | Active / Completed / Archived with counts and urgent badge, search, priority filter, add / edit (date, priority, reminder today / tomorrow / date & time, photo), view with history, complete / reopen / archive / delete | `/stores/:id/operations/notes` | `store-notes:view` / `create` / `edit` / `delete` |
+| Inventory ✅ | Stock (figures, search, warehouse / status / reserved / blocked filters, per-SKU on hand · reserved · blocked · available), Ledger (summary vs previous period, date presets, warehouse, movement type, search, 10 a page), Reservations (held quantity, orders, value, age filters), Low Stock (reorder quantity and value); receive (with or without a SKU picked), count / adjust, damage / block / write off, transfer, return, stock levels; stock record detail with lots, reservations, its own ledger and stock settings | `/inventory/*` | `product-inventory:manage` |
+| Store Settings ✅ | The current store's page: logo, status, code, shop link (share), status strip, rejection banner; Overview cards; Store Setup (address & contact, logo / banner upload with size and dimension checks, colours, tagline, business hours); Operational Settings (how customers buy, prefix, minimum order, payments, customer credit days); GST & Documents (GSTIN checks, required documents, add / remove / re-upload rejected); QR Store Tag (design, theme, live preview, generate, PDF / PNG, share); Additional Info; Activity Log (filters); Edit business details; Activate / Mark Inactive / Close Store | `/stores/:id` and its `settings`, `config`, `branding`, `business-hours`, `tax-details`, `documents`, `qr-tag`, `approval-history`; `/store-document-requirements` | `stores:view` (change: `stores:edit`, close: `stores:delete`) |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -34,9 +41,6 @@ Ordered by how often a seller needs it on the go.
 | --- | --- | --- | --- | --- |
 | 1 | Notifications | header bell | `/notifications`, `/notifications/:id/read`, `/notifications/read-all` | — |
 | 2 | Products (list, detail, status) | `/dashboard/products-master` | `/products-master` | `products-master:manage` |
-| 3 | Inventory: stock, low stock, ledger, reservations | `/dashboard/product-inventory/*` | `/inventory`, `/inventory/ledger` | `product-inventory:manage` |
-| 6 | Business Overview, Daily Business | `/dashboard/operations/*` | `/reports/*`, store operations | `store-operations:manage` |
-| 7 | Expenses, Notes | `/dashboard/operations/expenses`, `/notes` | store operations | `store-expenses:view`, `store-notes:view` |
 | 8 | Stock Health, Pending Stock | `/dashboard/operations/*` | store operations | `store-operations:manage`, `pending-stock:manage` |
 | 9 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
 | 10 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master` … | `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
@@ -46,7 +50,7 @@ Ordered by how often a seller needs it on the go.
 | 14 | Variants, Business Variants, Product Specs, Brand Approvals | catalog pages | catalog endpoints | catalog permissions |
 | 15 | Warehouses, Inventory Ledger (transactions) | `/dashboard/warehouse-master`, `/inventory-transactions` | `/warehouse-master`, `/inventory-transactions` | `*:manage` |
 | 16 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
-| 17 | Store Settings, Store QR Tag, Subscription, All Stores | settings pages | `/settings`, `/subscriptions/me`, `/reports/multi-store/overview` | `stores:view` / none |
+| 17 | Subscription | settings page | `/subscriptions/me` | none |
 | 18 | My Profile | account menu | `/auth/me` (PATCH) | — |
 
 ## Not for sellers
@@ -58,6 +62,11 @@ sellers — their permissions are stripped by `src/lib/access-policy.ts` — so
 the app leaves them out.
 
 ## Known gaps
+
+- Store Settings: the description (formatted text), onboarding and the
+  Categories tab stay on the Seller Panel; logo and banner aren't cropped
+  in the app (checked against the size rules instead), and document uploads
+  are photos (or a file URL).
 
 - New-order alerts work while the app is open. Alerts with the app closed need
   push notifications (Firebase Cloud Messaging / APNs) — a backend and

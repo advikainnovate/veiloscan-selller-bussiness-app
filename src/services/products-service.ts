@@ -251,6 +251,10 @@ export interface PickedFile {
   uri: string;
   name: string;
   type: string;
+  /** From the picker, when it knows them (for size rules). */
+  fileSize?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface UploadedFile {
@@ -261,11 +265,13 @@ export interface UploadedFile {
 
 export const fileService = {
   /** POST /files/upload (multipart): the Seller Panel's fileService.upload. */
-  upload(file: PickedFile, dirName: string): Promise<UploadedFile> {
+  upload(file: PickedFile, dirName: string, extra: { documentType?: string; documentId?: string } = {}): Promise<UploadedFile> {
     const form = new FormData();
     // React Native's FormData takes a { uri, name, type } file.
-    form.append('file', file as unknown as Blob);
+    form.append('file', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
     form.append('dirName', dirName);
+    if (extra.documentType) form.append('documentType', extra.documentType);
+    if (extra.documentId) form.append('documentId', extra.documentId);
     return api
       .post('/files/upload', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 60000 })
       .then(res => res.data);

@@ -320,6 +320,95 @@ export function DateField({
   );
 }
 
+const toHHMM = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const fromHHMM = (s: string) => {
+  const d = new Date();
+  const [h, m] = (s || '09:00').split(':').map(Number);
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+};
+const clock = (s: string) => {
+  if (!s) return '';
+  const [h, m] = s.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+};
+
+/** A time of day (HH:MM), picked with the phone's own clock. */
+export function TimeField({
+  label,
+  value,
+  onChange,
+  compact,
+}: {
+  label: string;
+  value: string;
+  onChange: (hhmm: string) => void;
+  /** Just the button, without the label above (for rows of times). */
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(fromHHMM(value));
+  const button = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value ? clock(value) : 'not set'}`}
+      onPress={() => {
+        setDraft(fromHHMM(value));
+        setOpen(true);
+      }}
+      style={[styles.select, styles.flex]}
+    >
+      <Text style={[styles.selectText, !value && styles.placeholder]}>{value ? clock(value) : 'Set time'}</Text>
+    </Pressable>
+  );
+  const pickers = (
+    <>
+      {open && Platform.OS === 'android' ? (
+        <DateTimePicker
+          value={draft}
+          mode="time"
+          onChange={(event, date) => {
+            setOpen(false);
+            if (event.type === 'set' && date) onChange(toHHMM(date));
+          }}
+        />
+      ) : null}
+      {Platform.OS === 'ios' ? (
+        <Sheet
+          visible={open}
+          title={label}
+          onClose={() => setOpen(false)}
+          footer={
+            <Button
+              title="Done"
+              onPress={() => {
+                onChange(toHHMM(draft));
+                setOpen(false);
+              }}
+            />
+          }
+        >
+          <DateTimePicker value={draft} mode="time" display="spinner" onChange={(_, date) => date && setDraft(date)} />
+        </Sheet>
+      ) : null}
+    </>
+  );
+  if (compact) {
+    return (
+      <View style={styles.flex}>
+        {button}
+        {pickers}
+      </View>
+    );
+  }
+  return (
+    <Field label={label}>
+      {button}
+      {pickers}
+    </Field>
+  );
+}
+
 /** A titled group of fields inside a step. */
 export function Section({
   title,
