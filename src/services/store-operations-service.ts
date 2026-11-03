@@ -57,12 +57,106 @@ export interface OpsDaily {
 
 export interface StockHealthRow {
   variantId: string;
+  productId: string;
   productName: string;
   sku: string;
+  combination: Record<string, string> | null;
   uom: string;
+  onHand: number;
   available: number;
+  minimum: number;
+  reorder: number;
+  warehouses: number;
+  inventoryId: string;
   health: 'low' | 'out' | 'healthy';
   imageUrl: string | null;
+  lastSoldAt: string | null;
+  /** Ordered from suppliers, not yet arrived. */
+  pendingQty: number;
+  suggestedReorder: number;
+}
+
+export interface StockHealth {
+  kpis: { totalSkus: number; totalProducts: number; lowStock: number; outOfStock: number; healthy: number };
+  items: StockHealthRow[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+/** A SKU to put on a stock order. */
+export interface SkuOption {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  combination: Record<string, string> | null;
+  costPrice: number | null;
+  available: number;
+  uom: string;
+}
+
+export type StockOrderStatus = 'ORDERED' | 'IN_TRANSIT' | 'PARTIALLY_RECEIVED' | 'RECEIVED' | 'CANCELLED';
+
+export interface StockOrderRow {
+  id: string;
+  idd: string;
+  supplierName: string;
+  supplierPhone: string | null;
+  referenceNumber: string | null;
+  orderDate: string;
+  expectedDate: string | null;
+  status: StockOrderStatus;
+  orderAmount: number;
+  warehouseTitle: string;
+  createdByName: string | null;
+  products: number;
+  totalUnits: number;
+  receivedUnits: number;
+  pendingUnits: number;
+  delayed: boolean;
+}
+
+export interface StockOrderList {
+  items: StockOrderRow[];
+  total: number;
+  page: number;
+  limit: number;
+  counts: { open: number; delayed: number; openAmount: number; received: number; cancelled: number; all: number };
+}
+
+export interface StockOrderDetail {
+  id: string;
+  idd: string;
+  status: StockOrderStatus;
+  supplierName: string;
+  supplierPhone: string | null;
+  referenceNumber: string | null;
+  orderDate: string;
+  expectedDate: string | null;
+  delayed: boolean;
+  orderAmount: number;
+  notes: string | null;
+  cancelReason: string | null;
+  warehouse: { id: string; title: string | null };
+  createdByName: string | null;
+  createdAt: string;
+  totals: { products: number; orderedUnits: number; receivedUnits: number; pendingUnits: number };
+  items: { id: string; productName: string; sku: string | null; uom: string; orderedQty: number; receivedQty: number; pendingQty: number; unitCost: number | null }[];
+  receipts: { id: string; idd: string; receivedDate: string; totalUnits: number; lines: { itemId: string; productName: string; sku: string | null; quantity: number }[]; notes: string | null; createdByName: string | null; createdAt: string }[];
+  /** The supplier's bill for the order (Expenses), once recorded. */
+  purchaseBill: {
+    id: string;
+    idd: string;
+    amount: number;
+    supplierName: string | null;
+    expenseDate: string;
+    outstandingAmount: number;
+    dueInDays: number | null;
+    dueDate: string | null;
+    status: string;
+  } | null;
+  history: LogEntry[];
 }
 
 export interface LogEntry {
@@ -188,8 +282,38 @@ export const storeOperationsService = {
   daily(storeId: string, date: string): Promise<OpsDaily> {
     return api.get(`${base(storeId)}/daily`, { params: { date } }).then(res => res.data);
   },
-  stockHealth(storeId: string, query: { filter?: string; limit?: number }): Promise<{ items: StockHealthRow[]; total: number }> {
+  stockHealth(storeId: string, query: { filter?: string; search?: string; page?: number; limit?: number }): Promise<StockHealth> {
     return api.get(`${base(storeId)}/stock-health`, { params: query }).then(res => res.data);
+  },
+
+  // Pending Stock: stock ordered from suppliers (pending-stock:manage).
+  skus(storeId: string, params: { search?: string; ids?: string }): Promise<SkuOption[]> {
+    return api.get(`${base(storeId)}/skus`, { params }).then(res => (Array.isArray(res.data) ? res.data : []));
+  },
+  stockOrders(storeId: string, query: { filter?: string; search?: string; page?: number; limit?: number }): Promise<StockOrderList> {
+    return api.get(`${base(storeId)}/stock-orders`, { params: query }).then(res => res.data);
+  },
+  stockOrder(storeId: string, id: string): Promise<StockOrderDetail> {
+    return api.get(`${base(storeId)}/stock-orders/${id}`).then(res => res.data);
+  },
+  createStockOrder(storeId: string, payload: Record<string, unknown>): Promise<StockOrderDetail> {
+    return api.post(`${base(storeId)}/stock-orders`, payload).then(res => res.data);
+  },
+  /** Status (ordered ⇄ in transit) or the expected date. */
+  updateStockOrder(storeId: string, id: string, payload: Record<string, unknown>): Promise<StockOrderDetail> {
+    return api.patch(`${base(storeId)}/stock-orders/${id}`, payload).then(res => res.data);
+  },
+  /** What arrived: added to the warehouse's stock as a purchase receipt. */
+  receiveStockOrder(storeId: string, id: string, payload: Record<string, unknown>): Promise<StockOrderDetail> {
+    return api.post(`${base(storeId)}/stock-orders/${id}/receive`, payload).then(res => res.data);
+  },
+  /** Received stock stays; only what hasn't arrived is cancelled. */
+  cancelStockOrder(storeId: string, id: string, reason?: string): Promise<StockOrderDetail> {
+    return api.post(`${base(storeId)}/stock-orders/${id}/cancel`, reason ? { reason } : {}).then(res => res.data);
+  },
+  /** The supplier's bill for a stock order: owed like any bill, kept out of operating expenses. */
+  createPurchaseBill(storeId: string, stockOrderId: string, payload: Record<string, unknown>) {
+    return api.post(`${base(storeId)}/stock-orders/${stockOrderId}/purchase-bill`, payload).then(res => res.data);
   },
 
   // Notes: the shop diary (store-notes:view / create / edit / delete).

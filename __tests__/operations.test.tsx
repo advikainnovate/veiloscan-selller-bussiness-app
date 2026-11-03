@@ -144,7 +144,7 @@ beforeEach(() => {
   ops.trend.mockResolvedValue({ canViewProfit: true, points: [{ date: '2026-11-01', orders: 10, sales: 100000, expenses: 20000, grossProfit: 40000, netProfit: 20000 }] });
   ops.breakdown.mockResolvedValue({ byPaymentMethod: [], byCategory: [{ categoryId: 'c1', name: 'Groceries', orders: 5, units: 9, sales: 100000, profit: 40000 }] });
   ops.sales.mockResolvedValue({ groupBy: 'none', canViewProfit: true, total: 0, items: [] });
-  ops.stockHealth.mockResolvedValue({ items: [{ variantId: 'v1', productName: 'Basmati Rice', sku: 'RICE5', uom: 'pcs', available: 2, health: 'low', imageUrl: null }], total: 1 });
+  ops.stockHealth.mockResolvedValue({ items: [{ variantId: 'v1', productName: 'Basmati Rice', sku: 'RICE5', uom: 'pcs', available: 2, health: 'low', imageUrl: null }], total: 1 } as never);
   ops.daily.mockResolvedValue({
     date: '2026-11-03',
     canViewProfit: false,

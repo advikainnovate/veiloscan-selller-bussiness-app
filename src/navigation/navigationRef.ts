@@ -6,7 +6,7 @@ import { MENU_ITEMS } from './menu';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
+type ModuleRoute = 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'order-requests': 'OrderRequests',
   'customer-credit': 'CustomerCredit',
@@ -18,6 +18,11 @@ const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   notes: 'Notes',
   'quantity-slabs': 'QuantitySlabs',
   profile: 'Profile',
+  notifications: 'Notifications',
+  subscription: 'Subscription',
+  'stock-health': 'StockHealth',
+  'pending-stock': 'PendingStock',
+  shipping: 'Shipping',
   warehouses: 'Warehouses',
   'brand-approvals': 'BrandApprovals',
   'product-variants': 'ProductVariants',
@@ -57,6 +62,15 @@ export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> 
   Stores: 'store-settings',
   QuantitySlabs: 'quantity-slabs',
   Profile: 'profile',
+  Notifications: 'notifications',
+  Subscription: 'subscription',
+  StockHealth: 'stock-health',
+  PendingStock: 'pending-stock',
+  Shipping: 'shipping',
+  ShippingZone: 'shipping',
+  ShippingZoneForm: 'shipping',
+  StockOrderDetail: 'pending-stock',
+  StockOrderForm: 'pending-stock',
   Warehouses: 'warehouses',
   WarehouseDetail: 'warehouses',
   WarehouseForm: 'warehouses',

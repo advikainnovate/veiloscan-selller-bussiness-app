@@ -56,6 +56,15 @@ import { ProductSpecDetailScreen } from '../screens/catalog/ProductSpecDetailScr
 import { ProductSpecFormScreen } from '../screens/catalog/ProductSpecFormScreen';
 import { QuantitySlabsScreen } from '../screens/pricing/QuantitySlabsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { SubscriptionScreen } from '../screens/SubscriptionScreen';
+import { ShippingScreen } from '../screens/shipping/ShippingScreen';
+import { ShippingZoneScreen } from '../screens/shipping/ShippingZoneScreen';
+import { ShippingZoneFormScreen } from '../screens/shipping/ShippingZoneFormScreen';
+import { StockHealthScreen } from '../screens/inventory/StockHealthScreen';
+import { PendingStockScreen } from '../screens/inventory/PendingStockScreen';
+import { StockOrderDetailScreen } from '../screens/inventory/StockOrderDetailScreen';
+import { StockOrderFormScreen } from '../screens/inventory/StockOrderFormScreen';
 import { QuantitySlabFormScreen } from '../screens/pricing/QuantitySlabFormScreen';
 import { CustomerCreditScreen } from '../screens/credit/CustomerCreditScreen';
 import { CreditDetailScreen } from '../screens/credit/CreditDetailScreen';
@@ -335,6 +344,51 @@ export function RootNavigator() {
                   name="ProductSpecForm"
                   component={ProductSpecFormScreen}
                   options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="StockHealth"
+                  component={StockHealthScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="PendingStock"
+                  component={PendingStockScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="StockOrderDetail"
+                  component={StockOrderDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="StockOrderForm"
+                  component={StockOrderFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="Shipping"
+                  component={ShippingScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ShippingZone"
+                  component={ShippingZoneScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ShippingZoneForm"
+                  component={ShippingZoneFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="Subscription"
+                  component={SubscriptionScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Notifications"
+                  component={NotificationsScreen}
+                  options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="Profile"

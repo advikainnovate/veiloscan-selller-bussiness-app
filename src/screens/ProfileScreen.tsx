@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type ComponentType, type ReactNode } from 'react';
+import React, { useEffect, useState, type ComponentType } from 'react';
 import { Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ import { AppHeader } from '../components/layout/AppHeader';
 import { Badge, type BadgeTone } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Gradient } from '../components/ui/Gradient';
+import { Group, groupStyles, Row } from '../components/ui/GroupList';
 import { OtpInput } from '../components/ui/OtpInput';
 import { PasswordField } from '../components/ui/PasswordField';
 import { Sheet } from '../components/ui/Sheet';
@@ -267,50 +268,19 @@ function Tile({ icon: Icon, tint, color, label, value }: { icon: ComponentType<I
   );
 }
 
-function Group({ title, action, children }: { title: string; action?: { label: string; onPress: () => void }; children: ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <View style={styles.groupHead}>
-        <Text style={styles.groupTitle}>{title.toUpperCase()}</Text>
-        {action ? (
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={action.onPress}>
-            <Text style={styles.link}>{action.label}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      <View style={styles.groupBody}>{children}</View>
-    </View>
-  );
-}
-
-function Row({ label, value, last }: { label: string; value: ReactNode; last?: boolean }) {
-  return (
-    <View style={[styles.row, !last && styles.rowLine]}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {typeof value === 'string' || value == null ? (
-        <Text style={styles.rowValue} numberOfLines={1}>
-          {value || '—'}
-        </Text>
-      ) : (
-        value
-      )}
-    </View>
-  );
-}
-
 const Verified = ({ on }: { on: boolean }) => (
   <View style={styles.inline}>
     <CheckCircleIcon size={14} color={on ? colors.success : colors.warning} />
-    <Text style={[styles.rowValue, on ? styles.ok : styles.amber]}>{on ? 'Verified' : 'Not verified'}</Text>
+    <Text style={[groupStyles.value, on ? styles.ok : styles.amber]}>{on ? 'Verified' : 'Not verified'}</Text>
   </View>
 );
 
-const Uploaded = ({ on }: { on: boolean }) => <Text style={[styles.rowValue, on ? styles.ok : styles.mutedValue]}>{on ? 'Uploaded' : 'Not uploaded'}</Text>;
+const Uploaded = ({ on }: { on: boolean }) => <Text style={[groupStyles.value, on ? styles.ok : groupStyles.muted]}>{on ? 'Uploaded' : 'Not uploaded'}</Text>;
 
 function Action({ icon: Icon, title, sub, onPress, tone = 'slate', last }: { icon: ComponentType<IconProps>; title: string; sub: string; onPress: () => void; tone?: 'slate' | 'green' | 'red'; last?: boolean }) {
   const tones = { slate: ['#f1f5f9', colors.textSecondary], green: ['#ecfdf5', '#059669'], red: ['#fef2f2', colors.error] } as const;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.action, !last && styles.rowLine, pressed && styles.pressed]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={({ pressed }) => [styles.action, !last && groupStyles.line, pressed && styles.pressed]}>
       <View style={[styles.actionIcon, { backgroundColor: tones[tone][0] }]}>
         <Icon size={16} color={tones[tone][1]} />
       </View>
@@ -344,7 +314,7 @@ function PlanGroup({ plan, loading }: { plan: NonNullable<Awaited<ReturnType<typ
         label="Current Plan"
         value={
           <View style={styles.inline}>
-            <Text style={styles.rowValue}>{plan.planName ?? '—'}</Text>
+            <Text style={groupStyles.value}>{plan.planName ?? '—'}</Text>
             {plan.isDefault ? <Badge label="Free" tone="slate" /> : null}
           </View>
         }
@@ -357,7 +327,7 @@ function PlanGroup({ plan, loading }: { plan: NonNullable<Awaited<ReturnType<typ
           <Row label="Billing" value={price} />
           {trialEnds ? <Row label="Free Trial Ends" value={trialEnds} /> : null}
           <Row label={trialEnds ? 'First Charge' : 'Renews On'} value={plan.currentPeriodEnd ? formatDay(plan.currentPeriodEnd) : '—'} />
-          <Row label="Auto-renew" value={<Text style={[styles.rowValue, plan.autoRenew ? styles.ok : styles.mutedValue]}>{plan.autoRenew ? 'On' : 'Off'}</Text>} />
+          <Row label="Auto-renew" value={<Text style={[groupStyles.value, plan.autoRenew ? styles.ok : groupStyles.muted]}>{plan.autoRenew ? 'On' : 'Off'}</Text>} />
           <Row label="Started On" value={plan.startedAt ? formatDay(plan.startedAt) : '—'} last />
         </>
       )}
@@ -380,7 +350,7 @@ function SalesTeamGroup({ state, loading, onRequest }: { state: SalesTeamState |
     <Group title="Sales Team" action={action}>
       {state.salesTeam ? (
         <>
-          <Row label="Sales Team ID" value={<Text style={[styles.rowValue, styles.mono]}>{state.salesTeam.salesId}</Text>} />
+          <Row label="Sales Team ID" value={<Text style={[groupStyles.value, styles.mono]}>{state.salesTeam.salesId}</Text>} />
           <Row label="Account Status" value={<Badge label={titleCase(state.salesTeam.status)} tone={ACCOUNT_TONE[state.salesTeam.status] ?? 'slate'} />} />
           <Row label="Member Since" value={formatDay(state.salesTeam.createdAt)} />
           <Row
@@ -694,15 +664,6 @@ const styles = StyleSheet.create({
   tileIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   tileLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textMuted },
   tileValue: { fontFamily: fonts.bold, fontSize: 14, color: colors.text },
-  group: { gap: 6 },
-  groupHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
-  groupTitle: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 1, color: colors.textSecondary },
-  groupBody: { overflow: 'hidden', paddingHorizontal: 14, borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.card },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 46, paddingVertical: 10 },
-  rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  rowLabel: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary },
-  rowValue: { flexShrink: 1, textAlign: 'right', fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
-  mutedValue: { color: colors.textMuted },
   note: { paddingBottom: 12, fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
   pitch: { flexDirection: 'row', gap: 8, paddingVertical: 12 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 10 },

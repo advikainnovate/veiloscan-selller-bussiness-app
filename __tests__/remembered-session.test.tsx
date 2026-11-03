@@ -16,7 +16,7 @@ jest.mock('../src/services/auth-service', () => ({
       firstName: 'Rajendra',
       lastName: 'Sah',
       userType: 'SELLER',
-      permissions: ['orders:manage', 'products-master:manage'],
+      permissions: ['orders:manage', 'products-master:manage', 'freebie-master:manage'],
     })),
     logout: jest.fn(async () => ({})),
   },
@@ -112,8 +112,8 @@ test('the menu shows only what the role allows, and opens pages and tabs', async
 
   // …one still to come opens its placeholder.
   await press(tree, 'Open menu');
-  await press(tree, 'Subscription');
-  expect(textOf(tree)).toContain('Subscription is coming to the app soon');
+  await press(tree, 'Freebies');
+  expect(textOf(tree)).toContain('Freebies is coming to the app soon');
 
   // A tab the role can't open says so.
   await press(tree, 'Back');

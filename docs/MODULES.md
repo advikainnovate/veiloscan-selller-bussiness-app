@@ -40,6 +40,11 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Business Variants ✅ | List (active / inactive, products covered, average price, search by SKU / barcode / product, product filter), add / edit SKU (attributes, selling / MRP / cost price, fixed or up to 5 slab tiers, image, status), activate / deactivate, delete | `/product-business-variants`, `/products-master` | `product-business-variants:manage` |
 | Product Specs ✅ | List (active / inactive, products covered, values as chips, product / specification filters), detail (details, values, activate / deactivate), add / edit (only specifications mapped to the product's category and not yet assigned; select options or typed values with order) | `/product-specifications`, `/product-specification-values`, `/specifications`, `/specifications-data`, `/categories/:id/product-configuration` | `product-specifications:manage` |
 | My Profile ✅ | Header avatar and menu card: photo, name, role, status, contact chips, bio; profile completeness with checklist; role / type / status / last login; personal info, security (verified email / phone, password changed, login attempts), documents, subscription plan (status, price, trial, renewal), sales team (ID or request to join); edit profile (photo, name, display name, gender, bio), change password by emailed code, sign out | `/auth/me`, `/users/:id` (PATCH), `/users/:id/profile` (GET, PUT), `/auth/forgot-password`, `/auth/reset-password`, `/subscriptions/me`, `/seller/sales-team` | — |
+| Notifications ✅ | Header bell and menu: All / Unread (with count), by kind (orders, notes…), grouped by day, unread tinted with a dot, relative times, more as you scroll; tap opens the order, order request or note (and marks it read), mark all as read | `/notifications` (`page`, `isRead`), `/notifications/:id/read`, `/notifications/read-all` | — |
+| Subscription ✅ | Navy plan card (stage: trial / complimentary / active / renewal due / expired, what it means, days left with progress, dates, highlights), renewal quote with GST, price / billing cycle / next charge / features included, usage meters (per-store breakdown, near-full and used-up warnings), billing details, payments (cash awaiting verification), every feature by module (all / included); owners change plan (monthly / yearly, upgrade / downgrade / switch billing, confirm; starts a trial from the free plan) | `/subscriptions/me/plan`, `/subscriptions/renewal`, `/subscriptions/me/payments`, `/public/subscription-plans`, `/subscriptions/start`, `/subscriptions/change` | none (changing: account owner) |
+| Stock Health ✅ | All / Low / Out / Healthy tiles that filter (with counts), search, per SKU: current vs minimum, suggested reorder, pending from suppliers, last sold; view product or inventory, restock, create a stock request; "Order N low / out" pre-fills a stock order; more as you scroll | `/stores/:id/operations/stock-health` | `store-operations:manage` |
+| Pending Stock ✅ | Open / delayed / open value / received tiles and every status as chips, search, received-of-total progress, delayed flags; stock order detail (products ordered / received / pending, receive what arrived with "everything pending arrived", mark in transit / back to ordered, change expected date, cancel with a reason, supplier bill paid or on credit, deliveries, history); new stock order (supplier, warehouse, dates, product search, quantity and unit cost, amount, notes) | `/stores/:id/operations/{skus,stock-orders,stock-orders/:id/{receive,cancel,purchase-bill}}` | `pending-stock:manage` |
+| Shipping ✅ | Zones list (zones / active / inactive / methods tiles, search, covered states, method count, activate / deactivate, delete); zone page (details, its methods with rate, free-above value and delivery days; add / edit in a sheet with slug from the title, fixed / per-kg / % of order, activate / deactivate, delete); create / edit zone (slug from the title, covered states picked from the Indian states and UTs) | `/shipping-zones`, `/shipping-methods` | `shipping:manage` |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -48,16 +53,10 @@ Ordered by how often a seller needs it on the go.
 
 | # | Module | Panel page | Backend | Permission |
 | --- | --- | --- | --- | --- |
-| 1 | Notifications | header bell | `/notifications`, `/notifications/:id/read`, `/notifications/read-all` | — |
-| 2 | Products (list, detail, status) | `/dashboard/products-master` | `/products-master` | `products-master:manage` |
-| 8 | Stock Health, Pending Stock | `/dashboard/operations/*` | store operations | `store-operations:manage`, `pending-stock:manage` |
-| 9 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
-| 10 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master` … | `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
-| 12 | Shipping | `/dashboard/shipping` | shipping methods / zones | `shipping:manage` |
-| 13 | Product create / edit wizard | `/dashboard/products-master/create` | product builder | `products-master:manage` |
-| 15 | Inventory Ledger (transactions) | `/dashboard/inventory-transactions` | `/inventory-transactions` | `*:manage` |
-| 16 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
-| 17 | Subscription | settings page | `/subscriptions/me` | none |
+| 1 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master`, `/gift-cards`, `/my-promotions` | same | `*:manage` |
+| 2 | Inventory Ledger (transactions) | `/dashboard/inventory-transactions` | `/inventory-transactions` | `inventory-transactions:manage` |
+| 3 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
+| 4 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
 
 ## Not for sellers
 
@@ -68,6 +67,9 @@ sellers — their permissions are stripped by `src/lib/access-policy.ts` — so
 the app leaves them out.
 
 ## Known gaps
+
+- Subscription renewal is paid on the Seller Panel: online payment in the app
+  needs Razorpay's React Native SDK (a native module), which isn't installed.
 
 - Catalog pages: no CSV export or multi-select bulk actions (Product
   Variants); brand approval documents are photos (PDFs on the Seller Panel);

@@ -53,6 +53,21 @@ export type RootStackParamList = {
   StoreSettings: { tab?: StoreSettingsTab; storeId?: string } | undefined;
   /** Every store the seller holds. */
   Stores: undefined;
+  /** Sales › Shipping: delivery zones, one zone with its methods, create (no id) / edit a zone. */
+  Shipping: undefined;
+  ShippingZone: { id: string };
+  ShippingZoneForm: { id?: string } | undefined;
+  /** Inventory › Stock Health: low, out-of-stock and healthy SKUs (`filter` opens one). */
+  StockHealth: { filter?: string } | undefined;
+  /** Inventory › Pending Stock: stock ordered from suppliers that hasn't fully arrived. */
+  PendingStock: { filter?: string } | undefined;
+  StockOrderDetail: { id: string };
+  /** A new stock order; `variantIds` pre-fills it (e.g. the low SKUs from Stock Health). */
+  StockOrderForm: { variantIds?: string[] } | undefined;
+  /** Settings › Subscription: the plan, usage, payments; change plan. */
+  Subscription: undefined;
+  /** The header bell: every notification. */
+  Notifications: undefined;
   /** My Profile (the header avatar and the menu's account card). */
   Profile: undefined;
   /** Catalog › Warehouses: list, one warehouse, add (no id) / edit. */
