@@ -67,8 +67,8 @@ test('the bell opens notifications: unread first, by day, by kind, mark all read
   let text = textOf(tree);
   expect(text).toContain('New order ORD-101');
   expect(text).toContain('5m ago');
-  expect(text).toContain('TODAY');
-  expect(text).toContain('YESTERDAY');
+  // The sections the entries fall in (just after midnight, "5m ago" is yesterday).
+  for (const n of ITEMS) expect(text).toContain(dayBucket(n.createdAt).toUpperCase());
   expect(text).toContain('2 unread');
 
   // Kinds present: orders and notes. (The last "Notes": the chip, not Home's tile underneath.)

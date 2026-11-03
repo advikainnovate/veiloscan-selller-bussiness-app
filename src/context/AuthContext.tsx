@@ -4,6 +4,7 @@ import { clearSession, restoreSession, saveSession, saveUser, type SessionUser }
 import { canUseSellerApp, NOT_SELLER_MESSAGE } from '../lib/seller-access';
 import { grants, usablePermissions } from '../lib/access-policy';
 import { authService, type AuthResult } from '../services/auth-service';
+import { stopPush } from '../lib/push';
 
 type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
 
@@ -104,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // While still signed in, so the backend knows whose device it is.
+    await stopPush();
     try {
       await authService.logout();
     } catch {

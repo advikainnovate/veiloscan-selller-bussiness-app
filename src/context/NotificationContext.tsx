@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, Vibration } from 'react-native';
 import { dashboardService, type AppNotification } from '../services/dashboard-service';
+import { startPush } from '../lib/push';
 
 // Checked often enough that a new order is noticed while the app is open.
 const POLL_MS = 30_000;
@@ -41,7 +42,13 @@ export function NotificationProvider({ enabled, children }: { enabled: boolean; 
         if (!known) return;
         const fresh = items.filter(n => !known.has(n.id) && !n.readAt && ORDER_TYPES.includes(n.type));
         if (fresh.length) {
-          Vibration.vibrate([0, 300, 150, 300]);
+          // Haptics are best-effort; a device or native-module failure must not
+          // prevent the in-app order banner from being shown.
+          try {
+            Vibration.vibrate([0, 300, 150, 300]);
+          } catch {
+            // Ignore vibration failures and continue with the alert.
+          }
           setAlerts(prev => [...fresh, ...prev].slice(0, 3));
         }
       },
@@ -50,6 +57,9 @@ export function NotificationProvider({ enabled, children }: { enabled: boolean; 
       },
     );
   }, []);
+
+  // Pushes: a push while the app is open checks at once instead of at the next poll.
+  useEffect(() => (enabled ? startPush({ onReceived: refresh }) : undefined), [enabled, refresh]);
 
   useEffect(() => {
     if (!enabled) {

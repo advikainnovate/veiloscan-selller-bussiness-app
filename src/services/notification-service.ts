@@ -23,6 +23,10 @@ export const notificationService = {
       limit: Number(res.data?.limit ?? params.limit ?? 20),
     }));
   },
+  /** Registers (or refreshes) this phone's push token. */
+  registerDevice: (payload: { deviceId: string; fcmToken: string; platform: 'ANDROID' | 'IOS'; deviceName?: string; appVersion?: string }) =>
+    api.post('/notifications/devices', payload).then(res => res.data),
+  removeDevice: (deviceId: string) => api.delete(`/notifications/devices/${encodeURIComponent(deviceId)}`).then(res => res.data),
   markRead: (id: string) => api.patch(`/notifications/${id}/read`).then(res => res.data),
   markAllRead: (): Promise<{ updated: number }> => api.patch('/notifications/read-all').then(res => res.data),
 };

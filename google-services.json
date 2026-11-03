@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "618311267964",
+    "project_id": "veiloscan-40747",
+    "storage_bucket": "veiloscan-40747.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618311267964:android:352581b1f9577c64c6fbf9",
+        "android_client_info": {
+          "package_name": "com.veiloscan.business"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiC0lY1qveVkPaG2i7FOKH2LNmOwNnmDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618311267964:android:d5491bde677cd3dac6fbf9",
+        "android_client_info": {
+          "package_name": "com.veiloscanapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiC0lY1qveVkPaG2i7FOKH2LNmOwNnmDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

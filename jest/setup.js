@@ -49,3 +49,15 @@ jest.mock('../src/services/subscription-service', () => ({
 // Ships untranspiled TypeScript that Jest doesn't transform; tests that pick
 // photos mock it with results of their own.
 jest.mock('react-native-image-picker', () => ({ launchCamera: jest.fn(), launchImageLibrary: jest.fn() }));
+
+// Firebase Cloud Messaging is native; tests run without pushes.
+jest.mock('@react-native-firebase/messaging', () => ({
+  getMessaging: jest.fn(() => ({})),
+  getToken: jest.fn(async () => 'test-fcm-token'),
+  deleteToken: jest.fn(async () => {}),
+  onMessage: jest.fn(() => () => {}),
+  onTokenRefresh: jest.fn(() => () => {}),
+  onNotificationOpenedApp: jest.fn(() => () => {}),
+  getInitialNotification: jest.fn(async () => null),
+  setBackgroundMessageHandler: jest.fn(),
+}));

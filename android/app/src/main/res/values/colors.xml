@@ -1,4 +1,6 @@
 <resources>
     <!-- VeiloScan navy: shown before the app draws its animated splash. -->
     <color name="splash_background">#03172F</color>
+    <!-- VeiloScan orange: tints the small icon of push notifications. -->
+    <color name="notification_color">#FF6B00</color>
 </resources>
