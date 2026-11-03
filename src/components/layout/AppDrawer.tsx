@@ -17,10 +17,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, fonts } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useDrawer } from '../../context/DrawerContext';
+import { useStore } from '../../context/StoreContext';
+import { useFetch } from '../../hooks/useFetch';
+import { subscriptionService } from '../../services/subscription-service';
 import { MENU_ITEMS, MENU_SECTIONS, type MenuItem } from '../../navigation/menu';
 import { openMenuKey } from '../../navigation/navigationRef';
-import { ChevronDownIcon, ChevronRightIcon, CloseIcon, LogoutIcon } from '../icons';
+import { ChevronDownIcon, ChevronRightIcon, CloseIcon, LockIcon, LogoutIcon, StoreIcon } from '../icons';
 import { Avatar, displayName } from './Avatar';
+import { StorePickerSheet } from './StoreSwitcher';
 
 const markWhite = require('../../assets/brand/logo-mark-white.png');
 const { version } = require('../../../package.json');
@@ -35,6 +39,12 @@ const NAVY_LIGHT = '#0b2a55';
 export function AppDrawer({ activeKey }: { activeKey: string | null }) {
   const { isOpen, close } = useDrawer();
   const { user, hasPermission, logout } = useAuth();
+  const { stores, current: currentStore } = useStore();
+  const [pickingStore, setPickingStore] = useState(false);
+  // The plan, for the lock on features it doesn't include (as on the panel's sidebar).
+  const needsPlan = MENU_ITEMS.some(item => item.feature && (!item.permission || hasPermission(item.permission)));
+  const subscription = useFetch(() => (needsPlan ? subscriptionService.mine().catch(() => null) : Promise.resolve(null)), [needsPlan]);
+  const locked = (item: MenuItem) => item.feature === 'consolidatedDashboard' && !!subscription.data && !subscription.data.consolidatedDashboard;
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const width = Math.min(320, screenWidth * 0.86);
@@ -148,6 +158,25 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
           <ChevronRightIcon size={16} color="rgba(255,255,255,0.5)" />
         </Pressable>
 
+        {currentStore ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={stores.length > 1 ? `Store: ${currentStore.name}. Switch store` : `Store: ${currentStore.name}`}
+            disabled={stores.length < 2}
+            onPress={() => setPickingStore(true)}
+            style={({ pressed }) => [styles.storeRow, pressed && styles.pressed]}
+          >
+            <StoreIcon size={18} color="#ff8a33" />
+            <View style={styles.flex}>
+              <Text style={styles.storeLabel}>{stores.length > 1 ? 'CURRENT STORE' : 'STORE'}</Text>
+              <Text style={styles.storeName} numberOfLines={1}>
+                {currentStore.name}
+              </Text>
+            </View>
+            {stores.length > 1 ? <Text style={styles.storeSwitch}>Switch</Text> : null}
+          </Pressable>
+        ) : null}
+
         <ScrollView style={styles.flex} contentContainerStyle={styles.nav} showsVerticalScrollIndicator={false}>
           {MENU_SECTIONS.map(section => {
             const items = visibleItems.filter(item => item.section === section.key);
@@ -161,6 +190,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
                     item={item}
                     activeKey={activeKey}
                     hasPermission={hasPermission}
+                    locked={locked(item)}
                     expanded={toggled[item.key]}
                     onToggle={next => setToggled(t => ({ ...t, [item.key]: next }))}
                     onOpen={go}
@@ -179,6 +209,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
           <Text style={styles.version}>VeiloScan Business v{version}</Text>
         </View>
       </Animated.View>
+      <StorePickerSheet visible={pickingStore} onClose={() => setPickingStore(false)} onSwitched={close} />
     </View>
   );
 }
@@ -187,6 +218,7 @@ function DrawerItem({
   item,
   activeKey,
   hasPermission,
+  locked,
   expanded: toggledOpen,
   onToggle,
   onOpen,
@@ -194,6 +226,7 @@ function DrawerItem({
   item: MenuItem;
   activeKey: string | null;
   hasPermission: (permission: string) => boolean;
+  locked: boolean;
   expanded: boolean | undefined;
   onToggle: (next: boolean) => void;
   onOpen: (key: string) => void;
@@ -220,7 +253,11 @@ function DrawerItem({
           <Text style={[styles.itemText, onItem && styles.itemTextActive]} numberOfLines={1}>
             {item.label}
           </Text>
-          {children.length ? (
+          {locked ? (
+            <View accessible accessibilityLabel="Not included in your plan">
+              <LockIcon size={14} color="#94a3b8" />
+            </View>
+          ) : children.length ? (
             <View style={!expanded && styles.rotated}>
               <ChevronDownIcon size={16} color={onItem ? colors.white : '#94a3b8'} />
             </View>
@@ -298,6 +335,21 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   userName: { fontSize: 15, fontFamily: fonts.bold, color: colors.white },
+  storeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 12,
+    marginTop: -4,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,138,51,0.1)',
+  },
+  storeLabel: { fontSize: 10, fontFamily: fonts.bold, letterSpacing: 0.6, color: '#94a3b8' },
+  storeName: { marginTop: 1, fontSize: 14, fontFamily: fonts.semibold, color: colors.white },
+  storeSwitch: { fontSize: 12.5, fontFamily: fonts.semibold, color: '#ff8a33' },
   userMeta: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12, color: '#94a3b8' },
   nav: { paddingHorizontal: 12, paddingBottom: 16, gap: 18 },
   section: { gap: 2 },

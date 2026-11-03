@@ -47,6 +47,8 @@ export interface MenuItem {
   /** Opens this bottom tab instead of a module page. */
   tab?: keyof TabParamList;
   children?: MenuChild[];
+  /** Shown with a lock when the seller's plan doesn't include it; the page still opens and explains the upgrade. */
+  feature?: 'consolidatedDashboard';
 }
 
 // The Seller Panel's sidebar (src/components/dashboard/sidebar.tsx), without the
@@ -99,7 +101,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'stock-health', label: 'Stock Health', icon: BoxIcon, section: 'inventory', permission: 'store-operations:manage' },
   { key: 'pending-stock', label: 'Pending Stock', icon: TruckIcon, section: 'inventory', permission: 'pending-stock:manage' },
 
-  { key: 'all-stores', label: 'All Stores', icon: BuildingIcon, section: 'operations', permission: 'store-operations:manage' },
+  { key: 'all-stores', label: 'All Stores', icon: BuildingIcon, section: 'operations', permission: 'store-operations:manage', feature: 'consolidatedDashboard' },
   { key: 'business-overview', label: 'Business Overview', icon: ChartTrendIcon, section: 'operations', permission: 'store-operations:manage' },
   { key: 'daily-business', label: 'Daily Business', icon: CalendarIcon, section: 'operations', permission: 'store-operations:manage' },
   { key: 'expenses', label: 'Expenses', icon: WalletIcon, section: 'operations', permission: 'store-expenses:view' },

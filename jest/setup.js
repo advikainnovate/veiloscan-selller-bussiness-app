@@ -35,3 +35,13 @@ jest.mock('react-native-blob-util', () => ({
     android: { actionViewIntent: jest.fn(async () => true) },
   },
 }));
+
+// The seller's stores: none unless a test says otherwise (lists then span all stores).
+jest.mock('../src/services/store-service', () => ({
+  storeService: { list: jest.fn(async () => []) },
+}));
+
+// The seller's plan: everything included unless a test says otherwise.
+jest.mock('../src/services/subscription-service', () => ({
+  subscriptionService: { mine: jest.fn(async () => ({ plan: null, consolidatedDashboard: true })) },
+}));

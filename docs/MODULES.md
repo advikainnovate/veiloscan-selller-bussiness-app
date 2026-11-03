@@ -15,11 +15,15 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Module | App screens | Backend | Permission |
 | --- | --- | --- | --- |
 | Sign in, OTP sign in, password reset | Splash, Get Started, Login, Forgot / Reset Password | `/auth/*` | — |
-| Navigation | Drawer menu, header, bottom tabs | — | per menu item |
+| Navigation | Drawer menu, header, bottom tabs; store switcher (header bar and menu, remembered per user, sent as `X-Store-Id` like the panel's) | `GET /stores` | per menu item (switcher: `stores:view`) |
 | Home | Banner, today's figures, Quick Access | `GET /reports/overview`, `GET /customers`, `GET /notifications` | per card |
 | Orders ✅ | List (summary, search, status filters, sort, payment methods), detail, accept → ready → collect payment (split methods) or Customer Credit with reminder terms → picked up, cancel with reason, credit requests, invoice and receipt PDFs | `/orders`, `/orders/:id/*` (pickup-status, payments, invoices, receipts) | `orders:manage` (credit: `customer-credit:manage`) |
 | Self orders ✅ | New order: products (search, categories, weighed items, quantity slabs, line discounts, coupon, stock check) → Quick Sale / existing / new customer → pay now (single or split, change due) or Customer Credit; order discount, hand over now or later | `/orders/for-customer/*` | `orders:manage` |
-| Order Requests ✅ | List (status counts, search), detail (availability, edit items, status changes with reasons), final bill through the self-order flow | `/order-requests/*` | `orders:manage` |
+| Order Requests ✅ | List (summary cards, status counts, search), detail contact by call / WhatsApp / email, detail (availability, edit items, status changes with reasons), final bill through the self-order flow | `/order-requests/*` | `orders:manage` |
+| Customers ✅ | List (totals, new this month, with credit, total credit; All / With Credit / Top Customers; search by name, mobile or customer ID; 50 a page), lifetime purchase and credit due per customer, details sheet with call | `GET /customers` (`view`), `GET /customers/summary` | `customers:manage` (credit: `customer-credit:manage`) |
+| Sales Reports ✅ | Reports tab: store picker, date presets, KPIs vs the previous period (sales, orders, average order, gross profit, expenses, margin), sales & profit trend (daily / weekly / monthly), sales by payment method, top categories, sales list (all orders or by date / category / product / payment mode / customer / staff; search, payment filter, 10 a page) | `GET /stores`, `/stores/:id/operations/{overview,trend,sales,sales/breakdown}` | `store-operations:manage` (profit: `store-profit:view`) |
+| Customer Credit ✅ | List (six totals, status tabs with counts, search, 20 a page, Collect), detail (amounts, payment history with receipts, customer, order, reminders, send a reminder now), receive payment (checked against what's owed, confirm step), edit due date / reminders / notes, cancel an unpaid credit | `/customer-credit/*` | `customer-credit:manage` |
+| Coupons ✅ | List (totals, search, type and status filters), detail (activate / deactivate, delete), create and edit with the panel's fields and the backend's limits | `/coupons-master` | `coupons-master:manage` |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -31,13 +35,11 @@ Ordered by how often a seller needs it on the go.
 | 1 | Notifications | header bell | `/notifications`, `/notifications/:id/read`, `/notifications/read-all` | — |
 | 2 | Products (list, detail, status) | `/dashboard/products-master` | `/products-master` | `products-master:manage` |
 | 3 | Inventory: stock, low stock, ledger, reservations | `/dashboard/product-inventory/*` | `/inventory`, `/inventory/ledger` | `product-inventory:manage` |
-| 4 | Customers | `/dashboard/customers` | `/customers`, `/customers/:id/*` | `customers:manage` |
-| 5 | Customer Credit | `/dashboard/customer-credit` | `/customer-credit/*` | `customer-credit:manage` |
-| 6 | Sales Reports, Business Overview, Daily Business | `/dashboard/operations/*` | `/reports/*`, store operations | `store-operations:manage` |
+| 6 | Business Overview, Daily Business | `/dashboard/operations/*` | `/reports/*`, store operations | `store-operations:manage` |
 | 7 | Expenses, Notes | `/dashboard/operations/expenses`, `/notes` | store operations | `store-expenses:view`, `store-notes:view` |
 | 8 | Stock Health, Pending Stock | `/dashboard/operations/*` | store operations | `store-operations:manage`, `pending-stock:manage` |
 | 9 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
-| 10 | Coupons, Freebies, Gift Cards, Promotions | `/dashboard/coupons-master` … | `/coupons-master`, `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
+| 10 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master` … | `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
 | 11 | Pricing & Discounts (quantity slabs) | `/dashboard/pricing-discounts/*` | `/quantity-discounts` | `quantity-discounts:manage` |
 | 12 | Shipping | `/dashboard/shipping` | shipping methods / zones | `shipping:manage` |
 | 13 | Product create / edit wizard | `/dashboard/products-master/create` | product builder | `products-master:manage` |

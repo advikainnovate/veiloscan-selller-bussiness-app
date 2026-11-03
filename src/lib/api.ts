@@ -4,9 +4,20 @@ import { clearSession, getAccessToken, getRefreshToken, updateTokens, type Sessi
 
 export const api = axios.create({ baseURL: API_URL, timeout: 20000 });
 
+// The store picked in the header (as the Seller Panel's store switcher):
+// store-linked lists (orders, customers, products, reports…) are narrowed
+// to it. The backend only honours one of the seller's own stores.
+export const STORE_HEADER = 'X-Store-Id';
+let requestStoreId: string | null = null;
+
+export function setRequestStoreId(id: string | null) {
+  requestStoreId = id;
+}
+
 api.interceptors.request.use(config => {
   const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (requestStoreId && !config.headers.has(STORE_HEADER)) config.headers.set(STORE_HEADER, requestStoreId);
   return config;
 });
 

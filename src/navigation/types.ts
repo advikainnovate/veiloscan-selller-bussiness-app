@@ -29,6 +29,12 @@ export type RootStackParamList = {
   /** Create (no id) or edit a product. */
   ProductEditor: { id?: string };
   OrderRequestDetail: { id: string };
+  CustomerCredit: undefined;
+  CreditDetail: { id: string };
+  Coupons: undefined;
+  CouponDetail: { id: string };
+  /** Create (no id) or edit a coupon. */
+  CouponForm: { id?: string };
 };
 
 export type ScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

@@ -150,6 +150,14 @@ export const UsersIcon = makeIcon([
   { d: 'M17.75 14.25c2.6.5 4.5 2.55 4.5 5.75' },
 ]);
 
+export const UserPlusIcon = makeIcon([
+  { circle: { cx: 10, cy: 8, r: 3.5 } },
+  { d: 'M3.5 20c0-3.6 2.9-6.25 6.5-6.25 1.6 0 3 .5 4.1 1.35' },
+  { d: 'M18.5 13.5v6M15.5 16.5h6' },
+]);
+
+export const RupeeIcon = makeIcon([{ d: 'M7 4.5h10M7 9h10M7 4.5h3.5a4.5 4.5 0 0 1 0 9H7l7.5 6.5' }]);
+
 export const WalletIcon = makeIcon([
   { d: 'M3.5 7.5A2 2 0 0 1 5.5 5.5h12A2 2 0 0 1 19.5 7.5v9a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2Z' },
   { d: 'M14.5 12.75a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z' },

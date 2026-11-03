@@ -132,3 +132,31 @@ export function RocketArt({ size = 64 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** Three customers, the middle one in brand orange: the Customers banner. */
+export function CustomersArt({ width = 150 }: { width?: number }) {
+  return (
+    <Svg width={width} height={width * 0.66} viewBox="0 0 150 100">
+      <Defs>
+        <LinearGradient id="cu-side" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#f8fafc" />
+          <Stop offset="1" stopColor="#bfd3ea" />
+        </LinearGradient>
+        <LinearGradient id="cu-main" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#ffb020" />
+          <Stop offset="1" stopColor={ORANGE} />
+        </LinearGradient>
+      </Defs>
+      <Ellipse cx="75" cy="94" rx="62" ry="5" fill="#000000" opacity="0.18" />
+      {/* Side customers */}
+      <Circle cx="34" cy="38" r="13" fill="url(#cu-side)" />
+      <Path d="M10 92c0-18 10.5-30 24-30s24 12 24 30Z" fill="url(#cu-side)" />
+      <Circle cx="116" cy="38" r="13" fill="url(#cu-side)" />
+      <Path d="M92 92c0-18 10.5-30 24-30s24 12 24 30Z" fill="url(#cu-side)" />
+      {/* The customer in front */}
+      <Circle cx="75" cy="28" r="17" fill="url(#cu-main)" />
+      <Path d="M43 94c0-24 14-40 32-40s32 16 32 40Z" fill="url(#cu-main)" />
+      <Path d="M58 30a17 17 0 0 0 10 13" stroke={ORANGE_LIGHT} strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" />
+    </Svg>
+  );
+}

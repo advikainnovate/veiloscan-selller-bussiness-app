@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { STORE_PENDING, useStore } from '../context/StoreContext';
 import { useNotifications } from '../context/NotificationContext';
 import { extractErrorMessage } from '../lib/api';
 import { formatNumber, formatRupees, trend } from '../lib/format';
@@ -31,6 +32,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
   const canOrders = hasPermission('orders:manage');
   const canProducts = hasPermission('products-master:manage');
   const canCustomers = hasPermission('customers:manage');
+  const { storeKey } = useStore();
 
   const load = useCallback(async () => {
     try {
@@ -43,13 +45,19 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
     } catch (err) {
       setError(extractErrorMessage(err));
     }
-  }, [canCustomers]);
+    // A new store's figures (storeKey isn't read: it rides in the request header).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canCustomers, storeKey]);
+
+  // Another store's figures mustn't linger while this one's load.
+  useEffect(() => setData(null), [storeKey]);
 
   // Fresh figures each time Home comes back into view.
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      // Wait for the store, so the figures aren't first loaded for every store.
+      if (storeKey !== STORE_PENDING) load();
+    }, [load, storeKey]),
   );
 
   async function onRefresh() {

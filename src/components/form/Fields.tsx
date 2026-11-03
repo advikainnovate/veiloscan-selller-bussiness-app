@@ -237,6 +237,7 @@ export function DateField({
   value,
   onChange,
   minimumDate,
+  maximumDate,
 }: {
   label: string;
   required?: boolean;
@@ -244,6 +245,7 @@ export function DateField({
   value: string;
   onChange: (iso: string) => void;
   minimumDate?: Date;
+  maximumDate?: Date;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(fromISO(value));
@@ -281,6 +283,7 @@ export function DateField({
           value={draft}
           mode="date"
           minimumDate={minimumDate}
+          maximumDate={maximumDate}
           onChange={(event, date) => {
             setOpen(false);
             if (event.type === 'set' && date) onChange(toISO(date));
@@ -307,6 +310,7 @@ export function DateField({
             mode="date"
             display="inline"
             minimumDate={minimumDate}
+            maximumDate={maximumDate}
             accentColor={colors.secondary}
             onChange={(_, date) => date && setDraft(date)}
           />

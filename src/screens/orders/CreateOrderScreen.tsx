@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert as NativeAlert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
+import { useStore } from '../../context/StoreContext';
 import { extractErrorMessage } from '../../lib/api';
 import { formatDay } from '../../lib/date';
 import { formatRupees } from '../../lib/format';
@@ -105,6 +106,10 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SellerOrderResult | null>(null);
 
+  const { current: currentStore } = useStore();
+  const currentStoreId = useRef(currentStore?.id);
+  currentStoreId.current = currentStore?.id;
+
   // The stores the seller can sell from; a request is billed at its own store, with its customer and items.
   useEffect(() => {
     (async () => {
@@ -130,8 +135,10 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
               .filter(item => item.catalogItem)
               .map(item => ({ item: item.catalogItem!, quantity: item.quantity, uom: item.uom, discount: '' })),
           );
-        } else if (list.length === 1) {
-          setStoreId(list[0].id);
+        } else {
+          // Start in the store picked in the header; it can still be changed here.
+          const preferred = list.find(s => s.id === currentStoreId.current) ?? (list.length === 1 ? list[0] : null);
+          if (preferred) setStoreId(preferred.id);
         }
       } catch (err) {
         setLoadError(extractErrorMessage(err));

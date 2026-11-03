@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react';
 import { extractErrorMessage } from '../lib/api';
+import { STORE_PENDING, useStore } from '../context/StoreContext';
 
 export interface FetchState<T> {
   data: T | undefined;
@@ -13,8 +14,9 @@ export interface FetchState<T> {
 }
 
 /**
- * Loads data with `fetcher` and reloads when `deps` change. Keeps the last
- * data on a failed reload, so a dropped connection doesn't blank a list.
+ * Loads data with `fetcher` and reloads when `deps` change or the store is
+ * switched. Keeps the last data on a failed reload, so a dropped connection
+ * doesn't blank a list.
  */
 export function useFetch<T>(fetcher: () => Promise<T>, deps: DependencyList): FetchState<T> {
   const [data, setData] = useState<T>();
@@ -45,12 +47,22 @@ export function useFetch<T>(fetcher: () => Promise<T>, deps: DependencyList): Fe
     }
   }, []);
 
+  const { storeKey } = useStore();
+  const loadedFor = useRef(storeKey);
   useEffect(() => {
+    // Another store's data mustn't linger while this one's loads.
+    if (loadedFor.current !== storeKey) {
+      loadedFor.current = storeKey;
+      setData(undefined);
+      setError(null);
+    }
     setLoading(true);
+    // Wait for the store, so a list doesn't first load for every store.
+    if (storeKey === STORE_PENDING) return;
     reload();
-    // Reload when the caller's inputs change.
+    // Reload when the caller's inputs or the store change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, storeKey]);
 
   return { data, error, loading: loading && data === undefined, refreshing, reload };
 }

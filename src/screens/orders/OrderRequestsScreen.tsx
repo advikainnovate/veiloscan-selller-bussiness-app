@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../../theme';
@@ -17,7 +17,7 @@ import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
-import { ClipboardListIcon } from '../../components/icons';
+import { CheckCircleIcon, ClipboardListIcon, ClockIcon, ShoppingBagIcon, StoreIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
 
 const SEARCH_DELAY_MS = 300;
@@ -49,14 +49,15 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
     }, [allowed, reload]),
   );
 
+  const counts = data?.counts;
+  const all = counts ? Object.values(counts).reduce((n, c) => n + (c ?? 0), 0) : undefined;
+  const count = (st: OrderRequestStatus) => (counts ? String(counts[st] ?? 0) : '…');
   const chips = useMemo(() => {
-    const counts = data?.counts;
-    const all = counts ? Object.values(counts).reduce((n, c) => n + (c ?? 0), 0) : undefined;
     return [
       { value: '', label: 'All', count: all },
       ...ORDER_REQUEST_STATUSES.map(s => ({ value: s.value, label: s.label, count: counts?.[s.value] })),
     ];
-  }, [data]);
+  }, [counts, all]);
 
   if (!allowed) {
     return (
@@ -77,7 +78,27 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
         renderItem={({ item }) => <RequestCard request={item} onPress={() => navigation.navigate('OrderRequestDetail', { id: item.id })} />}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
-            <SearchBar value={query} onChange={setQuery} placeholder="Search request no., customer, mobile" />
+            <View>
+              <Text style={styles.pageTitle} accessibilityRole="header">
+                Order Requests
+              </Text>
+              <Text style={styles.pageSubtitle}>
+                Lists customers sent to your order-request stores. Check availability, confirm the items, generate the final bill and complete them.
+              </Text>
+            </View>
+            <View style={styles.cards}>
+              <SummaryCard icon={ShoppingBagIcon} tone={['#fffbeb', '#d97706']} label="New requests" value={count('REQUESTED')} hint="Waiting for you to check" />
+              <SummaryCard icon={ClockIcon} tone={['#f0f9ff', '#0284c7']} label="Under review" value={count('UNDER_REVIEW')} hint="Checking availability" />
+              <SummaryCard icon={CheckCircleIcon} tone={['#fff7ed', '#ea580c']} label="Confirmed" value={count('CONFIRMED')} hint="Ready for the final bill" />
+              <SummaryCard
+                icon={StoreIcon}
+                tone={['#ecfdf5', '#059669']}
+                label="Completed"
+                value={count('COMPLETED')}
+                hint={all != null ? `Billed as orders · ${all} request${all === 1 ? '' : 's'} in all` : 'Billed as orders'}
+              />
+            </View>
+            <SearchBar value={query} onChange={setQuery} placeholder="Search request, customer or mobile…" />
             <FilterChips options={chips} value={status} onChange={value => setStatus(value as OrderRequestStatus | '')} />
           </View>
         }
@@ -90,7 +111,11 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
             <EmptyState
               icon={ClipboardListIcon}
               title={status || debounced ? 'No requests match' : 'No order requests yet'}
-              text={status || debounced ? 'Try another filter or search.' : 'When customers send a list of products to your store, it shows up here.'}
+              text={
+                status || debounced
+                  ? 'Try another filter or search term.'
+                  : 'They arrive when a store is set to take order requests (Store › Settings) and a customer sends their list.'
+              }
             />
           )
         }
@@ -99,6 +124,37 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
       />
+    </View>
+  );
+}
+
+function SummaryCard({
+  icon: Icon,
+  tone,
+  label,
+  value,
+  hint,
+}: {
+  icon: ComponentType<IconProps>;
+  tone: [string, string];
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <View style={styles.summary} accessible accessibilityLabel={`${label}: ${value}`}>
+      <View style={styles.summaryHead}>
+        <View style={[styles.summaryIcon, { backgroundColor: tone[0] }]}>
+          <Icon size={16} color={tone[1]} />
+        </View>
+        <Text style={styles.summaryLabel} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryHint} numberOfLines={2}>
+        {hint}
+      </Text>
     </View>
   );
 }
@@ -150,6 +206,24 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, paddingBottom: 28 },
   headerBlock: { gap: 12, marginBottom: 14 },
+  pageTitle: { fontSize: 24, fontFamily: fonts.extrabold, color: colors.text, letterSpacing: -0.4 },
+  pageSubtitle: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.textSecondary },
+  cards: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  summary: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    padding: 12,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    ...shadow.card,
+  },
+  summaryHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  summaryIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  summaryLabel: { flex: 1, fontFamily: fonts.semibold, fontSize: 12.5, color: colors.text },
+  summaryValue: { marginTop: 10, fontFamily: fonts.extrabold, fontSize: 20, color: colors.text },
+  summaryHint: { marginTop: 2, fontFamily: fonts.regular, fontSize: 11.5, lineHeight: 15, color: colors.textSecondary },
   separator: { height: 10 },
   card: { padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.card },
   cardPressed: { backgroundColor: '#fffaf5' },

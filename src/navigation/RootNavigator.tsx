@@ -28,6 +28,11 @@ import { MainTabs } from './MainTabs';
 import { menuKeyForTab } from './menu';
 import { navigationRef, ROUTE_MENU_KEYS } from './navigationRef';
 import type { RootStackParamList, TabParamList } from './types';
+import { CustomerCreditScreen } from '../screens/credit/CustomerCreditScreen';
+import { CreditDetailScreen } from '../screens/credit/CreditDetailScreen';
+import { CouponsScreen } from '../screens/coupons/CouponsScreen';
+import { CouponDetailScreen } from '../screens/coupons/CouponDetailScreen';
+import { CouponFormScreen } from '../screens/coupons/CouponFormScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -138,6 +143,31 @@ export function RootNavigator() {
                   name="ProductDetail"
                   component={ProductDetailScreen}
                   options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="CustomerCredit"
+                  component={CustomerCreditScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="CreditDetail"
+                  component={CreditDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Coupons"
+                  component={CouponsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="CouponDetail"
+                  component={CouponDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="CouponForm"
+                  component={CouponFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="ProductEditor"

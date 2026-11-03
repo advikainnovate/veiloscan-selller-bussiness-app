@@ -96,6 +96,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
   }
 
   const unbillable = request.items.filter(i => !i.catalogItem).length;
+  const phoneDigits = `${request.customer.countryCode ?? ''}${request.customer.mobile ?? ''}`.replace(/\D/g, '');
   const statusActions = request.nextStatuses.filter(s => s !== 'COMPLETED' || request.bill);
 
   async function changeStatus(status: OrderRequestStatus, note?: string) {
@@ -347,6 +348,28 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
               <Text style={styles.noteText}>{request.customer.note}</Text>
             </View>
           ) : null}
+          {/* As on the Seller Panel: call, WhatsApp or email the customer about their list. */}
+          <View style={styles.contactRow}>
+            <ContactButton label="Call" onPress={() => Linking.openURL(`tel:+${phoneDigits}`)} />
+            <ContactButton
+              label="WhatsApp"
+              onPress={() =>
+                Linking.openURL(
+                  `https://wa.me/${phoneDigits}?text=${encodeURIComponent(
+                    `Hi ${request.customer.name}, about your order request ${request.requestNumber} at ${request.store.name}: `,
+                  )}`,
+                )
+              }
+            />
+            {request.customer.email ? (
+              <ContactButton
+                label="Email"
+                onPress={() =>
+                  Linking.openURL(`mailto:${request.customer.email}?subject=${encodeURIComponent(`Your order request ${request.requestNumber}`)}`)
+                }
+              />
+            ) : null}
+          </View>
         </Card>
       </ScrollView>
 
@@ -386,7 +409,19 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
   );
 }
 
+function ContactButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.contact, pressed && styles.contactPressed]}>
+      <Text style={styles.contactText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  contactRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  contact: { paddingHorizontal: 14, height: 34, justifyContent: 'center', borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  contactPressed: { backgroundColor: colors.background },
+  contactText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.text },
   flex: { flex: 1, minWidth: 0 },
   fullWidth: { alignSelf: 'stretch' },
   screen: { flex: 1, backgroundColor: colors.background },
