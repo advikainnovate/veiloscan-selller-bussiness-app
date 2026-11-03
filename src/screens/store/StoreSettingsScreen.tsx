@@ -36,6 +36,7 @@ import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { confirmAction, Detail, opsStyles } from '../../components/operations/OpsParts';
 import { StoreQrTagPanel } from '../../components/store/StoreQrTagPanel';
+import { StoreCategoriesPanel } from '../../components/store/StoreCategoriesPanel';
 import { ApprovalHistory, BrandingSection, BusinessDetailsSheet, ConfigSection, ContactSection, DocumentsSection, HoursSection, SectionCard, TaxSection } from '../../components/store/StoreSections';
 import {
   AlertCircleIcon,
@@ -46,6 +47,7 @@ import {
   ClockIcon,
   EditIcon,
   FileTextIcon,
+  FolderIcon,
   ImageIcon,
   MapPinIcon,
   PhoneIcon,
@@ -63,6 +65,7 @@ const TABS: { key: StoreSettingsTab; label: string; icon: ComponentType<IconProp
   { key: 'setup', label: 'Store Setup', icon: StoreIcon },
   { key: 'operations', label: 'Operational Settings', icon: SettingsIcon },
   { key: 'gst', label: 'GST & Documents', icon: FileTextIcon },
+  { key: 'categories', label: 'Categories', icon: FolderIcon },
   { key: 'qr-tag', label: 'QR Store Tag', icon: QrCodeIcon },
   { key: 'info', label: 'Additional Info', icon: SettingsIcon },
   { key: 'activity', label: 'Activity Log', icon: RefreshIcon },
@@ -94,8 +97,11 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
   const canView = hasPermission('stores:view');
   const canEdit = hasPermission('stores:edit');
   const canDelete = hasPermission('stores:delete');
-  const storeId = current?.id ?? '';
+  const canManageCategories = hasPermission('store-categories:manage');
+  const visibleTabs = TABS.filter(t => t.key !== 'categories' || canManageCategories);
+  const storeId = route.params?.storeId ?? current?.id ?? '';
   const [tab, setTab] = useState<StoreSettingsTab>(route.params?.tab ?? 'overview');
+  const shownTab: StoreSettingsTab = visibleTabs.some(t => t.key === tab) ? tab : 'overview';
   const [editing, setEditing] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   useEffect(() => {
@@ -104,7 +110,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
 
   const { data: store, error, loading, reload } = useFetch(() => (canView && storeId ? storeManageService.get(storeId) : Promise.resolve(null)), [canView, storeId]);
 
-  const header = <AppHeader title="Store Settings" subtitle={current?.name} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
+  const header = <AppHeader title="Store Settings" subtitle={store?.name ?? current?.name} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
   if (!canView) {
     return (
       <View style={opsStyles.screen}>
@@ -117,7 +123,12 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
     return (
       <View style={opsStyles.screen}>
         {header}
-        <EmptyState icon={StoreIcon} title="No store yet" text="Create your store on the Seller Panel; it shows here once it's set up." />
+        <EmptyState icon={StoreIcon} title="No store yet" text="Set up your store to start selling." />
+        {hasPermission('stores:create') ? (
+          <Pressable accessibilityRole="button" onPress={() => navigation.navigate('CreateStore')} style={[opsStyles.primaryBtn, styles.centerBtn]}>
+            <Text style={opsStyles.primaryBtnText}>Set up store</Text>
+          </Pressable>
+        ) : null}
       </View>
     );
   }
@@ -172,6 +183,15 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
   const isApproved = store.approvalStatus === 'APPROVED';
   const actions = [
     {
+      label: 'Continue Onboarding',
+      icon: EditIcon,
+      hidden: !canEdit || store.onboardingStatus === 'COMPLETED',
+      onPress: () => {
+        setActionsOpen(false);
+        navigation.navigate('CreateStore', { storeId });
+      },
+    },
+    {
       label: 'Activate Store',
       icon: CheckCircleIcon,
       // A suspended store is only reactivated by the platform.
@@ -198,8 +218,8 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
       <ScrollView contentContainerStyle={opsStyles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} />} keyboardShouldPersistTaps="handled">
         <StoreHeader store={store} canEdit={canEdit} hasActions={actions.length > 0} onEdit={() => setEditing(true)} onActions={() => setActionsOpen(true)} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-          {TABS.map(t => {
-            const on = t.key === tab;
+          {visibleTabs.map(t => {
+            const on = t.key === shownTab;
             const Icon = t.icon;
             return (
               <Pressable key={t.key} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => pickTab(t.key)} style={[styles.tab, on && styles.tabOn]}>
@@ -210,15 +230,15 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
           })}
         </ScrollView>
 
-        {!canEdit && EDIT_TABS.includes(tab) ? (
+        {!canEdit && EDIT_TABS.includes(shownTab) ? (
           <View style={styles.notice}>
             <AlertCircleIcon size={16} color={colors.warningDark} />
             <Text style={styles.noticeText}>Your role can view this store but not change it.</Text>
           </View>
         ) : null}
 
-        {tab === 'overview' ? <Overview store={store} canEdit={canEdit} onEdit={pickTab} onEditBusiness={() => setEditing(true)} /> : null}
-        {tab === 'setup' ? (
+        {shownTab === 'overview' ? <Overview store={store} canEdit={canEdit} onEdit={pickTab} onEditBusiness={() => setEditing(true)} /> : null}
+        {shownTab === 'setup' ? (
           canEdit ? (
             <>
               <ContactSection key={`c${String(store.settings?.updatedAt)}`} storeId={storeId} settings={store.settings ?? null} onChange={changed} />
@@ -229,14 +249,14 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
             <Overview store={store} canEdit={false} only={['contact', 'images', 'hours']} />
           )
         ) : null}
-        {tab === 'operations' ? (
+        {shownTab === 'operations' ? (
           canEdit ? (
             <ConfigSection key={String(store.config?.updatedAt)} storeId={storeId} config={store.config ?? null} onChange={changed} />
           ) : (
             <Overview store={store} canEdit={false} only={['settings']} />
           )
         ) : null}
-        {tab === 'gst' ? (
+        {shownTab === 'gst' ? (
           canEdit ? (
             <>
               <TaxSection key={String(store.taxDetails?.updatedAt)} storeId={storeId} taxDetails={store.taxDetails ?? null} onChange={changed} />
@@ -246,13 +266,18 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
             <Overview store={store} canEdit={false} only={['gst', 'documents']} />
           )
         ) : null}
-        {tab === 'qr-tag' ? (
+        {shownTab === 'categories' ? (
+          <SectionCard icon={FolderIcon} title="Store Categories" subtitle="Map the catalog categories this store sells in.">
+            <StoreCategoriesPanel key={storeId} storeId={storeId} storeName={store.name} />
+          </SectionCard>
+        ) : null}
+        {shownTab === 'qr-tag' ? (
           <SectionCard icon={QrCodeIcon} title="QR Store Tag" subtitle="A printable 4 × 6 in tag for your counter">
             <StoreQrTagPanel storeId={storeId} storeName={store.name} storeStatus={store.status} canEdit={canEdit} />
           </SectionCard>
         ) : null}
-        {tab === 'info' ? <AdditionalInfo store={store} /> : null}
-        {tab === 'activity' ? (
+        {shownTab === 'info' ? <AdditionalInfo store={store} onContinue={canEdit ? () => navigation.navigate('CreateStore', { storeId }) : undefined} /> : null}
+        {shownTab === 'activity' ? (
           <SectionCard icon={RefreshIcon} title="Approval History">
             <ApprovalHistory storeId={storeId} />
           </SectionCard>
@@ -369,7 +394,7 @@ function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store:
         <View style={styles.rejected}>
           <AlertCircleIcon size={18} color={colors.error} />
           <View style={styles.flex}>
-            <Text style={styles.rejectedTitle}>Changes requested — update the store and resubmit on the Seller Panel</Text>
+            <Text style={styles.rejectedTitle}>Changes requested — update the store and resubmit from Continue Onboarding</Text>
             <Text style={styles.rejectedText}>{store.rejectionReason}</Text>
           </View>
         </View>
@@ -577,7 +602,7 @@ function Overview({
 
 // ── Additional info ──────────────────────────────────────────────────────
 
-function AdditionalInfo({ store }: { store: StoreRecord }) {
+function AdditionalInfo({ store, onContinue }: { store: StoreRecord; onContinue?: () => void }) {
   const config = store.config ?? null;
   const tax = store.taxDetails ?? null;
   const reqs = useFetch(() => storeManageService.documentRequirements().catch(() => DEFAULT_DOCUMENT_REQUIREMENTS), []);
@@ -612,7 +637,17 @@ function AdditionalInfo({ store }: { store: StoreRecord }) {
         <Detail label="Tax-inclusive Pricing" value={yes(config?.taxInclusivePricing !== false)} />
         <Detail label="Auto-accept Orders" value={yes(!!config?.autoAcceptOrders)} />
       </SectionCard>
-      <SectionCard icon={CheckCircleIcon} title="Onboarding" subtitle={onboardingDone ? undefined : 'Continue onboarding on the Seller Panel'}>
+      <SectionCard
+        icon={CheckCircleIcon}
+        title="Onboarding"
+        action={
+          !onboardingDone && onContinue ? (
+            <Pressable accessibilityRole="button" onPress={onContinue}>
+              <Text style={styles.link}>Continue</Text>
+            </Pressable>
+          ) : null
+        }
+      >
         {ONBOARDING_STEPS.map(s => {
           const done = stepDone(s.key);
           return (
@@ -634,6 +669,7 @@ const styles = StyleSheet.create({
   grow: { flexGrow: 1, justifyContent: 'center' },
   fill: { width: '100%', height: '100%' },
   selfStart: { alignSelf: 'flex-start' },
+  centerBtn: { alignSelf: 'center', marginTop: -40 },
   accent: { color: colors.secondary },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   headCard: { gap: 12, padding: 16, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surface, ...shadow.card },

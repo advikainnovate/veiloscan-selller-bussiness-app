@@ -97,6 +97,14 @@ export const storeManageService = {
   /** Whether stores need a logo / banner, with and without GST. */
   brandingRequirements: () => data<BrandingRequirement[]>(api.get('/store-document-requirements/branding')),
 
+  // ── Store categories (store-categories:manage; new ones are approved by the platform) ──
+  categories: (id: string) => data<Rec[] | { items?: Rec[] }>(api.get(`${base(id)}/categories`)).then(r => (Array.isArray(r) ? r : r.items ?? [])),
+  /** Replaces the store's categories with exactly this selection (parents included). */
+  syncCategories: (id: string, categoryIds: string[]) => data(api.put(`${base(id)}/categories`, { categoryIds })),
+  setCategoryStatus: (id: string, mappingId: string, status: 'active' | 'inactive') => data(api.patch(`${base(id)}/categories/${mappingId}`, { status })),
+  /** Asks again for a rejected category. */
+  resubmitCategory: (id: string, mappingId: string) => data(api.post(`${base(id)}/categories/${mappingId}/resubmit`)),
+
   // ── Add New Store (the backend's six-step onboarding; needs stores:create to start) ──
   startOnboarding: (payload: Rec) => data<OnboardingProgress>(api.post('/store-onboarding', payload, allStores)),
   getOnboarding: (id: string) => data<OnboardingProgress>(api.get(onboarding(id))),

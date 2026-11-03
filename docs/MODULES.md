@@ -31,6 +31,15 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Notes ✅ | Active / Completed / Archived with counts and urgent badge, search, priority filter, add / edit (date, priority, reminder today / tomorrow / date & time, photo), view with history, complete / reopen / archive / delete | `/stores/:id/operations/notes` | `store-notes:view` / `create` / `edit` / `delete` |
 | Inventory ✅ | Stock (figures, search, warehouse / status / reserved / blocked filters, per-SKU on hand · reserved · blocked · available), Ledger (summary vs previous period, date presets, warehouse, movement type, search, 10 a page), Reservations (held quantity, orders, value, age filters), Low Stock (reorder quantity and value); receive (with or without a SKU picked), count / adjust, damage / block / write off, transfer, return, stock levels; stock record detail with lots, reservations, its own ledger and stock settings | `/inventory/*` | `product-inventory:manage` |
 | Store Settings ✅ | The current store's page: logo, status, code, shop link (share), status strip, rejection banner; Overview cards; Store Setup (address & contact, logo / banner upload with size and dimension checks, colours, tagline, business hours); Operational Settings (how customers buy, prefix, minimum order, payments, customer credit days); GST & Documents (GSTIN checks, required documents, add / remove / re-upload rejected); QR Store Tag (design, theme, live preview, generate, PDF / PNG, share); Additional Info; Activity Log (filters); Edit business details; Activate / Mark Inactive / Close Store | `/stores/:id` and its `settings`, `config`, `branding`, `business-hours`, `tax-details`, `documents`, `qr-tag`, `approval-history`; `/store-document-requirements` | `stores:view` (change: `stores:edit`, close: `stores:delete`) |
+| Stores ✅ | Store switcher links (Manage this store, All stores, Add New Store; Set up store with none); All Stores list (totals, plan's store allowance, search, status / type / category / city filters, per store: open, switch, edit, continue onboarding, close); Add New Store wizard (Business Details with the 100-word description, Store Setup with address, images, hours and settings, GST & Documents with required uploads, Review & Submit with terms), resuming drafts and resubmitting rejected stores | `GET /stores`, `/subscriptions/me/usage`, `/store-onboarding/*`, `/store-document-requirements{,/branding}` | `stores:view` (add: `stores:create`, continue: `stores:edit`, close: `stores:delete`) |
+| Store Categories ✅ | Store page › Categories tab: selected main / sub / child counts, awaiting approval and inactive, rejected categories with Request again, the mapped tree with products per category and an on / off switch per store, Map Categories picker (one level at a time with Select All, or search across all levels by name, tag or description), save the whole selection (removals confirmed; new ones sent for approval) | `/category-master`, `/products-master?storeId`, `/stores/:id/categories` (GET, PUT, PATCH :id, POST :id/resubmit) | `store-categories:manage` |
+| Quantity Discount Slabs ✅ | Pricing & Discounts menu: list (running / scheduled / ended / inactive totals and filters, search by scheme, product or ID, slab ladder, store, dates, coupons allowed, 10 a page, delete), create / edit (product search, store, status, start and end date and time, all / specific / single-SKU variants with a variant picker, per-variant or combined counting, unit, up to 20 slabs of % or ₹ per unit / per order, live "Customers will see" preview, allow coupons, history) | `/quantity-discounts`, `/quantity-discounts/products{,/:id}` | `quantity-discounts:manage` |
+| Warehouses ✅ | List (active / awaiting / rejected / inactive tiles that filter, stock value, units and low-stock items, needs-attention banner, search, location / type / status filters), detail (approval notice with VeiloScan's note, stock figures, stock in it, recent movements, location with map / call / email, operations, approval history; resubmit with a note, switch on / off, manage stock), add / edit (basic, location, additional, settings switches; address changes go back for approval), activate / deactivate, delete | `/warehouse-master` (+ `/:id/resubmit`, `/:id/history`), `/inventory`, `/inventory/ledger`, `/product-business-variants` | `warehouse-master:manage` |
+| Brand Approvals ✅ | List (awaiting / changes needed / approved tiles, search, changes-needed banner), detail (what to change, details, documents, progress; fix & resubmit, withdraw, add a product), new request (child category mapped to your stores, a listed brand or a new one, stores per category with already-requested ones shown, sales channels, ownership, trademark details, photos of the documents, checklist) | `/brand-requests` (+ `/options`, `/:id/resubmit`), `/categorywise-brands`, `/category-master`, `/brands-master`, `/files/upload` | `products-master:manage` |
+| Product Variants ✅ | List (active / inactive tiles, products and types in use, search, product / type filters, value swatches), add / edit mapping (values follow the chosen type), view product, activate / deactivate, remove | `/product-variants`, `/variant-master`, `/variant-data`, `/product-images` | `product-variants:manage` |
+| Business Variants ✅ | List (active / inactive, products covered, average price, search by SKU / barcode / product, product filter), add / edit SKU (attributes, selling / MRP / cost price, fixed or up to 5 slab tiers, image, status), activate / deactivate, delete | `/product-business-variants`, `/products-master` | `product-business-variants:manage` |
+| Product Specs ✅ | List (active / inactive, products covered, values as chips, product / specification filters), detail (details, values, activate / deactivate), add / edit (only specifications mapped to the product's category and not yet assigned; select options or typed values with order) | `/product-specifications`, `/product-specification-values`, `/specifications`, `/specifications-data`, `/categories/:id/product-configuration` | `product-specifications:manage` |
+| My Profile ✅ | Header avatar and menu card: photo, name, role, status, contact chips, bio; profile completeness with checklist; role / type / status / last login; personal info, security (verified email / phone, password changed, login attempts), documents, subscription plan (status, price, trial, renewal), sales team (ID or request to join); edit profile (photo, name, display name, gender, bio), change password by emailed code, sign out | `/auth/me`, `/users/:id` (PATCH), `/users/:id/profile` (GET, PUT), `/auth/forgot-password`, `/auth/reset-password`, `/subscriptions/me`, `/seller/sales-team` | — |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -44,14 +53,11 @@ Ordered by how often a seller needs it on the go.
 | 8 | Stock Health, Pending Stock | `/dashboard/operations/*` | store operations | `store-operations:manage`, `pending-stock:manage` |
 | 9 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
 | 10 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master` … | `/freebie-master`, `/gift-cards`, `/my-promotions` | `*:manage` |
-| 11 | Pricing & Discounts (quantity slabs) | `/dashboard/pricing-discounts/*` | `/quantity-discounts` | `quantity-discounts:manage` |
 | 12 | Shipping | `/dashboard/shipping` | shipping methods / zones | `shipping:manage` |
 | 13 | Product create / edit wizard | `/dashboard/products-master/create` | product builder | `products-master:manage` |
-| 14 | Variants, Business Variants, Product Specs, Brand Approvals | catalog pages | catalog endpoints | catalog permissions |
-| 15 | Warehouses, Inventory Ledger (transactions) | `/dashboard/warehouse-master`, `/inventory-transactions` | `/warehouse-master`, `/inventory-transactions` | `*:manage` |
+| 15 | Inventory Ledger (transactions) | `/dashboard/inventory-transactions` | `/inventory-transactions` | `*:manage` |
 | 16 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
 | 17 | Subscription | settings page | `/subscriptions/me` | none |
-| 18 | My Profile | account menu | `/auth/me` (PATCH) | — |
 
 ## Not for sellers
 
@@ -63,8 +69,14 @@ the app leaves them out.
 
 ## Known gaps
 
-- Store Settings: the description (formatted text), onboarding and the
-  Categories tab stay on the Seller Panel; logo and banner aren't cropped
+- Catalog pages: no CSV export or multi-select bulk actions (Product
+  Variants); brand approval documents are photos (PDFs on the Seller Panel);
+  warehouses have no pincode autofill or "find on map".
+
+- Store Settings: the description's formatting (bold, lists) stays on the
+  Seller Panel — the wizard writes the
+  description as plain paragraphs and keeps a saved one unless it's edited;
+  the list has no CSV export; logo and banner aren't cropped
   in the app (checked against the size rules instead), and document uploads
   are photos (or a file URL).
 

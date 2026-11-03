@@ -3,21 +3,9 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { useNotifications } from '../../context/NotificationContext';
-import { navigationRef } from '../../navigation/navigationRef';
+import { openNotification } from '../../lib/notifications';
 import type { AppNotification } from '../../services/dashboard-service';
 import { ClipboardListIcon, CloseIcon, ShoppingBagIcon } from '../icons';
-
-/** Where a notification's Seller Panel link points in the app. */
-function openNotification(n: AppNotification) {
-  if (!navigationRef.isReady()) return;
-  const link = n.link ?? '';
-  const order = /\/orders\/([\w-]+)/.exec(link)?.[1] ?? (n.data?.orderId as string | undefined);
-  const request = /\/order-requests\/([\w-]+)/.exec(link)?.[1] ?? (n.data?.requestId as string | undefined);
-  if (n.type === 'NEW_ORDER_REQUEST' && request) navigationRef.navigate('OrderRequestDetail', { id: request });
-  else if (order) navigationRef.navigate('OrderDetail', { id: order });
-  else if (n.type === 'NEW_ORDER_REQUEST') navigationRef.navigate('OrderRequests');
-  else navigationRef.navigate('Main', { screen: 'Orders' });
-}
 
 /** New-order banners at the top of the screen, as the Seller Panel's alert stack. */
 export function OrderAlerts() {

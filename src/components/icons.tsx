@@ -316,6 +316,11 @@ export const BanIcon = makeIcon([
   { d: 'm6.3 6.3 11.4 11.4' },
 ]);
 
+export const TrashIcon = makeIcon([
+  { d: 'M4 7h16M10 11v6M14 11v6' },
+  { d: 'M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7' },
+]);
+
 export const RefreshIcon = makeIcon([
   { d: 'M20 11a8 8 0 0 0-14.5-4.5M4 4v5h5' },
   { d: 'M4 13a8 8 0 0 0 14.5 4.5M20 20v-5h-5' },

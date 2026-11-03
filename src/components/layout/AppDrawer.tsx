@@ -21,8 +21,8 @@ import { useStore } from '../../context/StoreContext';
 import { useFetch } from '../../hooks/useFetch';
 import { subscriptionService } from '../../services/subscription-service';
 import { MENU_ITEMS, MENU_SECTIONS, type MenuItem } from '../../navigation/menu';
-import { openMenuKey } from '../../navigation/navigationRef';
-import { ChevronDownIcon, ChevronRightIcon, CloseIcon, LockIcon, LogoutIcon, StoreIcon } from '../icons';
+import { navigationRef, openMenuKey } from '../../navigation/navigationRef';
+import { ChevronDownIcon, ChevronRightIcon, CloseIcon, LockIcon, LogoutIcon, PlusIcon, StoreIcon } from '../icons';
 import { Avatar, displayName } from './Avatar';
 import { StorePickerSheet } from './StoreSwitcher';
 
@@ -161,8 +161,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
         {currentStore ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={stores.length > 1 ? `Store: ${currentStore.name}. Switch store` : `Store: ${currentStore.name}`}
-            disabled={stores.length < 2}
+            accessibilityLabel={stores.length > 1 ? `Store: ${currentStore.name}. Switch store` : `Store: ${currentStore.name}. Manage store`}
             onPress={() => setPickingStore(true)}
             style={({ pressed }) => [styles.storeRow, pressed && styles.pressed]}
           >
@@ -173,7 +172,22 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
                 {currentStore.name}
               </Text>
             </View>
-            {stores.length > 1 ? <Text style={styles.storeSwitch}>Switch</Text> : null}
+            <Text style={styles.storeSwitch}>{stores.length > 1 ? 'Switch' : 'Manage'}</Text>
+          </Pressable>
+        ) : hasPermission('stores:create') ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Set up store"
+            onPress={() => {
+              close();
+              if (navigationRef.isReady()) navigationRef.navigate('CreateStore');
+            }}
+            style={({ pressed }) => [styles.storeRow, pressed && styles.pressed]}
+          >
+            <PlusIcon size={18} color="#ff8a33" />
+            <View style={styles.flex}>
+              <Text style={styles.storeName}>Set up store</Text>
+            </View>
           </Pressable>
         ) : null}
 

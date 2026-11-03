@@ -1,6 +1,7 @@
 import React, { useState, type ReactNode, type Ref } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import { colors, radius, fonts } from '../../theme';
+import { useRevealFocused } from '../layout/KeyboardScroll';
 
 export interface TextFieldProps extends TextInputProps {
   label: string;
@@ -16,6 +17,7 @@ export interface TextFieldProps extends TextInputProps {
 /** A labelled input with a leading icon; the border turns orange on focus. */
 export function TextField({ label, icon, labelExtra, trailing, error, style, onFocus, onBlur, ref, ...inputProps }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
+  const reveal = useRevealFocused();
   const borderColor = error ? colors.error : focused ? colors.borderFocus : colors.border;
 
   return (
@@ -33,6 +35,8 @@ export function TextField({ label, icon, labelExtra, trailing, error, style, onF
           style={[styles.input, style]}
           onFocus={e => {
             setFocused(true);
+            // Inside a KeyboardScroll: keep the field above the keyboard.
+            reveal();
             onFocus?.(e);
           }}
           onBlur={e => {

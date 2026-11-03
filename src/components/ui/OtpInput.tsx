@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from 'react-native';
+import { useRevealFocused } from '../layout/KeyboardScroll';
 import { colors, radius, fonts } from '../../theme';
 
 const LENGTH = 6;
@@ -21,6 +22,7 @@ export function OtpInput({
 }) {
   const inputRef = useRef<TextInputInstance>(null);
   const [focused, setFocused] = useState(false);
+  const reveal = useRevealFocused();
 
   return (
     <Pressable onPress={() => inputRef.current?.focus()} accessibilityLabel="Sign-in code" style={styles.row}>
@@ -42,7 +44,10 @@ export function OtpInput({
         maxLength={LENGTH}
         editable={!disabled}
         autoFocus={autoFocus}
-        onFocus={() => setFocused(true)}
+        onFocus={() => {
+          setFocused(true);
+          reveal();
+        }}
         onBlur={() => setFocused(false)}
         caretHidden
         style={styles.hiddenInput}

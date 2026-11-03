@@ -11,6 +11,10 @@ interface AuthContextValue {
   status: AuthStatus;
   user: SessionUser | null;
   permissions: string[];
+  /** The role titles, e.g. "Store Manager" (staff); usually one. */
+  roles: string[];
+  /** Fetches the signed-in user again, e.g. after editing the profile. */
+  refreshUser: () => Promise<void>;
   /** Whether the user's role allows `permission` (e.g. 'orders:manage'). */
   hasPermission: (permission: string) => boolean;
   login: (email: string, password: string, remember: boolean) => Promise<void>;
@@ -20,14 +24,22 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Role titles from /auth/me ([{ roleTitle }]) or plain strings. */
+function roleTitles(roles: unknown): string[] {
+  if (!Array.isArray(roles)) return [];
+  return roles.map(r => (typeof r === 'string' ? r : String((r as { roleTitle?: unknown })?.roleTitle ?? ''))).filter(Boolean);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<SessionUser | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
 
   const signOutLocally = useCallback(() => {
     setUser(null);
     setPermissions([]);
+    setRoles([]);
     setStatus('signedOut');
   }, []);
 
@@ -42,11 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        // Roles aren't kept: permissions drive access in the app.
-        const { roles: _roles, permissions: freshPermissions, ...freshUser } = await authService.me();
+        // Permissions drive access; role titles are only shown.
+        const { roles: freshRoles, permissions: freshPermissions, ...freshUser } = await authService.me();
         if (!canUseSellerApp(freshUser.userType)) throw new Error(NOT_SELLER_MESSAGE);
         setUser(freshUser);
         setPermissions(freshPermissions ?? []);
+        setRoles(roleTitles(freshRoles));
         await saveUser(freshUser);
         setStatus('signedIn');
       } catch {
@@ -64,7 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await saveSession(data, data.user, remember);
     setUser(data.user);
     setPermissions(data.permissions ?? []);
+    setRoles(roleTitles(data.roles));
     setStatus('signedIn');
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const { roles: freshRoles, permissions: freshPermissions, ...freshUser } = await authService.me();
+    setUser(freshUser);
+    setPermissions(freshPermissions ?? []);
+    setRoles(roleTitles(freshRoles));
+    await saveUser(freshUser);
   }, []);
 
   const login = useCallback(
@@ -95,8 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback((permission: string) => grants(usable, permission), [usable]);
 
   const value = useMemo(
-    () => ({ status, user, permissions, hasPermission, login, loginWithOtp, logout }),
-    [status, user, permissions, hasPermission, login, loginWithOtp, logout],
+    () => ({ status, user, permissions, roles, refreshUser, hasPermission, login, loginWithOtp, logout }),
+    [status, user, permissions, roles, refreshUser, hasPermission, login, loginWithOtp, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

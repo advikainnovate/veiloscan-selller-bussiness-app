@@ -9,7 +9,7 @@ export type Row = Record<string, unknown> & { id: string };
 const list = <T = Row>(resource: string, params?: Record<string, unknown>): Promise<T[]> =>
   api.get(resource, { params }).then(res => (Array.isArray(res.data) ? res.data : res.data?.items ?? []));
 
-function crud(resource: string) {
+export function crud(resource: string) {
   return {
     list: (params?: Record<string, unknown>) => list(resource, params),
     get: (id: string): Promise<Row> => api.get(`${resource}/${id}`).then(res => res.data),

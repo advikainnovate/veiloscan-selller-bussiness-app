@@ -6,7 +6,7 @@ import { MENU_ITEMS } from './menu';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes';
+type ModuleRoute = 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'order-requests': 'OrderRequests',
   'customer-credit': 'CustomerCredit',
@@ -16,6 +16,13 @@ const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'daily-business': 'DailyBusiness',
   expenses: 'Expenses',
   notes: 'Notes',
+  'quantity-slabs': 'QuantitySlabs',
+  profile: 'Profile',
+  warehouses: 'Warehouses',
+  'brand-approvals': 'BrandApprovals',
+  'product-variants': 'ProductVariants',
+  'business-variants': 'BusinessVariants',
+  'product-specs': 'ProductSpecs',
 };
 
 // Inventory's menu children: one screen, one tab each.
@@ -47,6 +54,24 @@ export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> 
   SupplierLedger: 'expenses',
   Notes: 'notes',
   StockDetail: 'inventory-stock',
+  Stores: 'store-settings',
+  QuantitySlabs: 'quantity-slabs',
+  Profile: 'profile',
+  Warehouses: 'warehouses',
+  WarehouseDetail: 'warehouses',
+  WarehouseForm: 'warehouses',
+  BrandApprovals: 'brand-approvals',
+  BrandRequestDetail: 'brand-approvals',
+  BrandRequestForm: 'brand-approvals',
+  ProductVariants: 'product-variants',
+  ProductVariantForm: 'product-variants',
+  BusinessVariants: 'business-variants',
+  BusinessVariantForm: 'business-variants',
+  ProductSpecs: 'product-specs',
+  ProductSpecDetail: 'product-specs',
+  ProductSpecForm: 'product-specs',
+  QuantitySlabForm: 'quantity-slabs',
+  CreateStore: 'store-settings',
   ProductDetail: 'products',
   ProductEditor: 'products',
 };

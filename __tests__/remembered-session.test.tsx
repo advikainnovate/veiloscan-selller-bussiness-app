@@ -104,10 +104,16 @@ test('the menu shows only what the role allows, and opens pages and tabs', async
   expect(textOf(tree)).toContain('No order requests yet');
   await press(tree, 'Back');
 
-  // …one still to come opens its placeholder.
+  // …Product Variants too (products-master:manage implies it)…
   await press(tree, 'Open menu');
   await press(tree, 'Product Variants');
-  expect(textOf(tree)).toContain('Product Variants is coming to the app soon');
+  expect(textOf(tree)).toContain('Which variant values (size, colour…) each product is offered in.');
+  await press(tree, 'Back');
+
+  // …one still to come opens its placeholder.
+  await press(tree, 'Open menu');
+  await press(tree, 'Subscription');
+  expect(textOf(tree)).toContain('Subscription is coming to the app soon');
 
   // A tab the role can't open says so.
   await press(tree, 'Back');

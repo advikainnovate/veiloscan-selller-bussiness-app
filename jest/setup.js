@@ -45,3 +45,7 @@ jest.mock('../src/services/store-service', () => ({
 jest.mock('../src/services/subscription-service', () => ({
   subscriptionService: { mine: jest.fn(async () => ({ plan: null, consolidatedDashboard: true })) },
 }));
+
+// Ships untranspiled TypeScript that Jest doesn't transform; tests that pick
+// photos mock it with results of their own.
+jest.mock('react-native-image-picker', () => ({ launchCamera: jest.fn(), launchImageLibrary: jest.fn() }));

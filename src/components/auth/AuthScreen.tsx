@@ -1,9 +1,6 @@
 import React, { type ReactNode } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   View,
@@ -13,10 +10,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, shadow } from '../../theme';
 import { ArrowLeftIcon } from '../icons';
+import { KeyboardScroll } from '../layout/KeyboardScroll';
 
 /**
  * The signed-out screens' frame: the Seller Panel's peach background with
- * its soft shapes, keyboard-aware scrolling, and an optional back button.
+ * its soft shapes, scrolling that keeps the focused field above the
+ * keyboard, and an optional back button.
  */
 export function AuthScreen({ children, onBack }: { children: ReactNode; onBack?: () => void }) {
   const insets = useSafeAreaInsets();
@@ -26,19 +25,17 @@ export function AuthScreen({ children, onBack }: { children: ReactNode; onBack?:
       <View style={[styles.blob, styles.blobTop]} />
       <View style={[styles.blob, styles.blobBottom]} />
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.scroll,
-            // Room for the back button above the card.
-            { paddingTop: insets.top + (onBack ? 60 : 24), paddingBottom: insets.bottom + 16 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <KeyboardScroll
+        style={styles.flex}
+        contentContainerStyle={[
+          styles.scroll,
+          // Room for the back button above the card.
+          { paddingTop: insets.top + (onBack ? 60 : 24), paddingBottom: insets.bottom + 16 },
+        ]}
+        innerStyle={styles.center}
+      >
+        {children}
+      </KeyboardScroll>
 
       {onBack ? (
         <Pressable
@@ -66,7 +63,8 @@ const styles = StyleSheet.create({
   blob: { position: 'absolute', borderRadius: 999 },
   blobTop: { width: 340, height: 340, top: -130, right: -120, backgroundColor: 'rgba(255,241,230,0.9)' },
   blobBottom: { width: 420, height: 380, bottom: -180, left: -140, backgroundColor: colors.secondaryLight },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16 },
+  scroll: { flexGrow: 1, paddingHorizontal: 16 },
+  center: { justifyContent: 'center' },
   back: {
     position: 'absolute',
     left: 16,

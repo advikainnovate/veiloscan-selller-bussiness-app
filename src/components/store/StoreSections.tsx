@@ -73,7 +73,7 @@ export function SectionCard({ icon: Icon, title, subtitle, action, children }: {
   );
 }
 
-function ErrorLine({ message }: { message: string }) {
+export function ErrorLine({ message }: { message: string }) {
   return (
     <View style={styles.error}>
       <AlertCircleIcon size={16} color={colors.errorDark} />
@@ -136,12 +136,11 @@ const CONTACT_LABELS: Record<keyof ContactForm, { label: string; required?: bool
   closingTime: { label: 'Closing Time', max: 5 },
 };
 
-export function ContactSection({ storeId, settings, onChange }: { storeId: string; settings: Rec | null; onChange: () => void }) {
-  const [form, setForm] = useState(() => contactFromRecord(settings));
-  const { saving, error, save } = useSave();
+/** The address & contact inputs (store page and Add New Store). */
+export function ContactFields({ form, setForm, withTimes = true }: { form: ContactForm; setForm: React.Dispatch<React.SetStateAction<ContactForm>>; withTimes?: boolean }) {
   const text = CONTACT_FIELDS.filter(k => k !== 'openingTime' && k !== 'closingTime');
   return (
-    <SectionCard icon={MapPinIcon} title="Address & Contact" subtitle="Store email, phone, address and default hours">
+    <>
       {text.map(k => {
         const meta = CONTACT_LABELS[k];
         return (
@@ -158,10 +157,22 @@ export function ContactSection({ storeId, settings, onChange }: { storeId: strin
           </Field>
         );
       })}
-      <View style={styles.row}>
-        <TimeField label="Opening Time" value={form.openingTime} onChange={openingTime => setForm(f => ({ ...f, openingTime }))} />
-        <TimeField label="Closing Time" value={form.closingTime} onChange={closingTime => setForm(f => ({ ...f, closingTime }))} />
-      </View>
+      {withTimes ? (
+        <View style={styles.row}>
+          <TimeField label="Opening Time" value={form.openingTime} onChange={openingTime => setForm(f => ({ ...f, openingTime }))} />
+          <TimeField label="Closing Time" value={form.closingTime} onChange={closingTime => setForm(f => ({ ...f, closingTime }))} />
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+export function ContactSection({ storeId, settings, onChange }: { storeId: string; settings: Rec | null; onChange: () => void }) {
+  const [form, setForm] = useState(() => contactFromRecord(settings));
+  const { saving, error, save } = useSave();
+  return (
+    <SectionCard icon={MapPinIcon} title="Address & Contact" subtitle="Store email, phone, address and default hours">
+      <ContactFields form={form} setForm={setForm} />
       {error ? <ErrorLine message={error} /> : null}
       <Button title="Save Address & Contact" loading={saving} onPress={() => save(contactProblem(form), () => storeManageService.updateSettings(storeId, compact(form)), 'Address & contact updated', onChange)} />
     </SectionCard>
@@ -170,16 +181,19 @@ export function ContactSection({ storeId, settings, onChange }: { storeId: strin
 
 // ── Branding ─────────────────────────────────────────────────────────────
 
-function ImagePickRow({
+export function ImagePickRow({
   kind,
   storeId,
   url,
+  hint,
   onUploaded,
   onRemove,
 }: {
   kind: 'logo' | 'banner';
   storeId: string;
   url: string | null;
+  /** Whether the image is required, above the size rules. */
+  hint?: string;
   onUploaded: (fileId: string, url: string) => void;
   onRemove: () => void;
 }) {
@@ -204,6 +218,7 @@ function ImagePickRow({
   return (
     <View style={styles.imageBlock}>
       <Text style={styles.label}>{label}</Text>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <View style={styles.row}>
         <View style={[styles.imageBox, kind === 'banner' ? styles.bannerBox : styles.logoBox]}>
           {url ? <Image source={{ uri: url }} style={styles.fill} resizeMode="cover" /> : <ImageIcon size={22} color={colors.textMuted} />}
@@ -305,12 +320,11 @@ export function BrandingSection({ storeId, branding, onChange }: { storeId: stri
 
 // ── Business hours ───────────────────────────────────────────────────────
 
-export function HoursSection({ storeId, hours, onChange }: { storeId: string; hours: Rec[]; onChange: () => void }) {
-  const [rows, setRows] = useState<HourRow[]>(() => hoursFromRecord(hours));
-  const { saving, error, save } = useSave();
+/** Open / closed and times per day; "Apply to all days" copies Monday's. */
+export function HoursEditor({ rows, setRows }: { rows: HourRow[]; setRows: React.Dispatch<React.SetStateAction<HourRow[]>> }) {
   const update = (day: string, patch: Partial<HourRow>) => setRows(r => r.map(x => (x.dayOfWeek === day ? { ...x, ...patch } : x)));
   return (
-    <SectionCard icon={ClockIcon} title="Business Hours" subtitle="Opening and closing time per day">
+    <>
       {rows.map(row => {
         const day = WEEK_DAYS.find(d => d.value === row.dayOfWeek)!.label;
         return (
@@ -330,6 +344,23 @@ export function HoursSection({ storeId, hours, onChange }: { storeId: string; ho
           </View>
         );
       })}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setRows(r => r.map(x => ({ ...x, isOpen: r[0].isOpen, openTime: r[0].openTime, closeTime: r[0].closeTime })))}
+        style={[styles.smallBtn, styles.selfStart]}
+      >
+        <Text style={styles.smallBtnText}>Apply Monday to all days</Text>
+      </Pressable>
+    </>
+  );
+}
+
+export function HoursSection({ storeId, hours, onChange }: { storeId: string; hours: Rec[]; onChange: () => void }) {
+  const [rows, setRows] = useState<HourRow[]>(() => hoursFromRecord(hours));
+  const { saving, error, save } = useSave();
+  return (
+    <SectionCard icon={ClockIcon} title="Business Hours" subtitle="Opening and closing time per day">
+      <HoursEditor rows={rows} setRows={setRows} />
       {error ? <ErrorLine message={error} /> : null}
       <Button
         title="Save Business Hours"
@@ -414,6 +445,17 @@ export function TaxSection({ storeId, taxDetails, onChange }: { storeId: string;
   return (
     <SectionCard icon={ShieldCheckIcon} title="GST / Tax Details" subtitle="With GST or without GST — this decides the required documents" action={v ? <Badge label={v.label} tone={v.tone} /> : null}>
       {taxDetails?.rejectionReason ? <ErrorLine message={`Rejected: ${String(taxDetails.rejectionReason)}`} /> : null}
+      <GstFields form={form} set={set} />
+      {error ? <ErrorLine message={error} /> : null}
+      <Button title="Save GST Details" loading={saving} onPress={() => save(gstProblem(form), () => storeManageService.updateTaxDetails(storeId, gstPayload(form)), 'GST details updated', onChange)} />
+    </SectionCard>
+  );
+}
+
+/** With or without GST, and the GST registration fields. */
+export function GstFields({ form, set }: { form: GstForm; set: <K extends keyof GstForm>(k: K, v: GstForm[K]) => void }) {
+  return (
+    <>
       <Choices
         options={[
           { value: 'yes', label: 'Yes, GST registered' },
@@ -441,9 +483,7 @@ export function TaxSection({ storeId, taxDetails, onChange }: { storeId: string;
       ) : (
         <Text style={styles.hint}>GST information can be added later.</Text>
       )}
-      {error ? <ErrorLine message={error} /> : null}
-      <Button title="Save GST Details" loading={saving} onPress={() => save(gstProblem(form), () => storeManageService.updateTaxDetails(storeId, gstPayload(form)), 'GST details updated', onChange)} />
-    </SectionCard>
+    </>
   );
 }
 
@@ -781,6 +821,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   center: { textAlign: 'center' },
+  selfStart: { alignSelf: 'flex-start' },
   card: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surface, ...shadow.card },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   cardIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondary },

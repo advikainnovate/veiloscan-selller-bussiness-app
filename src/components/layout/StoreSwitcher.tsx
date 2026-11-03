@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius } from '../../theme';
+import { useAuth } from '../../context/AuthContext';
 import { useStore } from '../../context/StoreContext';
+import { navigationRef } from '../../navigation/navigationRef';
 import { useToast } from '../../context/ToastContext';
 import { Sheet } from '../ui/Sheet';
-import { CheckIcon, ChevronDownIcon, StoreIcon } from '../icons';
+import { CheckIcon, ChevronDownIcon, PlusIcon, SettingsIcon, StoreIcon, type IconProps } from '../icons';
 
 /** Choose the store the whole app works in. */
 export function StorePickerSheet({ visible, onClose, onSwitched }: { visible: boolean; onClose: () => void; onSwitched?: () => void }) {
   const { stores, current, select } = useStore();
+  const { hasPermission } = useAuth();
   const toast = useToast();
+  // The panel's switcher links: manage the current store, every store, a new one.
+  const links: { label: string; icon: React.ComponentType<IconProps>; go: () => void }[] = [
+    ...(current && hasPermission('stores:view') ? [{ label: 'Manage this store', icon: SettingsIcon, go: () => navigationRef.navigate('StoreSettings', { storeId: current.id }) }] : []),
+    ...(hasPermission('stores:view') ? [{ label: 'All stores', icon: StoreIcon, go: () => navigationRef.navigate('Stores') }] : []),
+    ...(hasPermission('stores:create') ? [{ label: 'Add New Store', icon: PlusIcon, go: () => navigationRef.navigate('CreateStore') }] : []),
+  ];
   return (
     <Sheet
       visible={visible}
-      title="Switch store"
+      title={stores.length > 1 ? 'Switch store' : 'Your store'}
       subtitle="Orders, customers, products and reports show the store you pick."
       onClose={onClose}
     >
@@ -53,6 +62,28 @@ export function StorePickerSheet({ visible, onClose, onSwitched }: { visible: bo
           );
         })}
       </View>
+      {links.length ? (
+        <View style={styles.links}>
+          {links.map(link => {
+            const Icon = link.icon;
+            return (
+              <Pressable
+                key={link.label}
+                accessibilityRole="button"
+                onPress={() => {
+                  onClose();
+                  onSwitched?.();
+                  if (navigationRef.isReady()) link.go();
+                }}
+                style={({ pressed }) => [styles.link, pressed && styles.optionPressed]}
+              >
+                <Icon size={17} color={colors.textSecondary} />
+                <Text style={styles.linkText}>{link.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </Sheet>
   );
 }
@@ -101,6 +132,9 @@ const styles = StyleSheet.create({
   barName: { flex: 1, fontFamily: fonts.bold, fontSize: 13.5, color: colors.text },
   barAction: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.secondary },
   options: { gap: 8 },
+  links: { marginTop: 12, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 46, paddingHorizontal: 8, borderRadius: radius.md },
+  linkText: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text },
   option: {
     flexDirection: 'row',
     alignItems: 'center',

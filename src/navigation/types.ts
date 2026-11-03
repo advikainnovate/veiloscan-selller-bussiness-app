@@ -49,11 +49,39 @@ export type RootStackParamList = {
   /** Inventory, on Stock / Ledger / Reservations / Low Stock. */
   Inventory: { tab?: InventoryTab } | undefined;
   StockDetail: { id: string };
-  /** The current store's page, on one of its tabs (Overview by default). */
-  StoreSettings: { tab?: StoreSettingsTab } | undefined;
+  /** A store's page (the current store without `storeId`), on one of its tabs (Overview by default). */
+  StoreSettings: { tab?: StoreSettingsTab; storeId?: string } | undefined;
+  /** Every store the seller holds. */
+  Stores: undefined;
+  /** My Profile (the header avatar and the menu's account card). */
+  Profile: undefined;
+  /** Catalog › Warehouses: list, one warehouse, add (no id) / edit. */
+  Warehouses: undefined;
+  WarehouseDetail: { id: string };
+  WarehouseForm: { id?: string } | undefined;
+  /** Catalog › Brand Approvals: list, one request (fix & resubmit there), a new request. */
+  BrandApprovals: undefined;
+  BrandRequestDetail: { id: string };
+  BrandRequestForm: { categoryId?: string; brandId?: string } | undefined;
+  /** Catalog › Product Variants (product × variant value mappings). */
+  ProductVariants: undefined;
+  ProductVariantForm: { id?: string } | undefined;
+  /** Catalog › Business Variants (sellable SKUs). */
+  BusinessVariants: undefined;
+  BusinessVariantForm: { id?: string; productId?: string } | undefined;
+  /** Catalog › Product Specs (a product's specification values). */
+  ProductSpecs: undefined;
+  ProductSpecDetail: { id: string };
+  ProductSpecForm: { id?: string; productId?: string } | undefined;
+  /** Pricing & Discounts › Quantity Discount Slabs. */
+  QuantitySlabs: undefined;
+  /** Create (no id) or edit a quantity discount scheme. */
+  QuantitySlabForm: { id?: string } | undefined;
+  /** Add New Store, or continue a draft's onboarding (`storeId`). */
+  CreateStore: { storeId?: string } | undefined;
 };
 
-export type StoreSettingsTab = 'overview' | 'setup' | 'operations' | 'gst' | 'qr-tag' | 'info' | 'activity';
+export type StoreSettingsTab = 'overview' | 'setup' | 'operations' | 'gst' | 'categories' | 'qr-tag' | 'info' | 'activity';
 
 export type InventoryTab = 'stock' | 'ledger' | 'reservations' | 'low';
 

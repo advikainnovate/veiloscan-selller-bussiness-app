@@ -39,6 +39,24 @@ import { SupplierLedgerScreen } from '../screens/expenses/SupplierLedgerScreen';
 import { InventoryScreen } from '../screens/inventory/InventoryScreen';
 import { StockDetailScreen } from '../screens/inventory/StockDetailScreen';
 import { StoreSettingsScreen } from '../screens/store/StoreSettingsScreen';
+import { StoresScreen } from '../screens/store/StoresScreen';
+import { CreateStoreScreen } from '../screens/store/CreateStoreScreen';
+import { WarehousesScreen } from '../screens/catalog/WarehousesScreen';
+import { WarehouseDetailScreen } from '../screens/catalog/WarehouseDetailScreen';
+import { WarehouseFormScreen } from '../screens/catalog/WarehouseFormScreen';
+import { BrandApprovalsScreen } from '../screens/catalog/BrandApprovalsScreen';
+import { BrandRequestDetailScreen } from '../screens/catalog/BrandRequestDetailScreen';
+import { BrandRequestFormScreen } from '../screens/catalog/BrandRequestFormScreen';
+import { ProductVariantsScreen } from '../screens/catalog/ProductVariantsScreen';
+import { ProductVariantFormScreen } from '../screens/catalog/ProductVariantFormScreen';
+import { BusinessVariantsScreen } from '../screens/catalog/BusinessVariantsScreen';
+import { BusinessVariantFormScreen } from '../screens/catalog/BusinessVariantFormScreen';
+import { ProductSpecsScreen } from '../screens/catalog/ProductSpecsScreen';
+import { ProductSpecDetailScreen } from '../screens/catalog/ProductSpecDetailScreen';
+import { ProductSpecFormScreen } from '../screens/catalog/ProductSpecFormScreen';
+import { QuantitySlabsScreen } from '../screens/pricing/QuantitySlabsScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { QuantitySlabFormScreen } from '../screens/pricing/QuantitySlabFormScreen';
 import { CustomerCreditScreen } from '../screens/credit/CustomerCreditScreen';
 import { CreditDetailScreen } from '../screens/credit/CreditDetailScreen';
 import { CouponsScreen } from '../screens/coupons/CouponsScreen';
@@ -242,6 +260,96 @@ export function RootNavigator() {
                   name="StoreSettings"
                   component={StoreSettingsScreen}
                   options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Stores"
+                  component={StoresScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="CreateStore"
+                  component={CreateStoreScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="Warehouses"
+                  component={WarehousesScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="WarehouseDetail"
+                  component={WarehouseDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="WarehouseForm"
+                  component={WarehouseFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="BrandApprovals"
+                  component={BrandApprovalsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="BrandRequestDetail"
+                  component={BrandRequestDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="BrandRequestForm"
+                  component={BrandRequestFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="ProductVariants"
+                  component={ProductVariantsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ProductVariantForm"
+                  component={ProductVariantFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="BusinessVariants"
+                  component={BusinessVariantsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="BusinessVariantForm"
+                  component={BusinessVariantFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="ProductSpecs"
+                  component={ProductSpecsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ProductSpecDetail"
+                  component={ProductSpecDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="ProductSpecForm"
+                  component={ProductSpecFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="Profile"
+                  component={ProfileScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="QuantitySlabs"
+                  component={QuantitySlabsScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="QuantitySlabForm"
+                  component={QuantitySlabFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
                   name="ProductEditor"
