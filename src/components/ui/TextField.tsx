@@ -1,5 +1,5 @@
 import React, { useState, type ReactNode, type Ref } from 'react';
-import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type StyleProp, type TextInputInstance, type TextInputProps, type ViewStyle } from 'react-native';
 import { colors, radius, fonts } from '../../theme';
 import { useRevealFocused } from '../layout/KeyboardScroll';
 
@@ -11,25 +11,32 @@ export interface TextFieldProps extends TextInputProps {
   /** Shown inside the field, at the right, e.g. the show-password toggle. */
   trailing?: ReactNode;
   error?: string | null;
+  /** No label above the field: the placeholder says what it is (the label is still read out). */
+  hideLabel?: boolean;
+  /** Extra style for the bordered box. */
+  fieldStyle?: StyleProp<ViewStyle>;
   ref?: Ref<TextInputInstance>;
 }
 
 /** A labelled input with a leading icon; the border turns orange on focus. */
-export function TextField({ label, icon, labelExtra, trailing, error, style, onFocus, onBlur, ref, ...inputProps }: TextFieldProps) {
+export function TextField({ label, icon, labelExtra, trailing, error, hideLabel, fieldStyle, style, onFocus, onBlur, ref, ...inputProps }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const reveal = useRevealFocused();
   const borderColor = error ? colors.error : focused ? colors.borderFocus : colors.border;
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
-        {labelExtra}
-      </View>
-      <View style={[styles.field, { borderColor }, focused && styles.fieldFocused]}>
+      {hideLabel ? null : (
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>{label}</Text>
+          {labelExtra}
+        </View>
+      )}
+      <View style={[styles.field, fieldStyle, { borderColor }, focused && styles.fieldFocused]}>
         {icon ? <View style={styles.icon}>{icon}</View> : null}
         <TextInput
           ref={ref}
+          accessibilityLabel={hideLabel ? label : undefined}
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.secondary}
           style={[styles.input, style]}

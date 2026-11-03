@@ -49,6 +49,7 @@ export type RootStackParamList = {
   /** Inventory, on Stock / Ledger / Reservations / Low Stock. */
   Inventory: { tab?: InventoryTab } | undefined;
   StockDetail: { id: string };
+  InventoryLedger: undefined;
   /** A store's page (the current store without `storeId`), on one of its tabs (Overview by default). */
   StoreSettings: { tab?: StoreSettingsTab; storeId?: string } | undefined;
   /** Every store the seller holds. */

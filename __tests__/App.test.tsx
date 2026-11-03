@@ -37,5 +37,5 @@ test('first launch goes from the splash to Get Started', async () => {
 test('after Get Started has been seen, the app opens on Seller Sign In', async () => {
   await AsyncStorage.setItem('app.onboarded', '1');
   const tree = await renderPastSplash();
-  expect(textOf(tree)).toContain('Seller Sign In');
+  expect(textOf(tree)).toContain('Welcome back');
 });

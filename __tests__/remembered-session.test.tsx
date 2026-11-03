@@ -16,7 +16,7 @@ jest.mock('../src/services/auth-service', () => ({
       firstName: 'Rajendra',
       lastName: 'Sah',
       userType: 'SELLER',
-      permissions: ['orders:manage', 'products-master:manage', 'freebie-master:manage'],
+      permissions: ['orders:manage', 'products-master:manage', 'support-tickets:view'],
     })),
     logout: jest.fn(async () => ({})),
   },
@@ -83,7 +83,7 @@ test('a remembered sign-in opens on the Home tab, and signing out returns to Sig
   });
   await press(tree, 'Sign Out');
   expect(alert).toHaveBeenCalled();
-  expect(textOf(tree)).toContain('Seller Sign In');
+  expect(textOf(tree)).toContain('Welcome back');
 
   await act(async () => tree.unmount());
 });
@@ -112,8 +112,8 @@ test('the menu shows only what the role allows, and opens pages and tabs', async
 
   // …one still to come opens its placeholder.
   await press(tree, 'Open menu');
-  await press(tree, 'Freebies');
-  expect(textOf(tree)).toContain('Freebies is coming to the app soon');
+  await press(tree, 'Support Tickets');
+  expect(textOf(tree)).toContain('Support Tickets is coming to the app soon');
 
   // A tab the role can't open says so.
   await press(tree, 'Back');

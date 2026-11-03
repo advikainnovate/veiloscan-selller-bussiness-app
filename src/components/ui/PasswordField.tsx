@@ -5,11 +5,11 @@ import { EyeIcon, EyeOffIcon, LockIcon } from '../icons';
 import { TextField, type TextFieldProps } from './TextField';
 
 /** A password input with a lock icon and a show / hide toggle. */
-export function PasswordField(props: Omit<TextFieldProps, 'icon' | 'trailing'>) {
+export function PasswordField({ icon, ...props }: Omit<TextFieldProps, 'trailing'>) {
   const [visible, setVisible] = useState(false);
   return (
     <TextField
-      icon={<LockIcon size={18} color={colors.textMuted} />}
+      icon={icon ?? <LockIcon size={18} color={colors.textMuted} />}
       secureTextEntry={!visible}
       autoCapitalize="none"
       autoCorrect={false}

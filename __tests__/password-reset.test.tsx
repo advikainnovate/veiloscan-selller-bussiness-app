@@ -51,8 +51,8 @@ test('a seller resets their password and lands back on Sign In', async () => {
   // Real timers throughout: the splash plays for 1.6s.
   await act(() => new Promise<void>(resolve => setTimeout(resolve, 2000)));
 
-  await type(tree, 'Enter your email address', 'owner@shop.com');
-  await press(tree, 'Forgot Password?');
+  await type(tree, 'Email address', 'owner@shop.com');
+  await press(tree, 'Forgot password?');
   expect(textOf(tree)).toContain('Forgot Password');
 
   await press(tree, 'Send Code');
@@ -72,7 +72,7 @@ test('a seller resets their password and lands back on Sign In', async () => {
   await type(tree, 'Type the new password again', 'NewPass@123');
   await press(tree, 'Reset Password');
   expect(authService.resetPassword).toHaveBeenCalledWith('owner@shop.com', '112211', 'NewPass@123');
-  expect(textOf(tree)).toContain('Seller Sign In');
+  expect(textOf(tree)).toContain('Welcome back');
   expect(textOf(tree)).toContain('Your password has been reset');
 
   await act(async () => tree.unmount());

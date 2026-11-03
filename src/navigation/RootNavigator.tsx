@@ -61,6 +61,10 @@ import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { ShippingScreen } from '../screens/shipping/ShippingScreen';
 import { ShippingZoneScreen } from '../screens/shipping/ShippingZoneScreen';
 import { ShippingZoneFormScreen } from '../screens/shipping/ShippingZoneFormScreen';
+import { InventoryLedgerScreen } from '../screens/inventory/InventoryLedgerScreen';
+import { OffersScreen } from '../screens/offers/OffersScreen';
+import { OfferDetailScreen } from '../screens/offers/OfferDetailScreen';
+import { OfferFormScreen } from '../screens/offers/OfferFormScreen';
 import { StockHealthScreen } from '../screens/inventory/StockHealthScreen';
 import { PendingStockScreen } from '../screens/inventory/PendingStockScreen';
 import { StockOrderDetailScreen } from '../screens/inventory/StockOrderDetailScreen';
@@ -107,6 +111,10 @@ export function RootNavigator() {
     // The QR tag has its own menu item.
     if (route.name === 'StoreSettings') {
       return setActiveKey((route.params as { tab?: string } | undefined)?.tab === 'qr-tag' ? 'store-qr-tag' : 'store-settings');
+    }
+    // Freebies, gift cards and promotions share screens; the kind is the menu key.
+    if (route.name === 'Offers' || route.name === 'OfferDetail' || route.name === 'OfferForm') {
+      return setActiveKey((route.params as { kind: string }).kind);
     }
     // Detail pages highlight their module in the menu.
     const moduleKey =
@@ -378,6 +386,26 @@ export function RootNavigator() {
                 <Stack.Screen
                   name="ShippingZoneForm"
                   component={ShippingZoneFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="InventoryLedger"
+                  component={InventoryLedgerScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="Offers"
+                  component={OffersScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="OfferDetail"
+                  component={OfferDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="OfferForm"
+                  component={OfferFormScreen}
                   options={{ animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen

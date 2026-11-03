@@ -36,6 +36,9 @@ const MOVEMENT_LABELS: Record<string, string> = {
   STOCK_TAKE: 'Stock take (old)',
 };
 
+/** Every movement type, for a filter. */
+export const MOVEMENT_TYPES = Object.keys(MOVEMENT_LABELS);
+
 export const movementLabel = (type: string) => (MOVEMENT_LABELS[type] ?? type.replace(/_/g, ' ').toLowerCase()).replace(/\b\w/g, c => c.toUpperCase());
 
 /** Tint per kind of movement: in, sale, hold, adjust, damage, move, return, out. */

@@ -45,6 +45,8 @@ Status: ✅ done · 🚧 in progress · ⬜ not started
 | Stock Health ✅ | All / Low / Out / Healthy tiles that filter (with counts), search, per SKU: current vs minimum, suggested reorder, pending from suppliers, last sold; view product or inventory, restock, create a stock request; "Order N low / out" pre-fills a stock order; more as you scroll | `/stores/:id/operations/stock-health` | `store-operations:manage` |
 | Pending Stock ✅ | Open / delayed / open value / received tiles and every status as chips, search, received-of-total progress, delayed flags; stock order detail (products ordered / received / pending, receive what arrived with "everything pending arrived", mark in transit / back to ordered, change expected date, cancel with a reason, supplier bill paid or on credit, deliveries, history); new stock order (supplier, warehouse, dates, product search, quantity and unit cost, amount, notes) | `/stores/:id/operations/{skus,stock-orders,stock-orders/:id/{receive,cancel,purchase-bill}}` | `pending-stock:manage` |
 | Shipping ✅ | Zones list (zones / active / inactive / methods tiles, search, covered states, method count, activate / deactivate, delete); zone page (details, its methods with rate, free-above value and delivery days; add / edit in a sheet with slug from the title, fixed / per-kg / % of order, activate / deactivate, delete); create / edit zone (slug from the title, covered states picked from the Indian states and UTs) | `/shipping-zones`, `/shipping-methods` | `shipping:manage` |
+| Freebies, Gift Cards, Promotions ✅ | One list per kind (total / active / inactive tiles plus expired, or total face value for gift cards; search; promotion type or gift card category chips; activate / deactivate, delete); detail page by section; create / edit with the panel's checks (required fields, amounts, order value range, dates, % discount ≤ 100, gift card image upload) | `/freebie-master`, `/gift-cards`, `/my-promotions` | `freebie-master:manage`, `gift-cards:manage`, `my-promotions:manage` |
+| Inventory Ledger ✅ | Every stock movement, newest first (movements / stock in / stock out / holds tiles, search by product, SKU, reference or lot, movement type and warehouse filters); an entry's sheet shows on hand / reserved / blocked changes and balances, quantity, lot, cost, reason, reference, notes, who and when, with links to its stock record and order. Read only: entries come from stock operations and orders | `/inventory-transactions` | `inventory-transactions:manage` |
 | New-order alerts ✅ | Banner + vibration when a new order or request arrives while the app is open; tap to open it | `/notifications` (polled every 30 s) | — |
 
 ## Next, in order
@@ -53,10 +55,8 @@ Ordered by how often a seller needs it on the go.
 
 | # | Module | Panel page | Backend | Permission |
 | --- | --- | --- | --- | --- |
-| 1 | Freebies, Gift Cards, Promotions | `/dashboard/freebie-master`, `/gift-cards`, `/my-promotions` | same | `*:manage` |
-| 2 | Inventory Ledger (transactions) | `/dashboard/inventory-transactions` | `/inventory-transactions` | `inventory-transactions:manage` |
-| 3 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
-| 4 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
+| 1 | Support Tickets, Support Dashboard | `/dashboard/support/*` | `/support/*` | `support-tickets:view`, `support-reports:view` |
+| 2 | Users (staff) | `/dashboard/users` | `/users` | `users:view` |
 
 ## Not for sellers
 
@@ -70,6 +70,9 @@ the app leaves them out.
 
 - Subscription renewal is paid on the Seller Panel: online payment in the app
   needs Razorpay's React Native SDK (a native module), which isn't installed.
+
+- Freebies: picking the specific categories, brands or products for a
+  "Selected" eligibility is done on the Seller Panel.
 
 - Catalog pages: no CSV export or multi-select bulk actions (Product
   Variants); brand approval documents are photos (PDFs on the Seller Panel);

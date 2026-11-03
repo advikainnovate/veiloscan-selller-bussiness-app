@@ -17,7 +17,13 @@ const RESEND_SECONDS = 30;
  * email or mobile number, then the code sent to its email and phone. Errors
  * go to the login card, which knows how to show "onboarding pending".
  */
-export function OtpLoginForm({ onError, onClearError }: { onError: (error: unknown) => void; onClearError: () => void }) {
+export function OtpLoginForm({
+  onError,
+  onClearError,
+}: {
+  onError: (error: unknown) => void;
+  onClearError: () => void;
+}) {
   const { loginWithOtp } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -76,8 +82,11 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
         <View style={styles.fieldGroup}>
           <TextField
             label="Email or Mobile Number"
-            placeholder="Enter your email or mobile number"
-            icon={<MailIcon size={18} color={colors.textMuted} />}
+            hideLabel
+            placeholder="Email or mobile number"
+            icon={<MailIcon size={20} color={colors.primary} />}
+            fieldStyle={styles.field}
+            style={styles.input}
             value={identifier}
             onChangeText={setIdentifier}
             autoCapitalize="none"
@@ -88,7 +97,9 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
             returnKeyType="send"
             onSubmitEditing={sendCode}
           />
-          <Text style={styles.hint}>We'll send a 6-digit code to your email and phone.</Text>
+          <Text style={styles.hint}>
+            We'll send a 6-digit code to your email and phone.
+          </Text>
         </View>
         <Button
           title="Send Code"
@@ -132,7 +143,11 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
       </View>
 
       <View style={styles.row}>
-        <Checkbox label="Remember me" checked={remember} onChange={setRemember} />
+        <Checkbox
+          label="Remember me"
+          checked={remember}
+          onChange={setRemember}
+        />
         {resendIn > 0 ? (
           <Text style={styles.muted}>Resend in {resendIn}s</Text>
         ) : (
@@ -154,10 +169,27 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 }
 
 const styles = StyleSheet.create({
-  form: { marginTop: 20, gap: 18 },
-  hint: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  codeFor: { flex: 1, fontSize: 14, fontFamily: fonts.semibold, color: colors.text },
+  form: { marginTop: 18, gap: 14 },
+  field: { height: 52, borderRadius: 14, paddingHorizontal: 16, gap: 12 },
+  input: { fontSize: 15.5, letterSpacing: -0.1 },
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  codeFor: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
   link: { fontSize: 14, fontFamily: fonts.semibold, color: colors.secondary },
   muted: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted },
   fieldGroup: { gap: 6 },

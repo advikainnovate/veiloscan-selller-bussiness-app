@@ -1,13 +1,15 @@
 import { createNavigationContainerRef } from '@react-navigation/native';
 import type { InventoryTab, RootStackParamList } from './types';
 import { MENU_ITEMS } from './menu';
+import { OFFER_KINDS, type OfferKind } from '../lib/offers';
 
 // The drawer sits beside the navigator, not inside it, so it navigates through this ref.
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
+type ModuleRoute = 'InventoryLedger' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
+  'inventory-transactions': 'InventoryLedger',
   'order-requests': 'OrderRequests',
   'customer-credit': 'CustomerCredit',
   coupons: 'Coupons',
@@ -90,6 +92,8 @@ export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> 
   ProductEditor: 'products',
 };
 
+const isOfferKind = (key: string): key is OfferKind => (OFFER_KINDS as string[]).includes(key);
+
 /** Opens a menu page: its bottom tab, its own screen, or its module page. */
 export function openMenuKey(key: string) {
   if (!navigationRef.isReady()) return;
@@ -98,6 +102,7 @@ export function openMenuKey(key: string) {
   const inventoryTab = INVENTORY_KEY_TABS[key];
   if (inventoryTab) navigationRef.navigate('Inventory', { tab: inventoryTab });
   else if (key === 'store-settings' || key === 'store-qr-tag') navigationRef.navigate('StoreSettings', { tab: key === 'store-qr-tag' ? 'qr-tag' : 'overview' });
+  else if (isOfferKind(key)) navigationRef.navigate('Offers', { kind: key });
   else if (tab) navigationRef.navigate('Main', { screen: tab });
   else if (route) navigationRef.navigate(route);
   else navigationRef.navigate('Module', { key });
