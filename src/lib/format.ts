@@ -26,3 +26,21 @@ export function trend(value: number, previous: number): Trend {
   const rounded = Math.abs(pct) < 10 ? Math.round(pct * 10) / 10 : Math.round(pct);
   return { direction: pct > 0 ? 'up' : 'down', label: `${pct > 0 ? '+' : '−'}${Math.abs(rounded)}%` };
 }
+
+/** Rich text from the panel's editor (descriptions, tickets) as plain paragraphs. */
+export function htmlToText(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h\d)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

@@ -60,7 +60,8 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 15, fontFamily: fonts.bold, color: colors.text },
   body: { padding: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 5 },
-  rowLabel: { flexShrink: 1, fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary },
-  rowValue: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text, textAlign: 'right' },
+  // The label keeps its words; a long value wraps beside it.
+  rowLabel: { flexShrink: 0, maxWidth: '45%', fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary },
+  rowValue: { flexShrink: 1, fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text, textAlign: 'right' },
   rowStrong: { fontFamily: fonts.extrabold, fontSize: 15.5, color: colors.text },
 });

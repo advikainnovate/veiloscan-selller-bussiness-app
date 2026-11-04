@@ -31,6 +31,7 @@ import {
 import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { Badge } from '../../components/ui/Badge';
+import { Gradient } from '../../components/ui/Gradient';
 import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { Ring, SalesProfitChart } from '../../components/reports/SalesCharts';
@@ -46,7 +47,6 @@ import {
   ShoppingBagIcon,
   StoreIcon,
   TagIcon,
-  WalletIcon,
   type IconProps,
 } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
@@ -205,7 +205,7 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader brand />
+      <AppHeader title="Sales Reports" subtitle={store?.name ?? undefined} />
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.content}
@@ -214,13 +214,6 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
           <RefreshControl refreshing={overview.refreshing} onRefresh={() => reloadAll(true)} tintColor={colors.secondary} colors={[colors.secondary]} />
         }
       >
-        <View>
-          <Text style={styles.pageTitle} accessibilityRole="header">
-            Sales Reports
-          </Text>
-          <Text style={styles.pageSubtitle}>Track your store sales performance, revenue, profit and orders over time.</Text>
-        </View>
-
         {storesLoading ? (
           <ListSkeleton rows={3} height={120} />
         ) : !store ? (
@@ -231,11 +224,6 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
           />
         ) : (
           <>
-            <View style={styles.storeLine}>
-              <StoreIcon size={14} color={colors.textSecondary} />
-              <Text style={styles.storeLineText}>{store.name}</Text>
-            </View>
-
             <FilterChips
               options={RANGE_PRESETS.map(p => ({ value: p.key, label: p.label }))}
               value={preset.key}
@@ -247,30 +235,37 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
 
             {overview.error && !overview.data ? <ErrorState message={overview.error} onRetry={() => overview.reload()} /> : null}
 
+            {/* The period at a glance */}
+            <View style={styles.hero}>
+              <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={22} />
+              <View style={styles.heroGlow} />
+              <View style={styles.heroTop}>
+                <Text style={styles.heroLabel}>Total Sales</Text>
+                {loadingKpi ? null : <DeltaPill delta={change(cur?.sales, prev?.sales)} compare={compare} />}
+              </View>
+              {loadingKpi ? (
+                <View style={styles.heroSkeleton} />
+              ) : (
+                <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} accessibilityLabel={`Total Sales: ${money(cur?.sales)}`}>
+                  {money(cur?.sales)}
+                </Text>
+              )}
+              <View style={styles.heroStats}>
+                <HeroStat label="Total Orders" value={cur ? formatNumber(cur.orders) : '—'} delta={change(cur?.orders, prev?.orders)} loading={loadingKpi} />
+                <HeroStat label="Avg Order" value={money(aov(cur))} delta={change(aov(cur), aov(prev))} loading={loadingKpi} />
+                {canProfit || loadingKpi ? (
+                  <HeroStat
+                    label="Gross Profit"
+                    value={money(cur?.grossProfit)}
+                    negative={(cur?.grossProfit ?? 0) < 0}
+                    delta={change(cur?.grossProfit, prev?.grossProfit)}
+                    loading={loadingKpi}
+                  />
+                ) : null}
+              </View>
+            </View>
+
             <View style={styles.kpis}>
-              <Kpi icon={CartIcon} tone="orange" label="Total Sales" value={money(cur?.sales)} delta={change(cur?.sales, prev?.sales)} compare={compare} loading={loadingKpi} />
-              <Kpi
-                icon={ShoppingBagIcon}
-                tone="blue"
-                label="Total Orders"
-                value={cur ? formatNumber(cur.orders) : '—'}
-                delta={change(cur?.orders, prev?.orders)}
-                compare={compare}
-                loading={loadingKpi}
-              />
-              <Kpi icon={WalletIcon} tone="green" label="Average Order Value" value={money(aov(cur))} delta={change(aov(cur), aov(prev))} compare={compare} loading={loadingKpi} />
-              {canProfit || loadingKpi ? (
-                <Kpi
-                  icon={TagIcon}
-                  tone="amber"
-                  label="Gross Profit"
-                  value={money(cur?.grossProfit)}
-                  negative={(cur?.grossProfit ?? 0) < 0}
-                  delta={change(cur?.grossProfit, prev?.grossProfit)}
-                  compare={compare}
-                  loading={loadingKpi}
-                />
-              ) : null}
               <Kpi icon={BoxIcon} tone="rose" label="Expenses" value={money(cur?.expenses)} delta={change(cur?.expenses, prev?.expenses)} invert compare={compare} loading={loadingKpi} />
               {canProfit || loadingKpi ? (
                 <Kpi
@@ -496,6 +491,42 @@ function Panel({ title, action, children }: { title: string; action?: ReactNode;
   );
 }
 
+/** "↑ 24.5% vs last month" on the dark card. */
+function DeltaPill({ delta, compare, invert }: { delta: number | null; compare: string; invert?: boolean }) {
+  const good = delta !== null && (invert ? delta <= 0 : delta >= 0);
+  return (
+    <View style={[styles.deltaPill, delta === null ? styles.deltaPillNew : good ? styles.deltaPillUp : styles.deltaPillDown]}>
+      <Text style={[styles.deltaPillText, delta === null ? styles.deltaTextNew : good ? styles.deltaTextUp : styles.deltaTextDown]} numberOfLines={1}>
+        {delta === null ? 'New ' : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
+        {compare}
+      </Text>
+    </View>
+  );
+}
+
+function HeroStat({ label, value, delta, negative, loading }: { label: string; value: string; delta: number | null; negative?: boolean; loading: boolean }) {
+  const good = delta !== null && delta >= 0;
+  return (
+    <View style={styles.heroStat} accessible accessibilityLabel={`${label}: ${loading ? 'loading' : value}`}>
+      <Text style={styles.heroStatLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      {loading ? (
+        <View style={styles.heroStatSkeleton} />
+      ) : (
+        <Text style={[styles.heroStatValue, negative && styles.heroNegative]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {value}
+        </Text>
+      )}
+      {loading ? null : (
+        <Text style={[styles.heroStatDelta, delta === null ? styles.deltaTextNew : good ? styles.deltaTextUp : styles.deltaTextDown]} numberOfLines={1}>
+          {delta === null ? 'New ' : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 function Kpi({
   icon: Icon,
   tone,
@@ -522,12 +553,14 @@ function Kpi({
   const [bg, fg] = KPI_TONES[tone];
   return (
     <View style={styles.kpi} accessible accessibilityLabel={`${label}: ${loading ? 'loading' : value}`}>
-      <View style={[styles.kpiIcon, { backgroundColor: bg }]}>
-        <Icon size={20} color={fg} />
+      <View style={styles.kpiHead}>
+        <View style={[styles.kpiIcon, { backgroundColor: bg }]}>
+          <Icon size={16} color={fg} />
+        </View>
+        <Text style={styles.kpiLabel} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
-      <Text style={styles.kpiLabel} numberOfLines={1}>
-        {label}
-      </Text>
       {loading ? (
         <View style={styles.kpiSkeleton} />
       ) : (
@@ -653,48 +686,50 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   flip: { transform: [{ rotate: '180deg' }] },
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 16, paddingBottom: 32, gap: 14 },
-  pageTitle: { fontSize: 24, fontFamily: fonts.extrabold, color: colors.text, letterSpacing: -0.4 },
-  pageSubtitle: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.textSecondary },
-  storeLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -6 },
-  storeLineText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.text },
-  kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpi: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    padding: 14,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
-  kpiIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  kpiLabel: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  kpiValue: { marginTop: 2, fontFamily: fonts.extrabold, fontSize: 20, color: colors.text, letterSpacing: -0.3 },
-  kpiSkeleton: { marginTop: 6, height: 24, width: 90, borderRadius: 6, backgroundColor: colors.background },
+  content: { padding: 16, paddingBottom: 32, gap: 12 },
+  hero: { overflow: 'hidden', padding: 18, borderRadius: 22, backgroundColor: colors.primary, ...shadow.raised },
+  heroGlow: { position: 'absolute', top: -70, right: -60, width: 190, height: 190, borderRadius: 95, backgroundColor: 'rgba(255,138,51,0.06)' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  heroLabel: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.7)' },
+  heroValue: { marginTop: 4, fontFamily: fonts.extrabold, fontSize: 32, letterSpacing: -0.8, color: colors.white },
+  heroSkeleton: { marginTop: 8, height: 34, width: 160, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)' },
+  heroStats: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  heroStat: { flex: 1, minWidth: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)' },
+  heroStatLabel: { fontFamily: fonts.medium, fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  heroStatValue: { marginTop: 3, fontFamily: fonts.extrabold, fontSize: 16, color: colors.white },
+  heroStatSkeleton: { marginTop: 6, height: 18, width: 60, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.1)' },
+  heroStatDelta: { marginTop: 2, fontFamily: fonts.semibold, fontSize: 11 },
+  heroNegative: { color: '#fca5a5' },
+  deltaPill: { flexShrink: 1, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 12 },
+  deltaPillUp: { backgroundColor: 'rgba(74,222,128,0.14)' },
+  deltaPillDown: { backgroundColor: 'rgba(248,113,113,0.16)' },
+  deltaPillNew: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  deltaPillText: { fontFamily: fonts.semibold, fontSize: 11.5 },
+  deltaTextUp: { color: '#86efac' },
+  deltaTextDown: { color: '#fca5a5' },
+  deltaTextNew: { color: 'rgba(255,255,255,0.6)' },
+  kpis: { flexDirection: 'row', gap: 10 },
+  kpi: { flex: 1, minWidth: 0, padding: 12, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
+  kpiHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  kpiIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  kpiLabel: { flex: 1, fontFamily: fonts.medium, fontSize: 12.5, color: colors.textSecondary },
+  kpiValue: { marginTop: 8, fontFamily: fonts.extrabold, fontSize: 19, color: colors.text, letterSpacing: -0.3 },
+  kpiSkeleton: { marginTop: 10, height: 22, width: 80, borderRadius: 6, backgroundColor: colors.background },
   negative: { color: colors.error },
-  kpiCompare: { marginTop: 4, fontFamily: fonts.regular, fontSize: 11.5, lineHeight: 16, color: colors.textSecondary },
+  kpiCompare: { marginTop: 3, fontFamily: fonts.regular, fontSize: 11, lineHeight: 15, color: colors.textSecondary },
   kpiDelta: { fontFamily: fonts.semibold },
   kpiNew: { fontFamily: fonts.medium, color: colors.textMuted },
-  panel: {
-    padding: 16,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
+  panel: { padding: 16, borderRadius: 18, backgroundColor: colors.surface, ...shadow.card },
   panelHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   panelTitle: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.text },
   placeholder: { height: 180, borderRadius: radius.md, backgroundColor: colors.background },
   placeholderTall: { height: 250 },
   noData: { paddingVertical: 40, textAlign: 'center', fontFamily: fonts.regular, fontSize: 13.5, color: colors.textMuted },
-  segment: { flexDirection: 'row', padding: 2, borderRadius: 9, backgroundColor: colors.background },
-  segmentItem: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 7 },
-  segmentItemOn: { backgroundColor: colors.surface, ...shadow.card },
+  segment: { flexDirection: 'row', padding: 3, borderRadius: 11, backgroundColor: colors.background },
+  segmentItem: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
+  segmentItemOn: { backgroundColor: colors.primary },
   segmentText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.textSecondary },
-  segmentTextOn: { color: colors.text },
+  segmentTextOn: { color: colors.white },
   ringBlock: { alignItems: 'center', gap: 14 },
   methodList: { alignSelf: 'stretch', gap: 2 },
   methodRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 8 },
@@ -703,10 +738,10 @@ const styles = StyleSheet.create({
   methodName: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, color: colors.text },
   methodShare: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
   methodValue: { minWidth: 76, textAlign: 'right', fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
-  link: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.info },
+  link: { fontFamily: fonts.semibold, fontSize: 13, color: colors.secondary },
   cats: { gap: 14 },
   cat: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  catIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  catIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
   catTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   catName: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, color: colors.text },
   catValue: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
@@ -714,14 +749,7 @@ const styles = StyleSheet.create({
   shareTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#f1f5f9', overflow: 'hidden' },
   shareFill: { height: 6, borderRadius: 3 },
   sharePct: { width: 42, textAlign: 'right', fontFamily: fonts.regular, fontSize: 11, color: colors.textSecondary },
-  salesCard: {
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-    ...shadow.card,
-  },
+  salesCard: { overflow: 'hidden', borderRadius: 18, backgroundColor: colors.surface, ...shadow.card },
   salesHead: { gap: 10, padding: 14 },
   salesBody: { paddingHorizontal: 14, paddingBottom: 14 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

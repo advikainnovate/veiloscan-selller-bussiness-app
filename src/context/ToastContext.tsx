@@ -13,7 +13,7 @@ interface Toast {
 
 const ToastContext = createContext<(message: string, kind?: ToastKind) => void>(() => {});
 
-const SHOW_MS = 3200;
+const SHOW_MS = 3000;
 
 /** Short confirmations ("Order accepted") and errors, shown above the tab bar. */
 export function ToastProvider({ children }: { children: ReactNode }) {

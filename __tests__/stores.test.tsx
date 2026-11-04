@@ -145,7 +145,8 @@ test('all stores: totals, plan usage, search and filters, row actions', async ()
   await act(async () => tree.root.findAll(n => n.props.placeholder?.startsWith?.('Search by store name') && n.props.onChangeText)[0].props.onChangeText('mumbai'));
   text = textOf(tree);
   expect(text).toContain('Blue Bakery');
-  expect(text).not.toContain('Green Basket');
+  // (Home, underneath, names the current store; the list's rows are what's filtered.)
+  expect(tree.root.findAll(n => n.props.accessibilityLabel === 'More for Green Basket')).toHaveLength(0);
   await press(tree, 'Reset');
 
   await press(tree, 'More for Red Pharmacy');

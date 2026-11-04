@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState, type ComponentType } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
@@ -14,21 +14,11 @@ import { productsService, type Uom } from '../../services/products-service';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { Badge } from '../../components/ui/Badge';
+import { Gradient } from '../../components/ui/Gradient';
 import { Button } from '../../components/ui/Button';
 import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
-import {
-  AlertCircleIcon,
-  BanIcon,
-  BoxIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  ClockIcon,
-  FileTextIcon,
-  FilterIcon,
-  PlusIcon,
-  type IconProps,
-} from '../../components/icons';
+import { BanIcon, BoxIcon, CheckCircleIcon, CheckIcon, FilterIcon, PlusIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
 
 // Approval stages (see lib/product-approval) plus stock views, as the Seller Panel's tabs.
@@ -210,14 +200,34 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
 
   const header = (
     <View style={styles.headerBlock}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tiles}>
-        <Tile icon={BoxIcon} tone={['#fff1e6', '#ff6b00']} label="Total" value={stats.total} />
-        <Tile icon={CheckCircleIcon} tone={['#dcfce7', '#16a34a']} label="Published" value={stats.published} />
-        <Tile icon={ClockIcon} tone={['#fef3c7', '#d97706']} label="In review" value={stats.inReview} />
-        <Tile icon={AlertCircleIcon} tone={['#ffedd5', '#ea580c']} label="Changes required" value={stats.changes} />
-        <Tile icon={FileTextIcon} tone={['#f1f5f9', '#64748b']} label="Draft" value={stats.draft} />
-        <Tile icon={BanIcon} tone={['#fee2e2', '#dc2626']} label="Out of stock" value={stats.outOfStock} />
-      </ScrollView>
+      {/* The catalog at a glance; tapping a figure opens its tab */}
+      <View style={styles.summary}>
+        <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={20} />
+        <View style={styles.summaryGlow} />
+        <View style={styles.summaryTop}>
+          <View>
+            <Text style={styles.summaryLabel}>Products</Text>
+            <Text style={styles.summaryValue}>{stats.total}</Text>
+          </View>
+          {stats.outOfStock ? (
+            <Pressable accessibilityRole="button" onPress={() => setTab(tab === 'out_of_stock' ? 'all' : 'out_of_stock')} style={styles.alertPill}>
+              <BanIcon size={13} color="#fca5a5" />
+              <Text style={styles.alertPillText}>{`${stats.outOfStock} out of stock`}</Text>
+            </Pressable>
+          ) : (
+            <View style={[styles.alertPill, styles.okPill]}>
+              <CheckCircleIcon size={13} color="#4ade80" />
+              <Text style={[styles.alertPillText, styles.okPillText]}>All in stock</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.summaryStats}>
+          <SummaryStat label="Live" value={stats.published} dot="#4ade80" active={tab === 'published'} onPress={() => setTab(tab === 'published' ? 'all' : 'published')} />
+          <SummaryStat label="In review" value={stats.inReview} dot="#fbbf24" active={tab === 'in_review'} onPress={() => setTab(tab === 'in_review' ? 'all' : 'in_review')} />
+          <SummaryStat label="Changes" value={stats.changes} dot="#fb923c" active={tab === 'changes_required'} onPress={() => setTab(tab === 'changes_required' ? 'all' : 'changes_required')} />
+          <SummaryStat label="Draft" value={stats.draft} dot="#94a3b8" active={tab === 'draft'} onPress={() => setTab(tab === 'draft' ? 'all' : 'draft')} />
+        </View>
+      </View>
       <View style={styles.searchRow}>
         <View style={styles.flex}>
           <SearchBar value={search} onChange={setSearch} placeholder="Search name or SKU" />
@@ -234,6 +244,7 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
       </View>
       <FilterChips options={STATUS_TABS.map(t => ({ ...t, count: tabCount(t.value) }))} value={tab} onChange={setTab} />
       <View style={styles.sortRow}>
+        <View style={styles.sortGroup}>
         {SORTS.map(s => (
           <Pressable
             key={s.key}
@@ -245,6 +256,7 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
             <Text style={[styles.sortText, sort === s.key && styles.sortTextOn]}>{s.label}</Text>
           </Pressable>
         ))}
+        </View>
         <Pressable
           accessibilityRole="button"
           onPress={() => {
@@ -379,19 +391,27 @@ function MenuItem({ label, onPress, close, danger }: { label: string; onPress: (
   );
 }
 
-function Tile({ icon: Icon, tone, label, value }: { icon: ComponentType<IconProps>; tone: [string, string]; label: string; value: number }) {
+function SummaryStat({ label, value, dot, active, onPress }: { label: string; value: number; dot: string; active: boolean; onPress: () => void }) {
   return (
-    <View style={styles.tile}>
-      <View style={[styles.tileIcon, { backgroundColor: tone[0] }]}>
-        <Icon size={17} color={tone[1]} />
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}`} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.stat, active && styles.statActive]}>
+      <View style={styles.statHead}>
+        <View style={[styles.statDot, { backgroundColor: dot }]} />
+        <Text style={styles.statLabel} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
-      <View>
-        <Text style={styles.tileValue}>{value}</Text>
-        <Text style={styles.tileLabel}>{label}</Text>
-      </View>
-    </View>
+      <Text style={styles.statValue}>{value}</Text>
+    </Pressable>
   );
 }
+
+const STAGE_COLOR: Record<string, string> = {
+  published: '#22c55e',
+  in_review: '#f59e0b',
+  changes_required: '#f97316',
+  draft: '#38bdf8',
+  unpublished: '#94a3b8',
+};
 
 function ProductCard({
   product,
@@ -419,6 +439,7 @@ function ProductCard({
   const stockText = product.stockTotals.length
     ? product.stockTotals.map(t => readableQty(t.available, t.uom, uoms)).join(' + ')
     : 'No stock yet';
+  const off = product.mrp && product.price !== null && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   return (
     <Pressable
       accessibilityRole="button"
@@ -427,6 +448,7 @@ function ProductCard({
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && styles.cardPressed, busy && styles.cardBusy]}
     >
+      <View style={[styles.stripe, { backgroundColor: STAGE_COLOR[stage.key] ?? STAGE_COLOR.unpublished }]} />
       {selecting ? (
         <View style={[styles.check, selected && styles.checkOn]}>{selected ? <CheckIcon size={13} color={colors.white} strokeWidth={3} /> : null}</View>
       ) : null}
@@ -442,19 +464,26 @@ function ProductCard({
           {product.productName}
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {[product.variantSubtitle, product.skuItemNumber].filter(Boolean).join(' · ') || '—'}
-        </Text>
-        <Text style={styles.meta} numberOfLines={1}>
           {[category, brand ?? 'No brand', `${product.skuCount} SKU${product.skuCount === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
         </Text>
         <View style={styles.bottomRow}>
           <Text style={styles.price}>{product.price === null ? '—' : formatRupees(product.price)}</Text>
-          {product.mrp && product.price !== null && product.mrp > product.price ? <Text style={styles.mrp}>{formatRupees(product.mrp)}</Text> : null}
-          <Text style={[styles.stock, { color: stock.color }]} numberOfLines={1}>
-            {product.stockTotals.length ? stockText : stock.label}
-          </Text>
+          {off ? (
+            <>
+              <Text style={styles.mrp}>{formatRupees(product.mrp!)}</Text>
+              <Text style={styles.off}>{`${off}% off`}</Text>
+            </>
+          ) : null}
         </View>
-        <Badge label={stage.label} tone={stage.tone} style={styles.badge} />
+        <View style={styles.pills}>
+          <Badge label={stage.label} tone={stage.tone} />
+          <View style={[styles.stockPill, { backgroundColor: `${stock.color}14` }]}>
+            <View style={[styles.stockDot, { backgroundColor: stock.color }]} />
+            <Text style={[styles.stock, { color: stock.color }]} numberOfLines={1}>
+              {product.stockTotals.length ? stockText : stock.label}
+            </Text>
+          </View>
+        </View>
       </View>
       {!selecting ? (
         <Pressable accessibilityRole="button" accessibilityLabel={`Actions for ${product.productName}`} hitSlop={10} onPress={onMenu} style={styles.more}>
@@ -562,22 +591,23 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, paddingBottom: 96 },
-  headerBlock: { gap: 12, marginBottom: 14 },
-  tiles: { gap: 10, paddingVertical: 2 },
-  tile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 9,
-    paddingLeft: 9,
-    paddingRight: 14,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
-  tileIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  tileValue: { fontSize: 16, fontFamily: fonts.extrabold, color: colors.text },
-  tileLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textSecondary },
+  headerBlock: { gap: 12, marginBottom: 12 },
+  summary: { overflow: 'hidden', padding: 16, borderRadius: 20, backgroundColor: colors.primary, ...shadow.raised },
+  summaryGlow: { position: 'absolute', top: -60, right: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,138,51,0.06)' },
+  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  summaryLabel: { fontFamily: fonts.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.65)' },
+  summaryValue: { marginTop: 2, fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.6, color: colors.white },
+  alertPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, backgroundColor: 'rgba(248,113,113,0.15)' },
+  alertPillText: { fontFamily: fonts.semibold, fontSize: 11.5, color: '#fecaca' },
+  okPill: { backgroundColor: 'rgba(74,222,128,0.12)' },
+  okPillText: { color: '#bbf7d0' },
+  summaryStats: { flexDirection: 'row', gap: 6, marginTop: 14 },
+  stat: { flex: 1, minWidth: 0, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)' },
+  statActive: { borderColor: 'rgba(255,138,51,0.7)', backgroundColor: 'rgba(255,107,0,0.18)' },
+  statHead: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statDot: { width: 6, height: 6, borderRadius: 3 },
+  statLabel: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 10.5, color: 'rgba(255,255,255,0.7)' },
+  statValue: { marginTop: 3, fontFamily: fonts.extrabold, fontSize: 17, color: colors.white },
   searchRow: { flexDirection: 'row', gap: 8 },
   filterBtn: {
     width: 46,
@@ -592,38 +622,34 @@ const styles = StyleSheet.create({
   filterBtnOn: { backgroundColor: colors.secondary, borderColor: colors.secondary },
   filterCount: { position: 'absolute', top: 4, right: 6, fontFamily: fonts.bold, fontSize: 10, color: colors.white },
   sortRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  sort: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full },
-  sortOn: { backgroundColor: colors.primaryLight },
-  sortText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.textSecondary },
-  sortTextOn: { color: colors.text },
+  sortGroup: { flexDirection: 'row', padding: 3, gap: 2, borderRadius: 12, backgroundColor: colors.surface, ...shadow.card },
+  sort: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9 },
+  sortOn: { backgroundColor: colors.primary },
+  sortText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.textSecondary },
+  sortTextOn: { color: colors.white },
   selectBtn: { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 5 },
   selectText: { fontFamily: fonts.bold, fontSize: 13, color: colors.secondary },
   separator: { height: 10 },
-  card: { flexDirection: 'row', gap: 12, padding: 12, borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.card },
+  card: { overflow: 'hidden', flexDirection: 'row', gap: 12, paddingVertical: 12, paddingLeft: 16, paddingRight: 12, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
   cardSelected: { borderWidth: 1.5, borderColor: colors.secondary },
   cardPressed: { backgroundColor: '#fffaf5' },
   cardBusy: { opacity: 0.6 },
-  check: {
-    alignSelf: 'center',
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+  check: { alignSelf: 'center', width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   checkOn: { backgroundColor: colors.secondary, borderColor: colors.secondary },
-  cover: { width: 72, height: 72, borderRadius: 12, backgroundColor: colors.background },
+  cover: { width: 80, height: 80, borderRadius: 14, backgroundColor: colors.background },
   coverEmpty: { alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, minWidth: 0 },
-  name: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text, paddingRight: 18 },
-  meta: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  name: { fontFamily: fonts.semibold, fontSize: 14.5, lineHeight: 19, color: colors.text, paddingRight: 20 },
+  meta: { marginTop: 3, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
   bottomRow: { marginTop: 6, flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  price: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.text },
+  price: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.text },
   mrp: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted, textDecorationLine: 'line-through' },
-  stock: { marginLeft: 'auto', flexShrink: 1, fontFamily: fonts.semibold, fontSize: 12 },
-  badge: { marginTop: 8 },
+  off: { fontFamily: fonts.bold, fontSize: 12, color: colors.successDark },
+  pills: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  stockPill: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '60%', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  stockDot: { width: 6, height: 6, borderRadius: 3 },
+  stock: { flexShrink: 1, fontFamily: fonts.semibold, fontSize: 11.5 },
   more: { position: 'absolute', top: 6, right: 8, padding: 4 },
   moreText: { fontFamily: fonts.bold, fontSize: 18, color: colors.textMuted, lineHeight: 20 },
   bulkBar: {

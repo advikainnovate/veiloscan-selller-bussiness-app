@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState, type ComponentType } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, fonts, radius, shadow } from '../../theme';
+import { colors, fonts, shadow } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch } from '../../hooks/useFetch';
 import { formatRupees } from '../../lib/format';
@@ -22,8 +22,9 @@ import { orderService } from '../../services/order-service';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { Badge } from '../../components/ui/Badge';
+import { Gradient } from '../../components/ui/Gradient';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
-import { ArrowDownIcon, ArrowUpIcon, CartIcon, CheckCircleIcon, ClockIcon, PlusIcon, ShoppingBagIcon, WalletIcon, type IconProps } from '../../components/icons';
+import { ArrowDownIcon, ArrowUpIcon, CartIcon, CheckCircleIcon, PlusIcon, ShoppingBagIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
 
 const QUICK_SALES = 'QUICK';
@@ -111,33 +112,51 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
 
   const header = (
     <View style={styles.headerBlock}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tiles}>
-        <Tile icon={ShoppingBagIcon} tone={['#fef3c7', '#d97706']} label="New orders" value={String(stats.newCount)} />
-        <Tile icon={ClockIcon} tone={['#f3e8ff', '#9333ea']} label="Ready for pickup" value={String(stats.ready)} />
-        <Tile icon={CheckCircleIcon} tone={['#dcfce7', '#16a34a']} label="Picked up today" value={String(stats.pickedUpToday)} />
-        <Tile icon={WalletIcon} tone={['#fff1e6', '#ff6b00']} label="Collected" value={formatRupees(Math.round(stats.collected))} />
-      </ScrollView>
+      {/* Today at a glance; tapping a figure filters the list */}
+      <View style={styles.summary}>
+        <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={20} />
+        <View style={styles.summaryGlow} />
+        <View style={styles.summaryTop}>
+          <View>
+            <Text style={styles.summaryLabel}>Collected</Text>
+            <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {formatRupees(Math.round(stats.collected))}
+            </Text>
+          </View>
+          <View style={styles.summaryBadge}>
+            <CheckCircleIcon size={14} color="#4ade80" />
+            <Text style={styles.summaryBadgeText}>{`${stats.pickedUpToday} picked up today`}</Text>
+          </View>
+        </View>
+        <View style={styles.summaryStats}>
+          <SummaryStat label="New orders" value={stats.newCount} dot="#fbbf24" active={filter === 'CREATED'} onPress={() => setFilter(filter === 'CREATED' ? '' : 'CREATED')} />
+          <SummaryStat label="Ready" value={stats.ready} dot="#c084fc" active={filter === 'PACKED'} onPress={() => setFilter(filter === 'PACKED' ? '' : 'PACKED')} />
+          <SummaryStat label="All orders" value={rows.length} dot="#94a3b8" active={!filter} onPress={() => setFilter('')} />
+        </View>
+      </View>
       <SearchBar value={search} onChange={setSearch} placeholder="Search order ID, customer, phone" />
       <FilterChips options={chips} value={filter} onChange={setFilter} />
       <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>Sort by</Text>
-        {SORTS.map(option => {
-          const active = sort.key === option.key;
-          const Arrow = sort.desc ? ArrowDownIcon : ArrowUpIcon;
-          return (
-            <Pressable
-              key={option.key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`Sort by ${option.label}${active ? (sort.desc ? ', descending' : ', ascending') : ''}`}
-              onPress={() => toggleSort(option.key)}
-              style={[styles.sort, active && styles.sortActive]}
-            >
-              <Text style={[styles.sortText, active && styles.sortTextActive]}>{option.label}</Text>
-              {active ? <Arrow size={11} color={colors.text} /> : null}
-            </Pressable>
-          );
-        })}
+        <Text style={styles.sortLabel}>{`${visible.length} shown · Sort`}</Text>
+        <View style={styles.sortGroup}>
+          {SORTS.map(option => {
+            const active = sort.key === option.key;
+            const Arrow = sort.desc ? ArrowDownIcon : ArrowUpIcon;
+            return (
+              <Pressable
+                key={option.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`Sort by ${option.label}${active ? (sort.desc ? ', descending' : ', ascending') : ''}`}
+                onPress={() => toggleSort(option.key)}
+                style={[styles.sort, active && styles.sortActive]}
+              >
+                <Text style={[styles.sortText, active && styles.sortTextActive]}>{option.label}</Text>
+                {active ? <Arrow size={11} color={colors.white} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -188,19 +207,35 @@ function Separator() {
   return <View style={styles.separator} />;
 }
 
-function Tile({ icon: Icon, tone, label, value }: { icon: ComponentType<IconProps>; tone: [string, string]; label: string; value: string }) {
+function SummaryStat({ label, value, dot, active, onPress }: { label: string; value: number; dot: string; active: boolean; onPress: () => void }) {
   return (
-    <View style={styles.tile}>
-      <View style={[styles.tileIcon, { backgroundColor: tone[0] }]}>
-        <Icon size={18} color={tone[1]} />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={[styles.stat, active && styles.statActive]}
+    >
+      <View style={styles.statHead}>
+        <View style={[styles.statDot, { backgroundColor: dot }]} />
+        <Text style={styles.statLabel} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
-      <View>
-        <Text style={styles.tileValue}>{value}</Text>
-        <Text style={styles.tileLabel}>{label}</Text>
-      </View>
-    </View>
+      <Text style={styles.statValue}>{value}</Text>
+    </Pressable>
   );
 }
+
+const TONE_COLOR: Record<string, string> = {
+  amber: '#f59e0b',
+  blue: '#3b82f6',
+  violet: '#8b5cf6',
+  green: '#22c55e',
+  red: '#ef4444',
+  orange: '#ff6b00',
+  slate: '#94a3b8',
+};
 
 function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void }) {
   const quick = isQuickSale(order);
@@ -211,6 +246,7 @@ function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void })
   const creditDue = Number(order.creditOutstanding) || 0;
   const name = quick ? 'Quick Sale' : order.customerName || 'Registered customer';
 
+  const tone = orderStatusTone(order.orderStatus);
   return (
     <Pressable
       accessibilityRole="button"
@@ -218,77 +254,78 @@ function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void })
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
+      <View style={[styles.stripe, { backgroundColor: TONE_COLOR[tone] ?? TONE_COLOR.slate }]} />
       <View style={styles.cardTop}>
-        <Text style={styles.orderId} numberOfLines={1}>
-          {order.uniqueOrderId}
-        </Text>
-        <Badge label={orderStatusLabel(order)} tone={orderStatusTone(order.orderStatus)} />
-        <Text style={styles.amount}>{formatRupees(orderAmount(order))}</Text>
-      </View>
-      <Text style={styles.meta} numberOfLines={1}>
-        {formatWhen(order.createdAt)} · {isPickupOrder(order) ? 'Store pickup' : 'Delivery'}
-        {order.store?.name ? ` · ${order.store.name}` : ''}
-      </Text>
-      <View style={styles.cardBottom}>
         <View style={[styles.avatar, quick && styles.avatarQuick]}>
-          {quick ? (
-            <CartIcon size={16} color={colors.secondary} />
-          ) : (
-            <Text style={styles.avatarText}>{name.trim()[0]?.toUpperCase() ?? '?'}</Text>
-          )}
+          {quick ? <CartIcon size={17} color={colors.secondary} /> : <Text style={styles.avatarText}>{initials(name)}</Text>}
         </View>
         <View style={styles.flex}>
           <Text style={styles.customer} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={styles.phone} numberOfLines={1}>
-            {quick ? 'No customer details' : order.customerPhone || '—'}
+          <Text style={styles.orderId} numberOfLines={1}>
+            {`${order.uniqueOrderId} · ${formatWhen(order.createdAt)}`}
           </Text>
         </View>
-        <View style={styles.payment}>
-          <Badge label={pay.label} tone={pay.tone} />
+        <View style={styles.amountCol}>
+          <Text style={styles.amount}>{formatRupees(orderAmount(order))}</Text>
           {discount ? <Text style={styles.discount}>−{formatRupees(discount.amount)} off</Text> : null}
         </View>
       </View>
-      {paidBy || creditDue > 0 ? (
-        <Text style={styles.paidBy} numberOfLines={1}>
-          {paidBy}
-          {paidBy && creditDue > 0 ? ' · ' : ''}
-          {creditDue > 0 ? `${formatRupees(creditDue)} on credit` : ''}
+      <View style={styles.cardBottom}>
+        <Badge label={orderStatusLabel(order)} tone={tone} />
+        <Badge label={pay.label} tone={pay.tone} />
+        <Text style={styles.meta} numberOfLines={1}>
+          {[
+            isPickupOrder(order) ? 'Pickup' : 'Delivery',
+            paidBy || null,
+            creditDue > 0 ? `${formatRupees(creditDue)} on credit` : null,
+            order.store?.name,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </Text>
-      ) : null}
+      </View>
     </Pressable>
   );
 }
+
+/** "Asha Rao" → "AR". */
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]!.toUpperCase())
+    .join('') || '?';
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   screen: { flex: 1, backgroundColor: colors.background },
   list: { padding: 16, paddingBottom: 96 },
-  headerBlock: { gap: 12, marginBottom: 14 },
-  tiles: { gap: 10, paddingVertical: 2 },
-  tile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingLeft: 10,
-    paddingRight: 16,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
-  tileIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  tileValue: { fontSize: 17, fontFamily: fonts.extrabold, color: colors.text },
-  tileLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textSecondary },
+  headerBlock: { gap: 12, marginBottom: 12 },
+  summary: { overflow: 'hidden', padding: 16, borderRadius: 20, backgroundColor: colors.primary, ...shadow.raised },
+  summaryGlow: { position: 'absolute', top: -60, right: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,138,51,0.06)' },
+  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  summaryLabel: { fontFamily: fonts.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.65)' },
+  summaryValue: { marginTop: 2, fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.6, color: colors.white },
+  summaryBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, backgroundColor: 'rgba(74,222,128,0.12)' },
+  summaryBadgeText: { fontFamily: fonts.semibold, fontSize: 11.5, color: '#bbf7d0' },
+  summaryStats: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  stat: { flex: 1, minWidth: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)' },
+  statActive: { borderColor: 'rgba(255,138,51,0.7)', backgroundColor: 'rgba(255,107,0,0.18)' },
+  statHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statDot: { width: 7, height: 7, borderRadius: 4 },
+  statLabel: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  statValue: { marginTop: 3, fontFamily: fonts.extrabold, fontSize: 18, color: colors.white },
   separator: { height: 10 },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  sortLabel: { marginRight: 2, fontFamily: fonts.medium, fontSize: 12.5, color: colors.textSecondary },
-  sort: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full },
-  sortActive: { backgroundColor: colors.primaryLight },
-  sortText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.textSecondary },
-  sortTextActive: { color: colors.text },
-  paidBy: { marginTop: 8, fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  sortLabel: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.textSecondary },
+  sortGroup: { flexDirection: 'row', padding: 3, gap: 2, borderRadius: 12, backgroundColor: colors.surface, ...shadow.card },
+  sort: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 9 },
+  sortActive: { backgroundColor: colors.primary },
+  sortText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.textSecondary },
+  sortTextActive: { color: colors.white },
   fab: {
     position: 'absolute',
     right: 16,
@@ -304,26 +341,18 @@ const styles = StyleSheet.create({
   },
   fabPressed: { backgroundColor: colors.secondaryDark },
   fabText: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
-  card: { padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.card },
+  card: { overflow: 'hidden', paddingVertical: 12, paddingLeft: 16, paddingRight: 14, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
   cardPressed: { backgroundColor: '#fffaf5' },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  orderId: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 14.5, color: colors.text },
-  amount: { marginLeft: 'auto', fontFamily: fonts.extrabold, fontSize: 15.5, color: colors.text },
-  meta: { marginTop: 4, fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
-  cardBottom: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
   avatarQuick: { backgroundColor: colors.secondaryLight },
   avatarText: { fontFamily: fonts.bold, fontSize: 14, color: colors.primary },
-  customer: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
-  phone: { marginTop: 1, fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
-  payment: { alignItems: 'flex-end', gap: 3 },
-  discount: { fontFamily: fonts.semibold, fontSize: 11, color: colors.successDark },
+  customer: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text },
+  orderId: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  amountCol: { alignItems: 'flex-end' },
+  amount: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.text },
+  discount: { marginTop: 2, fontFamily: fonts.semibold, fontSize: 11, color: colors.successDark },
+  cardBottom: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  meta: { flex: 1, minWidth: 0, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary, textAlign: 'right' },
 });

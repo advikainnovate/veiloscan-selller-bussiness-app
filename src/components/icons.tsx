@@ -350,3 +350,14 @@ export const ImageIcon = makeIcon([
   { circle: { cx: 9, cy: 10, r: 1.6 } },
   { d: 'm5 18 5.5-5.5L14 16l2-2 3 3' },
 ]);
+
+export const ShareIcon = makeIcon([
+  { d: 'M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7' },
+  { d: 'M16 6l-4-4-4 4' },
+  { d: 'M12 2v13' },
+]);
+
+export const CopyIcon = makeIcon([
+  { d: 'M9 9h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z' },
+  { d: 'M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1' },
+]);

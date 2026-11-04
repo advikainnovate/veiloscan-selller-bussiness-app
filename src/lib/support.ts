@@ -1,6 +1,7 @@
 // Support labels, SLA wording and the new-ticket rules, as the Seller Panel's
 // src/lib/support.ts and new-ticket-modal.tsx.
 import type { BadgeTone } from '../components/ui/Badge';
+export { htmlToText } from './format';
 import type { SupportTicketSummary, TicketPriority, TicketStatus, TicketTypeDef } from '../services/support-service';
 
 export const TICKET_STATUSES: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER', 'WAITING_FOR_STORE', 'ESCALATED', 'RESOLVED', 'CLOSED', 'REOPENED'];
@@ -101,23 +102,6 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** Descriptions are rich text on the panel: shown here as plain paragraphs. */
-export function htmlToText(html: string | null | undefined): string {
-  if (!html) return '';
-  return html
-    .replace(/<\s*br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|h\d)>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '• ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 
 /** Plain text typed on the phone, as the paragraphs the panel's editor would send. */
 export function textToHtml(text: string): string {

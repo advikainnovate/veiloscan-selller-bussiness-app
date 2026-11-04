@@ -1,5 +1,5 @@
 import React, { type ComponentType } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, fonts } from '../../theme';
@@ -14,7 +14,7 @@ export const TAB_META: Record<keyof TabParamList, { label: string; icon: Compone
   Reports: { label: 'Reports', icon: BarChartIcon },
 };
 
-/** Five quick pages; the active one sits in a peach block. */
+/** Five quick pages; the active one's icon sits in an orange pill. */
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
@@ -37,9 +37,11 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityLabel={label}
             onPress={onPress}
             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
-            style={[styles.tab, focused && styles.tabActive]}
+            style={({ pressed }) => [styles.tab, pressed && styles.tabPressed]}
           >
-            <Icon size={23} color={focused ? colors.secondary : colors.textSecondary} strokeWidth={focused ? 2 : 1.7} />
+            <View style={[styles.pill, focused && styles.pillActive]}>
+              <Icon size={22} color={focused ? colors.secondary : colors.textSecondary} strokeWidth={focused ? 2.1 : 1.7} />
+            </View>
             <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
               {label}
             </Text>
@@ -53,16 +55,21 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    gap: 4,
     paddingTop: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
     backgroundColor: colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    // A soft shadow upwards, in place of a border.
+    ...Platform.select({
+      ios: { shadowColor: '#061b3a', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 12 },
+      default: { elevation: 12 },
+    }),
   },
-  // The active tab sits in a soft peach block, icon and label together.
-  tab: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 8, borderRadius: radius.lg },
-  tabActive: { backgroundColor: colors.secondaryLight },
-  label: { fontSize: 12, fontFamily: fonts.medium, color: colors.textSecondary },
+  tab: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2, borderRadius: radius.lg },
+  tabPressed: { opacity: 0.7 },
+  pill: { width: 52, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  pillActive: { backgroundColor: colors.secondaryLight },
+  label: { fontSize: 11.5, fontFamily: fonts.medium, color: colors.textSecondary },
   labelActive: { color: colors.secondary, fontFamily: fonts.bold },
 });

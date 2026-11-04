@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, fonts, radius, shadow } from '../theme';
+import { colors, fonts, shadow } from '../theme';
 import { useNotifications } from '../context/NotificationContext';
 import { useToast } from '../context/ToastContext';
 import { extractErrorMessage } from '../lib/api';
 import { bySection, groupLabel, notificationGroup, notificationLook, openNotification, relativeTime } from '../lib/notifications';
 import { notificationService, type NotificationPage } from '../services/notification-service';
 import { AppHeader } from '../components/layout/AppHeader';
+import { Gradient } from '../components/ui/Gradient';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton } from '../components/list/ListParts';
 import { opsStyles } from '../components/operations/OpsParts';
 import { BellIcon, CheckIcon } from '../components/icons';
@@ -121,28 +122,42 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
       <AppHeader title="Notifications" subtitle={unread ? `${unread} unread` : 'All caught up'} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />
 
       <View style={styles.top}>
-        <View style={styles.tabsRow}>
-          <View accessibilityRole="tablist" style={styles.tabs}>
-            {(
-              [
-                ['all', 'All'],
-                ['unread', unread ? `Unread · ${unread}` : 'Unread'],
-              ] as const
-            ).map(([key, label]) => {
-              const on = tab === key;
-              return (
-                <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setTab(key)} style={[styles.tab, on && styles.tabOn]}>
-                  <Text style={[styles.tabText, on && styles.tabTextOn]}>{label}</Text>
-                </Pressable>
-              );
-            })}
+        {/* Where things stand */}
+        <View style={styles.summary}>
+          <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={20} />
+          <View style={styles.summaryGlow} />
+          <View style={styles.summaryIcon}>
+            <BellIcon size={20} color={colors.white} />
+            {unread ? <View style={styles.summaryDot} /> : null}
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.summaryTitle}>{unread ? `${unread} unread` : 'All caught up'}</Text>
+            <Text style={styles.summaryText} numberOfLines={1}>
+              {unread ? 'Orders, requests and reminders waiting for you' : 'Nothing new right now'}
+            </Text>
           </View>
           {unread ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Mark all as read" hitSlop={8} onPress={markAll} style={styles.markAll}>
-              <CheckIcon size={14} color={colors.secondary} strokeWidth={2.4} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Mark all as read" hitSlop={8} onPress={markAll} style={({ pressed }) => [styles.markAll, pressed && styles.pressed]}>
+              <CheckIcon size={14} color={colors.primary} strokeWidth={2.6} />
               <Text style={styles.markAllText}>Mark all read</Text>
             </Pressable>
           ) : null}
+        </View>
+
+        <View accessibilityRole="tablist" style={styles.tabs}>
+          {(
+            [
+              ['all', 'All'],
+              ['unread', unread ? `Unread · ${unread}` : 'Unread'],
+            ] as const
+          ).map(([key, label]) => {
+            const on = tab === key;
+            return (
+              <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setTab(key)} style={[styles.tab, on && styles.tabOn]}>
+                <Text style={[styles.tabText, on && styles.tabTextOn]}>{label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
         {groups.length > 1 ? <FilterChips options={[{ value: '', label: 'Everything' }, ...groups.map(g => ({ value: g, label: groupLabel(g), count: items.filter(n => notificationGroup(n) === g).length }))]} value={group} onChange={setGroup} /> : null}
       </View>
@@ -160,39 +175,46 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} />}
           onEndReached={() => (hasMore && !loadingMore && !group ? load('more') : undefined)}
           onEndReachedThreshold={0.4}
-          renderSectionHeader={({ section }) => <Text style={styles.section}>{section.title.toUpperCase()}</Text>}
-          renderItem={({ item, index, section }) => {
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionWrap}>
+              <Text style={styles.section}>{section.title.toUpperCase()}</Text>
+              <Text style={styles.sectionCount}>{section.data.length}</Text>
+            </View>
+          )}
+          renderItem={({ item }) => {
             const look = notificationLook(item);
             const Icon = look.icon;
             const isUnread = !item.readAt;
-            const first = index === 0;
-            const last = index === section.data.length - 1;
             return (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${isUnread ? 'Unread. ' : ''}${item.title}`}
                 accessibilityHint={item.message}
                 onPress={() => open(item)}
-                style={({ pressed }) => [styles.row, first && styles.rowFirst, last && styles.rowLast, !last && styles.rowLine, isUnread && styles.rowUnread, pressed && styles.rowPressed]}
+                style={({ pressed }) => [styles.row, isUnread && styles.rowUnread, pressed && styles.rowPressed]}
               >
+                {isUnread ? <View style={styles.stripe} /> : null}
                 <View style={[styles.icon, { backgroundColor: look.tint }]}>
                   <Icon size={18} color={look.color} />
                 </View>
                 <View style={styles.flex}>
-                  <Text style={[styles.title, !isUnread && styles.titleRead]} numberOfLines={2}>
-                    {item.title}
-                  </Text>
+                  <View style={styles.rowTop}>
+                    <Text style={[styles.title, !isUnread && styles.titleRead]} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.time}>{relativeTime(item.createdAt, now)}</Text>
+                  </View>
                   {item.message ? (
                     <Text style={styles.message} numberOfLines={2}>
                       {item.message}
                     </Text>
                   ) : null}
-                  <Text style={styles.time}>{relativeTime(item.createdAt, now)}</Text>
                 </View>
                 {isUnread ? <View style={styles.dot} accessibilityLabel="Unread" /> : null}
               </Pressable>
             );
           }}
+          ItemSeparatorComponent={Gap}
           ListEmptyComponent={
             <View style={styles.empty}>
               <EmptyState
@@ -220,33 +242,45 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
   );
 }
 
+function Gap() {
+  return <View style={styles.gap} />;
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
-  top: { gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  tabsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tabs: { flex: 1, flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.md, backgroundColor: colors.primaryLight },
-  tab: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
-  tabOn: { backgroundColor: colors.white, ...shadow.card },
+  pressed: { opacity: 0.8 },
+  top: { gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
+  summary: { overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20, backgroundColor: colors.primary, ...shadow.raised },
+  summaryGlow: { position: 'absolute', top: -60, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,138,51,0.06)' },
+  summaryIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
+  summaryDot: { position: 'absolute', top: 9, right: 10, width: 9, height: 9, borderRadius: 5, borderWidth: 1.5, borderColor: colors.primary, backgroundColor: colors.secondary },
+  summaryTitle: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.white },
+  summaryText: { marginTop: 1, fontFamily: fonts.regular, fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+  markAll: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 14, backgroundColor: colors.white },
+  markAllText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.primary },
+  tabs: { flexDirection: 'row', gap: 4, padding: 3, borderRadius: 14, backgroundColor: colors.surface, ...shadow.card },
+  tab: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 11 },
+  tabOn: { backgroundColor: colors.primary },
   tabText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.textSecondary },
-  tabTextOn: { color: colors.text },
-  markAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  markAllText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.secondary },
+  tabTextOn: { color: colors.white },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
-  section: { paddingTop: 16, paddingBottom: 8, fontFamily: fonts.bold, fontSize: 11, letterSpacing: 1, color: colors.textSecondary, backgroundColor: colors.background },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: colors.surface },
-  rowFirst: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
-  rowLast: { borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
-  rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  sectionWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 14, paddingBottom: 8, backgroundColor: colors.background },
+  section: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 1, color: colors.textSecondary },
+  sectionCount: { overflow: 'hidden', minWidth: 18, paddingHorizontal: 5, borderRadius: 9, textAlign: 'center', fontFamily: fonts.bold, fontSize: 10.5, color: colors.textSecondary, backgroundColor: colors.primaryLight },
+  gap: { height: 8 },
+  row: { overflow: 'hidden', flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
   // The panel's unread tint (orange-50/50).
-  rowUnread: { backgroundColor: '#fff8f1' },
+  rowUnread: { backgroundColor: '#fffaf5' },
   rowPressed: { backgroundColor: colors.background },
-  icon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  title: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.text },
+  stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: colors.secondary },
+  icon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  rowTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  title: { flex: 1, fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.text },
   titleRead: { fontFamily: fonts.semibold, color: colors.textSecondary },
-  message: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.textSecondary },
-  time: { marginTop: 4, fontFamily: fonts.medium, fontSize: 11, color: colors.textMuted },
-  dot: { width: 9, height: 9, marginTop: 6, borderRadius: 5, backgroundColor: colors.secondary },
+  message: { marginTop: 3, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.textSecondary },
+  time: { marginTop: 2, fontFamily: fonts.medium, fontSize: 11, color: colors.textMuted },
+  dot: { width: 8, height: 8, marginTop: 6, borderRadius: 4, backgroundColor: colors.secondary },
   empty: { minHeight: 380 },
   footer: { alignItems: 'center', gap: 12, paddingTop: 16 },
-  tip: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', padding: 12, borderRadius: radius.md, backgroundColor: colors.surface },
+  tip: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', padding: 12, borderRadius: 14, backgroundColor: colors.surface },
 });

@@ -29,10 +29,20 @@ export function OrderAlerts() {
   );
 }
 
+// How long a banner stays before it hides itself.
+const ALERT_MS = 3000;
+
 function AlertCard({ alert, onView, onDismiss }: { alert: AppNotification; onView: () => void; onDismiss: () => void }) {
   const progress = useRef(new Animated.Value(0)).current;
+  const dismiss = useRef(onDismiss);
+  dismiss.current = onDismiss;
   useEffect(() => {
     Animated.spring(progress, { toValue: 1, useNativeDriver: true, friction: 7 }).start();
+    // Gone on its own after a few seconds (slides back up first); the bell keeps it.
+    const timer = setTimeout(() => {
+      Animated.timing(progress, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => dismiss.current());
+    }, ALERT_MS);
+    return () => clearTimeout(timer);
   }, [progress]);
   const request = alert.type === 'NEW_ORDER_REQUEST';
   const Icon = request ? ClipboardListIcon : ShoppingBagIcon;

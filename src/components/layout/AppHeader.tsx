@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Image,
-  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -55,9 +54,9 @@ export function AppHeader(props: AppHeaderProps) {
           style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
         >
           {onBack ? (
-            <ArrowLeftIcon size={20} color={colors.text} />
+            <ArrowLeftIcon size={20} color={colors.text} strokeWidth={2} />
           ) : (
-            <MenuIcon size={22} color={colors.text} />
+            <MenuIcon size={21} color={colors.text} strokeWidth={2} />
           )}
         </Pressable>
 
@@ -72,16 +71,16 @@ export function AppHeader(props: AppHeaderProps) {
               style={styles.mark}
               resizeMode="contain"
             />
-            <Text
-              style={styles.wordmark}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-            >
-              VeiloScan
-            </Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Business</Text>
+            <View style={styles.brandText}>
+              <Text
+                style={styles.wordmark}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                Veilo<Text style={styles.wordmarkAccent}>Scan</Text>
+              </Text>
+              <Text style={styles.brandTag}>BUSINESS</Text>
             </View>
           </View>
         ) : (
@@ -112,16 +111,21 @@ export function AppHeader(props: AppHeaderProps) {
           hitSlop={6}
           style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
         >
-          <BellIcon size={21} color={colors.text} />
-          {unreadCount > 0 ? <View style={styles.dot} /> : null}
+          <BellIcon size={20} color={colors.text} strokeWidth={1.9} />
+          {unreadCount > 0 ? (
+            <View style={styles.count}>
+              <Text style={styles.countText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+            </View>
+          ) : null}
         </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="My profile"
           onPress={() => openMenuKey('profile')}
           hitSlop={6}
+          style={({ pressed }) => [styles.avatarRing, pressed && styles.pressedRing]}
         >
-          <Avatar user={user} size={42} />
+          <Avatar user={user} size={34} />
         </Pressable>
       </View>
       {/* Sub-pages (with a back arrow) stay in the store they were opened from. */}
@@ -130,77 +134,81 @@ export function AppHeader(props: AppHeaderProps) {
   );
 }
 
-const softShadow = Platform.select({
-  ios: {
-    shadowColor: '#061b3a',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  default: { elevation: 2 },
-});
-
 const styles = StyleSheet.create({
-  wrap: { backgroundColor: colors.surface },
+  wrap: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 14,
-    paddingBottom: 12,
-    backgroundColor: colors.surface,
+    paddingBottom: 10,
   },
+  // Soft, borderless buttons on a light tint.
   iconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    ...softShadow,
+    backgroundColor: colors.background,
   },
-  pressed: { backgroundColor: colors.background },
-  dot: {
+  pressed: { backgroundColor: colors.primaryLight },
+  count: {
     position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
+    top: 3,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.secondary,
-    borderWidth: 1.5,
-    borderColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
+  countText: { fontFamily: fonts.bold, fontSize: 9.5, color: colors.white },
+  avatarRing: {
+    padding: 2,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: colors.secondarySoft,
+  },
+  pressedRing: { borderColor: colors.secondary },
   brand: {
     flex: 1,
     minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 7,
+    marginLeft: 2,
   },
-  mark: { width: 28, height: 28 },
+  mark: { width: 30, height: 30 },
+  brandText: { flexShrink: 1 },
   wordmark: {
-    flexShrink: 1,
-    fontSize: 19,
+    fontSize: 18,
+    lineHeight: 21,
     fontFamily: fonts.extrabold,
     color: colors.text,
     letterSpacing: -0.4,
   },
-  badge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: colors.secondary,
+  wordmarkAccent: { color: colors.secondary },
+  brandTag: {
+    fontFamily: fonts.semibold,
+    fontSize: 8.5,
+    letterSpacing: 2.6,
+    color: colors.textSecondary,
   },
-  badgeText: { fontSize: 10.5, fontFamily: fonts.bold, color: colors.white },
-  titles: { flex: 1, minWidth: 0 },
-  title: { fontSize: 18, fontFamily: fonts.extrabold, color: colors.text },
+  titles: { flex: 1, minWidth: 0, marginLeft: 2 },
+  title: { fontSize: 17.5, fontFamily: fonts.bold, letterSpacing: -0.3, color: colors.text },
   subtitle: {
     marginTop: 1,
     fontFamily: fonts.regular,
-    fontSize: 12.5,
+    fontSize: 12,
     color: colors.textSecondary,
   },
 });

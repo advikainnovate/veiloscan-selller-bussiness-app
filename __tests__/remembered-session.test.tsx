@@ -68,13 +68,13 @@ test('a remembered sign-in opens on the Home tab, and signing out returns to Sig
   const home = textOf(tree);
   expect(home).toContain('Quick Access');
   // Today's figures against yesterday, in Indian grouping.
-  expect(home).toContain('Today Orders');
+  expect(home).toContain('Orders today');
   expect(home).toContain('"24"');
   expect(home).toContain('+20%');
   expect(home).toContain('₹1,28,450');
   expect(home).toContain('1,286');
-  // No customers:manage in this role: no customer card.
-  expect(home).not.toContain('Total Customers');
+  // No customers:manage in this role: no customer figure.
+  expect(tree.root.findAll(n => typeof n.props.accessibilityLabel === 'string' && n.props.accessibilityLabel.startsWith('Customers:'))).toHaveLength(0);
 
   await press(tree, 'Open menu');
   // Sign out asks first; confirm it.

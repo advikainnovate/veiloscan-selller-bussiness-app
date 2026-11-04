@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { MENU_ITEMS, type MenuItem } from '../../navigation/menu';
 import { openMenuKey } from '../../navigation/navigationRef';
 import { Button } from '../ui/Button';
-import { CheckIcon, SlidersIcon } from '../icons';
+import { CheckIcon, PlusIcon, SlidersIcon } from '../icons';
 
 export const MAX_QUICK_ACCESS = 8;
 
@@ -61,19 +61,21 @@ export function QuickAccess() {
   if (!available.length) return null;
 
   return (
-    <View>
+    <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Quick Access</Text>
-        <Text style={styles.subtitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-          Manage your store faster
-        </Text>
+        <View style={styles.flex}>
+          <Text style={styles.title}>Quick Access</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>
+            Manage your store faster
+          </Text>
+        </View>
         <Pressable
           accessibilityRole="button"
           onPress={() => setCustomizing(true)}
           hitSlop={8}
           style={({ pressed }) => [styles.customize, pressed && styles.pressedText]}
         >
-          <SlidersIcon size={17} color={colors.secondary} />
+          <SlidersIcon size={15} color={colors.secondaryDark} />
           <Text style={styles.customizeText}>Customize</Text>
         </Pressable>
       </View>
@@ -90,7 +92,7 @@ export function QuickAccess() {
               style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
             >
               <View style={[styles.tileIcon, { backgroundColor: bg }]}>
-                <Icon size={24} color={fg} />
+                <Icon size={22} color={fg} />
               </View>
               <Text style={styles.tileText} numberOfLines={2}>
                 {item.label}
@@ -98,9 +100,15 @@ export function QuickAccess() {
             </Pressable>
           );
         })}
-        {!shown.length ? (
-          <Pressable onPress={() => setCustomizing(true)} style={styles.empty}>
-            <Text style={styles.emptyText}>Tap Customize to choose your shortcuts.</Text>
+        {/* Room for more: a slot that opens Customize. */}
+        {shown.length < MAX_QUICK_ACCESS ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Add a shortcut" onPress={() => setCustomizing(true)} style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}>
+            <View style={[styles.tileIcon, styles.addIcon]}>
+              <PlusIcon size={20} color={colors.textMuted} />
+            </View>
+            <Text style={[styles.tileText, styles.addText]} numberOfLines={2}>
+              Add
+            </Text>
           </Pressable>
         ) : null}
       </View>
@@ -196,29 +204,21 @@ function CustomizeSheet({
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  title: { fontSize: 17, fontFamily: fonts.extrabold, color: colors.text },
-  subtitle: { flex: 1, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
-  customize: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  flex: { flex: 1, minWidth: 0 },
+  card: { paddingTop: 14, paddingHorizontal: 8, paddingBottom: 8, borderRadius: 20, backgroundColor: colors.surface, ...shadow.card },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8, marginBottom: 8 },
+  title: { fontSize: 16, fontFamily: fonts.bold, color: colors.text },
+  subtitle: { marginTop: 1, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  customize: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: colors.secondaryLight },
   pressedText: { opacity: 0.6 },
-  customizeText: { fontFamily: fonts.bold, fontSize: 13, color: colors.secondary },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: {
-    width: '22.5%',
-    flexGrow: 1,
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
+  customizeText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.secondaryDark },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  tile: { width: '25%', alignItems: 'center', gap: 7, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 2, borderRadius: 14 },
   tilePressed: { backgroundColor: colors.background },
-  tileIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  tileText: { fontSize: 12, lineHeight: 15, fontFamily: fonts.semibold, color: colors.text, textAlign: 'center' },
-  empty: { flex: 1, padding: 18, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border },
-  emptyText: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, textAlign: 'center' },
+  tileIcon: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  tileText: { fontSize: 11.5, lineHeight: 14.5, fontFamily: fonts.medium, color: colors.text, textAlign: 'center' },
+  addIcon: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.border, backgroundColor: colors.background },
+  addText: { color: colors.textMuted },
   backdrop: { flex: 1, backgroundColor: 'rgba(3,19,41,0.45)' },
   sheet: {
     maxHeight: '80%',

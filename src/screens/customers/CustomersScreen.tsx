@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, type ComponentType } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../../theme';
@@ -13,19 +13,8 @@ import { ComingSoon } from '../../components/layout/ComingSoon';
 import { Button } from '../../components/ui/Button';
 import { Gradient } from '../../components/ui/Gradient';
 import { Sheet } from '../../components/ui/Sheet';
-import { CustomersArt } from '../../components/home/Illustrations';
 import { EmptyState, ErrorState, ListSkeleton, SearchBar } from '../../components/list/ListParts';
-import {
-  ChevronRightIcon,
-  LayersIcon,
-  PhoneIcon,
-  PlusIcon,
-  RupeeIcon,
-  UserPlusIcon,
-  UsersIcon,
-  WalletIcon,
-  type IconProps,
-} from '../../components/icons';
+import { ChevronRightIcon, PhoneIcon, PlusIcon, UserPlusIcon, UsersIcon, WalletIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
 
 const PAGE_SIZE = 50;
@@ -105,9 +94,9 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
   const showCredit = stats?.withCredit != null;
   const value = (n: number | null | undefined, format = formatNumber) => (n == null ? '—' : format(n));
   const tabs: { key: CustomerView; label: string; count?: number }[] = [
-    { key: 'all', label: 'All Customers', count: stats?.total },
+    { key: 'all', label: 'All', count: stats?.total },
     ...(showCredit ? [{ key: 'credit' as const, label: 'With Credit', count: stats?.withCredit ?? undefined }] : []),
-    { key: 'top', label: 'Top Customers', count: stats?.top },
+    { key: 'top', label: 'Top', count: stats?.top },
   ];
 
   const rows = list.data?.items ?? [];
@@ -119,54 +108,34 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
 
   const header = (
     <View style={styles.headerBlock}>
-      <View style={styles.titleRow}>
-        <View style={styles.flex}>
-          <Text style={styles.pageTitle} accessibilityRole="header">
-            Customers
-          </Text>
-          <Text style={styles.pageSubtitle}>Manage your customers, credit and purchase history</Text>
+      {/* Who buys from the store, and what they owe; tapping a figure opens its tab */}
+      <View style={styles.summary}>
+        <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={20} />
+        <View style={styles.summaryGlow} />
+        <View style={styles.summaryTop}>
+          <View>
+            <Text style={styles.summaryLabel}>Total customers</Text>
+            <Text style={styles.summaryValue}>{value(stats?.total)}</Text>
+          </View>
+          {stats?.newThisMonth ? (
+            <View style={styles.newPill}>
+              <UserPlusIcon size={13} color="#bbf7d0" />
+              <Text style={styles.newPillText}>{`+${formatNumber(stats.newThisMonth)} this month`}</Text>
+            </View>
+          ) : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add Customer"
-          onPress={() => setAdding(true)}
-          style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
-        >
-          <PlusIcon size={16} color={colors.white} strokeWidth={2.4} />
-          <Text style={styles.addText}>Add Customer</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.banner}>
-        <Gradient colors={['#031329', '#0b2a55', '#163f78']} direction="diagonal" borderRadius={radius.xl} />
-        <View style={styles.bannerRing} />
-        <View style={styles.bannerCopy}>
-          <Text style={styles.bannerTitle}>
-            Know Your{'\n'}
-            <Text style={styles.bannerAccent}>Customers Better.</Text>
-          </Text>
-          <Text style={styles.bannerText}>View details, purchase history, credit and more in one place.</Text>
-        </View>
-        <View style={styles.bannerArt}>
-          <CustomersArt width={112} />
+        <View style={styles.summaryStats}>
+          {showCredit ? (
+            <>
+              <SummaryStat label="With credit" value={value(stats?.withCredit)} dot="#fb923c" active={view === 'credit'} onPress={() => setView(view === 'credit' ? 'all' : 'credit')} />
+              <SummaryStat label="Credit due" value={value(stats?.creditOutstanding, n => formatRupees(Math.round(n)))} dot="#f87171" active={false} onPress={() => setView('credit')} />
+            </>
+          ) : null}
+          <SummaryStat label="Top buyers" value={value(stats?.top)} dot="#4ade80" active={view === 'top'} onPress={() => setView(view === 'top' ? 'all' : 'top')} />
         </View>
       </View>
 
-      <View style={styles.tiles}>
-        <Tile icon={UsersIcon} tone={['#dcfce7', '#16a34a']} value={value(stats?.total)} label="Total Customers" />
-        <Tile icon={UserPlusIcon} tone={['#eaf2fb', '#2563eb']} value={value(stats?.newThisMonth)} label="New (This Month)" />
-        {showCredit ? (
-          <>
-            <Tile icon={LayersIcon} tone={['#fff1e6', '#ff6b00']} value={value(stats?.withCredit)} label="With Credit" />
-            <Tile
-              icon={RupeeIcon}
-              tone={['#fff1e6', '#ff6b00']}
-              value={value(stats?.creditOutstanding, n => formatRupees(Math.round(n)))}
-              label="Total Credit"
-            />
-          </>
-        ) : null}
-      </View>
+      <SearchBar value={query} onChange={setQuery} placeholder="Search by name, mobile or customer ID" />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {tabs.map(tab => {
@@ -186,8 +155,6 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
           );
         })}
       </ScrollView>
-
-      <SearchBar value={query} onChange={setQuery} placeholder="Search by name, mobile or customer ID" />
     </View>
   );
 
@@ -213,7 +180,7 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader brand />
+      <AppHeader title="Customers" subtitle={stats ? `${formatNumber(stats.total)} customer${stats.total === 1 ? '' : 's'}` : undefined} />
       <FlatList
         ref={listRef}
         data={list.loading || (list.error && !list.data) ? [] : rows}
@@ -256,6 +223,16 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
         }
       />
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Add Customer"
+        onPress={() => setAdding(true)}
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+      >
+        <PlusIcon size={20} color={colors.white} strokeWidth={2.4} />
+        <Text style={styles.fabText}>Add customer</Text>
+      </Pressable>
+
       <CustomerSheet customer={selected} onClose={() => setSelected(null)} />
 
       {/* Customers are saved with their first order; there is no separate sign-up. */}
@@ -284,19 +261,19 @@ function Separator() {
   return <View style={styles.separator} />;
 }
 
-function Tile({ icon: Icon, tone, value, label }: { icon: ComponentType<IconProps>; tone: [string, string]; value: string; label: string }) {
+function SummaryStat({ label, value, dot, active, onPress }: { label: string; value: string; dot: string; active: boolean; onPress: () => void }) {
   return (
-    <View style={styles.tile} accessible accessibilityLabel={`${label}: ${value}`}>
-      <View style={[styles.tileIcon, { backgroundColor: tone[0] }]}>
-        <Icon size={20} color={tone[1]} />
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}`} accessibilityState={{ selected: active }} onPress={onPress} style={[styles.stat, active && styles.statActive]}>
+      <View style={styles.statHead}>
+        <View style={[styles.statDot, { backgroundColor: dot }]} />
+        <Text style={styles.statLabel} numberOfLines={1}>
+          {label}
+        </Text>
       </View>
-      <Text style={styles.tileValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+      <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {value}
       </Text>
-      <Text style={styles.tileLabel} numberOfLines={2}>
-        {label}
-      </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -351,26 +328,36 @@ function CustomerCard({ customer, onPress }: { customer: CustomerRow; onPress: (
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <View style={[styles.avatar, { backgroundColor: tone.bg }]}>
-        <Text style={[styles.avatarText, { color: tone.fg }]}>{customerInitials(customer)}</Text>
+      <View style={styles.cardTop}>
+        <View style={[styles.avatar, { backgroundColor: tone.bg }]}>
+          <Text style={[styles.avatarText, { color: tone.fg }]}>{customerInitials(customer)}</Text>
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={styles.meta} numberOfLines={1}>
+            {phone ? `${phone}  •  ` : ''}
+            {customer.idd}
+          </Text>
+        </View>
+        <View style={styles.spend}>
+          <Text style={styles.spendValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            {formatRupees(Math.round(customer.lifetimePurchase))}
+          </Text>
+          <Text style={styles.spendLabel}>{`${formatNumber(customer.orderCount)} order${customer.orderCount === 1 ? '' : 's'}`}</Text>
+        </View>
       </View>
-      <View style={styles.cardBody}>
-        <Text style={styles.name} numberOfLines={1}>
-          {name}
-        </Text>
-        <Text style={styles.meta} numberOfLines={1}>
-          {phone ? `${phone}  •  ` : ''}
-          {customer.idd}
-        </Text>
-        <CreditPill customer={customer} />
-      </View>
-      <View style={styles.spend}>
-        <Text style={styles.spendValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-          {formatRupees(Math.round(customer.lifetimePurchase))}
-        </Text>
-        <Text style={styles.spendLabel}>Lifetime Purchase</Text>
-      </View>
-      <ChevronRightIcon size={18} color={colors.text} strokeWidth={2.2} />
+      {customer.creditOutstanding != null || customer.lastOrderAt ? (
+        <View style={styles.cardBottom}>
+          <CreditPill customer={customer} />
+          {customer.lastOrderAt ? (
+            <Text style={styles.lastOrder} numberOfLines={1}>
+              {`Last order ${formatDay(customer.lastOrderAt)}`}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -432,110 +419,47 @@ const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   flip: { transform: [{ rotate: '180deg' }] },
   screen: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 16, paddingBottom: 32 },
-  headerBlock: { gap: 14, marginBottom: 14 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pageTitle: { fontSize: 24, fontFamily: fonts.extrabold, color: colors.text, letterSpacing: -0.4 },
-  pageSubtitle: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.textSecondary },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 42,
-    paddingHorizontal: 14,
-    borderRadius: radius.full,
-    backgroundColor: colors.secondary,
-    ...shadow.button,
-  },
-  addBtnPressed: { backgroundColor: colors.secondaryDark },
-  addText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
-  banner: {
-    minHeight: 132,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: radius.xl,
-    overflow: 'hidden',
-    paddingLeft: 20,
-  },
-  bannerRing: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    right: -50,
-    top: -40,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  bannerCopy: { flex: 1, paddingVertical: 18 },
-  bannerTitle: { fontSize: 22, lineHeight: 26, fontFamily: fonts.extrabold, color: colors.white, letterSpacing: -0.4 },
-  bannerAccent: { color: '#ffb020' },
-  bannerText: { marginTop: 8, fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,0.9)' },
-  bannerArt: { paddingRight: 12, alignSelf: 'center' },
-  tiles: { flexDirection: 'row', gap: 8 },
-  tile: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
-  tileIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  tileValue: { fontSize: 17, fontFamily: fonts.extrabold, color: colors.text },
-  tileLabel: { marginTop: 2, fontFamily: fonts.regular, fontSize: 11, lineHeight: 14, color: colors.textSecondary, textAlign: 'center' },
-  tabs: { gap: 8, paddingVertical: 2 },
-  tab: {
-    height: 40,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  tabActive: { backgroundColor: colors.secondary, borderColor: colors.secondary },
-  tabText: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
+  list: { padding: 16, paddingBottom: 96 },
+  headerBlock: { gap: 12, marginBottom: 12 },
+  summary: { overflow: 'hidden', padding: 16, borderRadius: 20, backgroundColor: colors.primary, ...shadow.raised },
+  summaryGlow: { position: 'absolute', top: -60, right: -50, width: 160, height: 160, borderRadius: 80, backgroundColor: 'rgba(255,138,51,0.06)' },
+  summaryTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  summaryLabel: { fontFamily: fonts.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.65)' },
+  summaryValue: { marginTop: 2, fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.6, color: colors.white },
+  newPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, backgroundColor: 'rgba(74,222,128,0.12)' },
+  newPillText: { fontFamily: fonts.semibold, fontSize: 11.5, color: '#bbf7d0' },
+  summaryStats: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  stat: { flex: 1, minWidth: 0, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)' },
+  statActive: { borderColor: 'rgba(255,138,51,0.7)', backgroundColor: 'rgba(255,107,0,0.18)' },
+  statHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statDot: { width: 7, height: 7, borderRadius: 4 },
+  statLabel: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  statValue: { marginTop: 3, fontFamily: fonts.extrabold, fontSize: 17, color: colors.white },
+  tabs: { gap: 6, padding: 3, borderRadius: 14, backgroundColor: colors.surface, ...shadow.card },
+  tab: { height: 34, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 11 },
+  tabActive: { backgroundColor: colors.primary },
+  tabText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.textSecondary },
   tabTextActive: { color: colors.white },
   separator: { height: 10 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow.card,
-  },
+  card: { padding: 12, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
   cardPressed: { backgroundColor: '#fffaf5' },
-  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: fonts.bold, fontSize: 18 },
-  cardBody: { flex: 1, minWidth: 0, gap: 3 },
-  name: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.text },
-  meta: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
-  pill: {
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 3,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: radius.full,
-  },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: fonts.bold, fontSize: 15.5 },
+  cardBody: { flex: 1, minWidth: 0, gap: 2 },
+  name: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
+  meta: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  spend: { alignItems: 'flex-end', maxWidth: 120 },
+  spendValue: { fontFamily: fonts.extrabold, fontSize: 15.5, color: colors.text },
+  spendLabel: { marginTop: 1, fontFamily: fonts.regular, fontSize: 11, color: colors.textSecondary },
+  cardBottom: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  lastOrder: { flex: 1, minWidth: 0, fontFamily: fonts.regular, fontSize: 11.5, color: colors.textMuted, textAlign: 'right' },
+  pill: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radius.full },
   pillText: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 12 },
   pillStrong: { fontFamily: fonts.bold },
-  spend: {
-    minWidth: 92,
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: radius.md,
-    backgroundColor: '#ecfdf3',
-  },
-  spendValue: { fontFamily: fonts.extrabold, fontSize: 15, color: '#15803d' },
-  spendLabel: { marginTop: 1, fontFamily: fonts.regular, fontSize: 10.5, color: colors.textSecondary },
+  fab: { position: 'absolute', right: 16, bottom: 16, flexDirection: 'row', alignItems: 'center', gap: 6, height: 50, paddingHorizontal: 18, borderRadius: 25, backgroundColor: colors.secondary, ...shadow.button },
+  fabPressed: { backgroundColor: colors.secondaryDark },
+  fabText: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
   pager: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
   pagerText: { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
   pagerAlone: { marginTop: 16, textAlign: 'center' },

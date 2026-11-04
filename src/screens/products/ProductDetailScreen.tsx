@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState, type ComponentType } from 'react';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +9,7 @@ import { useFetch } from '../../hooks/useFetch';
 import { useProductActions } from '../../hooks/useProductActions';
 import { extractErrorMessage } from '../../lib/api';
 import { formatWhen } from '../../lib/date';
-import { formatNumber, formatRupees } from '../../lib/format';
+import { formatNumber, formatRupees, htmlToText } from '../../lib/format';
 import { canPublish, canSubmitForApproval, productStage, type ProductStageKey } from '../../lib/product-approval';
 import { productBuilderService } from '../../services/product-builder-service';
 import {
@@ -31,7 +32,7 @@ import { ErrorState, FilterChips, ListSkeleton } from '../../components/list/Lis
 import { ProductDocuments, ProductPhotos, VariantPhotoStrip } from '../../components/products/ProductMedia';
 import { MeasuresSheet, SeoSheet, TagEditor } from '../../components/products/ProductEditors';
 import { ShareProductSheet } from '../../components/products/ShareProduct';
-import { BoxIcon, FileTextIcon } from '../../components/icons';
+import { BanIcon, BoxIcon, CheckCircleIcon, CheckIcon, CopyIcon, EditIcon, FileTextIcon, ShareIcon, TrashIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
 
 const TABS = [
@@ -69,6 +70,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
   const [tab, setTab] = useState<Tab>('overview');
   const [editing, setEditing] = useState<'measures' | 'seo' | 'share' | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const record = useFetch(() => (allowed ? productsService.get(id) : Promise.resolve(null)), [id, allowed]);
   const categories = useFetch(() => categoryService.list(), []);
@@ -186,50 +188,80 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
     <View style={styles.screen}>
       <AppHeader title={name} subtitle={`SKU ${text(p.skuItemNumber) ?? '—'} · ${productType}`} onBack={navigation.goBack} />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={record.refreshing} onRefresh={() => reloadAll(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
       >
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button title="Edit product" onPress={() => navigation.navigate('ProductEditor', { id })} style={styles.flex} />
-          <ActionButton label="Share" onPress={() => setEditing('share')} />
-          <ActionButton label="Duplicate" onPress={() => actions.duplicate({ id, productName: name })} />
-          {canPublish(p) ? (
-            <ActionButton label={Number(p.status) === 1 ? 'Deactivate' : 'Activate'} onPress={() => actions.toggleStatus({ id, productName: name, status: p.status })} />
-          ) : null}
-          <ActionButton
-            label="Delete"
-            danger
-            onPress={async () => {
-              await actions.remove({ id, productName: name });
-            }}
-          />
+        {/* The product at a glance: photos, price, stock */}
+        <View style={styles.hero}>
+          <Gallery urls={gallery} badges={<>
+            <Badge label={stage.label} tone={stage.tone} />
+            {canPublish(p) || stage.key === 'published' || stage.key === 'unpublished' ? (
+              <Badge label={Number(p.status) === 1 ? 'Active' : 'Inactive'} tone={Number(p.status) === 1 ? 'green' : 'slate'} />
+            ) : null}
+          </>} />
+          <View style={styles.heroBody}>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.meta} numberOfLines={2}>
+              {`${categoryPath} · ${brand}`}
+            </Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.salePrice}>{cheapest ? formatRupees(cheapest.sellingPrice) : '—'}</Text>
+              {cheapest?.mrp && cheapest.mrp > cheapest.sellingPrice ? (
+                <>
+                  <Text style={styles.mrp}>{formatRupees(cheapest.mrp)}</Text>
+                  <Text style={styles.off}>{`${Math.round(((cheapest.mrp - cheapest.sellingPrice) / cheapest.mrp) * 100)}% off`}</Text>
+                </>
+              ) : null}
+            </View>
+            {skus.length > 1 ? <Text style={styles.from}>{`Lowest of ${skus.length} SKUs`}</Text> : null}
+            <View style={styles.chips}>
+              {margin !== null ? <Text style={[styles.chip, styles.chipGood]}>{`Margin ${margin.toFixed(1)}%`}</Text> : null}
+              {cheapest?.costPrice ? <Text style={styles.chip}>{`Cost ${formatRupees(cheapest.costPrice)}`}</Text> : null}
+              <Text style={styles.chip}>{productType}</Text>
+            </View>
+          </View>
+          <View style={styles.stock}>
+            <StockStat label="Available" value={formatNumber(totals.available)} color={totals.available > 0 ? '#047857' : colors.error} />
+            <View style={styles.stockDivider} />
+            <StockStat label="Reserved" value={formatNumber(totals.reserved)} color={colors.text} />
+            <View style={styles.stockDivider} />
+            <StockStat label="Out of stock" value={`${totals.outOfStock} SKU${totals.outOfStock === 1 ? '' : 's'}`} color={totals.outOfStock ? colors.error : colors.textSecondary} />
+          </View>
         </View>
 
         {/* Where it is in the approval workflow */}
-        <View style={[styles.banner, { backgroundColor: tone.bg, borderColor: tone.border }]}>
-          <View style={styles.bannerTop}>
-            <Badge label={stage.label} tone={stage.tone} />
+        <View style={[styles.card, { borderColor: tone.border }, styles.approval]}>
+          <View style={styles.approvalHead}>
+            <Text style={styles.cardTitle}>Approval</Text>
             {stageDate ? (
-              <Text style={styles.bannerDate}>
+              <Text style={styles.metaSmall}>
                 {stage.key === 'in_review' ? 'Submitted' : 'Reviewed'} {formatWhen(stageDate)}
               </Text>
             ) : null}
           </View>
+          {stage.key !== 'changes_required' ? (
+            <View style={styles.steps}>
+              {FLOW.map((label, i) => {
+                const at = flowIndex(stage.key);
+                const done = i < at || stage.key === 'published';
+                const current = i === at && stage.key !== 'published';
+                return (
+                  <View key={label} style={styles.step}>
+                    {i > 0 ? <View style={[styles.stepLine, (done || current) && styles.stepLineDone]} /> : null}
+                    <View style={[styles.stepDot, done && styles.stepDotDone, current && styles.stepDotCurrent]}>
+                      {done ? <CheckIcon size={11} color={colors.white} strokeWidth={3} /> : <Text style={[styles.stepNum, current && styles.stepNumCurrent]}>{i + 1}</Text>}
+                    </View>
+                    <Text style={[styles.stepLabel, (done || current) && styles.stepLabelActive]}>{label}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
           <Text style={[styles.bannerText, { color: tone.fg }]}>{stage.description}</Text>
           {remarks ? (
-            <Text style={styles.remarks}>
-              <Text style={styles.bold}>Reviewer note: </Text>
-              {remarks}
-            </Text>
-          ) : null}
-          {stage.key !== 'changes_required' ? (
-            <View style={styles.flow}>
-              {FLOW.map((label, i) => (
-                <Text key={label} style={[styles.flowStep, i < flowIndex(stage.key) && styles.flowDone, i === flowIndex(stage.key) && styles.flowCurrent]}>
-                  {label}
-                </Text>
-              ))}
+            <View style={[styles.remarks, { backgroundColor: tone.bg }]}>
+              <Text style={styles.remarksLabel}>Reviewer note</Text>
+              <Text style={styles.remarksText}>{remarks}</Text>
             </View>
           ) : null}
           {canSubmitForApproval(p) ? (
@@ -257,18 +289,32 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
           ) : null}
         </View>
 
+        {/* Quick actions */}
+        <View style={styles.quick}>
+          <QuickAction icon={ShareIcon} label="Share" onPress={() => setEditing('share')} />
+          <QuickAction icon={CopyIcon} label="Duplicate" onPress={() => actions.duplicate({ id, productName: name })} />
+          {canPublish(p) ? (
+            <QuickAction
+              icon={Number(p.status) === 1 ? BanIcon : CheckCircleIcon}
+              label={Number(p.status) === 1 ? 'Deactivate' : 'Activate'}
+              onPress={() => actions.toggleStatus({ id, productName: name, status: p.status })}
+            />
+          ) : null}
+          <QuickAction
+            icon={TrashIcon}
+            label="Delete"
+            danger
+            onPress={async () => {
+              await actions.remove({ id, productName: name });
+            }}
+          />
+        </View>
+
         <FilterChips options={[...TABS]} value={tab} onChange={value => setTab(value as Tab)} />
 
         {tab === 'overview' ? (
           <>
-            {gallery.length ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.gallery}>
-                {gallery.map(url => (
-                  <Image key={url} source={{ uri: url }} style={styles.galleryImg} />
-                ))}
-              </ScrollView>
-            ) : null}
-            <Card>
+            <Card title="Details">
               <InfoRow label="Category" value={categoryPath} />
               <InfoRow label="Brand" value={brand} />
               <InfoRow label="Type" value={productType} />
@@ -276,19 +322,10 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
               <Text style={styles.tagsLabel}>Tags</Text>
               <TagEditor productId={id} tags={productTags} onChange={() => tags.reload()} />
             </Card>
-            <View style={styles.tiles}>
-              <Tile label="Sale price" value={cheapest ? formatRupees(cheapest.sellingPrice) : '—'} />
-              <Tile label="MRP" value={cheapest?.mrp ? formatRupees(cheapest.mrp) : '—'} />
-              <Tile label="Cost price" value={cheapest?.costPrice ? formatRupees(cheapest.costPrice) : '—'} />
-              <Tile label="Margin" value={margin !== null ? `${margin.toFixed(2)}%` : '—'} />
-              <Tile label="Available" value={formatNumber(totals.available)} />
-              <Tile label="Reserved" value={formatNumber(totals.reserved)} />
-              <Tile label="Out-of-stock SKUs" value={String(totals.outOfStock)} tone={totals.outOfStock ? colors.error : undefined} />
-            </View>
             {text(p.productShortDescription) || text(p.productLongDescription) ? (
               <Card title="Description">
-                {text(p.productShortDescription) ? <Text style={styles.short}>{text(p.productShortDescription)}</Text> : null}
-                {text(p.productLongDescription) ? <Text style={styles.long}>{text(p.productLongDescription)}</Text> : null}
+                {text(p.productShortDescription) ? <Text style={styles.short}>{htmlToText(text(p.productShortDescription))}</Text> : null}
+                {text(p.productLongDescription) ? <Text style={styles.long}>{htmlToText(text(p.productLongDescription))}</Text> : null}
               </Card>
             ) : null}
             <ProductInformation record={p} />
@@ -435,6 +472,14 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
         ) : null}
       </ScrollView>
 
+      {/* Editing is the main thing to do here: always in reach */}
+      <View style={[styles.bar, { paddingBottom: insets.bottom + 12 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Share" onPress={() => setEditing('share')} style={({ pressed }) => [styles.barIcon, pressed && styles.pressed]}>
+          <ShareIcon size={20} color={colors.text} />
+        </Pressable>
+        <Button title="Edit product" icon={<EditIcon size={18} color={colors.white} />} onPress={() => navigation.navigate('ProductEditor', { id })} style={styles.flex} />
+      </View>
+
       <MeasuresSheet
         visible={editing === 'measures'}
         productId={id}
@@ -559,10 +604,61 @@ function ProductInformation({ record: p }: { record: Row }) {
   );
 }
 
-function ActionButton({ label, onPress, danger }: { label: string; onPress: () => void; danger?: boolean }) {
+/** Photos, one per page, with dots; the badges sit on top. */
+function Gallery({ urls, badges }: { urls: string[]; badges: React.ReactNode }) {
+  const { width } = useWindowDimensions();
+  const pageWidth = width - 32;
+  const [page, setPage] = useState(0);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.actionBtn, danger && styles.actionDanger, pressed && styles.pressed]}>
-      <Text style={[styles.actionText, danger && styles.actionTextDanger]}>{label}</Text>
+    <View style={styles.galleryWrap}>
+      {urls.length ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={e => setPage(Math.round(e.nativeEvent.contentOffset.x / pageWidth))}
+        >
+          {urls.map(url => (
+            <Image key={url} source={{ uri: url }} style={[styles.galleryImg, { width: pageWidth }]} resizeMode="contain" />
+          ))}
+        </ScrollView>
+      ) : (
+        <View style={[styles.galleryImg, styles.galleryEmpty]}>
+          <BoxIcon size={36} color={colors.textMuted} />
+          <Text style={styles.metaSmall}>No photos yet</Text>
+        </View>
+      )}
+      <View style={styles.galleryBadges}>{badges}</View>
+      {urls.length > 1 ? (
+        <View style={styles.dots}>
+          {urls.map((url, i) => (
+            <View key={url} style={[styles.dot, i === page && styles.dotOn]} />
+          ))}
+        </View>
+      ) : null}
+      {urls.length ? <Text style={styles.galleryCount}>{`${page + 1}/${urls.length}`}</Text> : null}
+    </View>
+  );
+}
+
+function StockStat({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View style={styles.stockStat}>
+      <Text style={[styles.stockValue, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+        {value}
+      </Text>
+      <Text style={styles.stockLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function QuickAction({ icon: Icon, label, onPress, danger }: { icon: ComponentType<IconProps>; label: string; onPress: () => void; danger?: boolean }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.quickBtn, pressed && styles.pressed]}>
+      <View style={[styles.quickIcon, danger && styles.quickIconDanger]}>
+        <Icon size={18} color={danger ? colors.error : colors.secondary} />
+      </View>
+      <Text style={[styles.quickText, danger && styles.quickTextDanger]}>{label}</Text>
     </Pressable>
   );
 }
@@ -572,17 +668,6 @@ function Edit({ onPress }: { onPress: () => void }) {
     <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={onPress} hitSlop={8}>
       <Text style={styles.edit}>Edit</Text>
     </Pressable>
-  );
-}
-
-function Tile({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <View style={styles.tile}>
-      <Text style={styles.tileLabel}>{label}</Text>
-      <Text style={[styles.tileValue, tone ? { color: tone } : null]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-        {value}
-      </Text>
-    </View>
   );
 }
 
@@ -608,34 +693,67 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   bold: { fontFamily: fonts.bold },
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 16, gap: 14, paddingBottom: 32 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  actionBtn: { height: 52, paddingHorizontal: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, justifyContent: 'center' },
-  actionDanger: { borderColor: '#fecaca' },
-  actionText: { fontFamily: fonts.bold, fontSize: 14, color: colors.text },
-  actionTextDanger: { color: colors.error },
+  content: { padding: 16, gap: 12 },
   pressed: { opacity: 0.7 },
-  banner: { padding: 14, borderRadius: radius.lg, borderWidth: 1, gap: 8 },
-  bannerTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bannerDate: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  card: { padding: 14, borderRadius: 18, borderWidth: 1, borderColor: 'transparent', backgroundColor: colors.surface, ...shadow.card },
+  cardTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
+  meta: { marginTop: 4, fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+  metaSmall: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  hero: { overflow: 'hidden', borderRadius: 20, backgroundColor: colors.surface, ...shadow.card },
+  galleryWrap: { backgroundColor: '#f8fafc' },
+  galleryImg: { height: 240, backgroundColor: '#f8fafc' },
+  galleryEmpty: { alignItems: 'center', justifyContent: 'center', gap: 6 },
+  galleryBadges: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  galleryCount: { position: 'absolute', top: 12, right: 12, overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, fontFamily: fonts.semibold, fontSize: 11, color: colors.white, backgroundColor: 'rgba(6,27,58,0.55)' },
+  dots: { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(6,27,58,0.2)' },
+  dotOn: { width: 16, backgroundColor: colors.secondary },
+  heroBody: { paddingHorizontal: 16, paddingTop: 14 },
+  name: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 25, letterSpacing: -0.3, color: colors.text },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  salePrice: { fontFamily: fonts.extrabold, fontSize: 26, letterSpacing: -0.6, color: colors.text },
+  mrp: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted, textDecorationLine: 'line-through' },
+  off: { fontFamily: fonts.bold, fontSize: 13.5, color: '#047857' },
+  from: { marginTop: 1, fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  chip: { overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, fontFamily: fonts.semibold, fontSize: 12, color: colors.textSecondary, backgroundColor: colors.background },
+  chipGood: { color: '#047857', backgroundColor: '#ecfdf5' },
+  stock: { flexDirection: 'row', alignItems: 'center', marginTop: 14, marginHorizontal: 12, marginBottom: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: colors.background },
+  stockStat: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  stockValue: { fontFamily: fonts.extrabold, fontSize: 16 },
+  stockLabel: { marginTop: 1, fontFamily: fonts.medium, fontSize: 11, color: colors.textSecondary },
+  stockDivider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: colors.border },
+  approval: { gap: 10 },
+  approvalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  steps: { flexDirection: 'row', marginTop: 2 },
+  step: { flex: 1, alignItems: 'center' },
+  stepLine: { position: 'absolute', top: 11, right: '50%', width: '100%', height: 2, backgroundColor: colors.border },
+  stepLineDone: { backgroundColor: '#4ade80' },
+  stepDot: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
+  stepDotDone: { backgroundColor: colors.success },
+  stepDotCurrent: { width: 28, height: 28, borderRadius: 14, marginTop: -2, borderWidth: 4, borderColor: colors.secondaryLight, backgroundColor: colors.secondary },
+  stepNum: { fontFamily: fonts.bold, fontSize: 11, color: colors.textMuted },
+  stepNumCurrent: { color: colors.white },
+  stepLabel: { marginTop: 5, fontFamily: fonts.medium, fontSize: 11, textAlign: 'center', color: colors.textMuted },
+  stepLabelActive: { fontFamily: fonts.semibold, color: colors.text },
   bannerText: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 19 },
-  remarks: { padding: 10, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.75)', fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.text },
-  flow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  flowStep: { overflow: 'hidden', paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full, fontFamily: fonts.semibold, fontSize: 11, color: colors.textMuted },
-  flowDone: { backgroundColor: colors.successLight, color: colors.successDark },
-  flowCurrent: { backgroundColor: colors.white, color: colors.text, borderWidth: 1, borderColor: colors.border },
+  remarks: { gap: 2, padding: 10, borderRadius: 12 },
+  remarksLabel: { fontFamily: fonts.bold, fontSize: 12, color: colors.text },
+  remarksText: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.text },
   issues: { gap: 3 },
   issuesTitle: { fontFamily: fonts.bold, fontSize: 13, color: colors.warningDark },
   issue: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.warningDark },
   ready: { fontFamily: fonts.bold, fontSize: 13, color: colors.successDark },
-  bannerBtn: { marginTop: 4 },
-  gallery: { gap: 10 },
-  galleryImg: { width: 150, height: 150, borderRadius: radius.lg, backgroundColor: colors.surface },
+  bannerBtn: { marginTop: 2 },
+  quick: { flexDirection: 'row', gap: 8 },
+  quickBtn: { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12, borderRadius: 16, backgroundColor: colors.surface, ...shadow.card },
+  quickIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondaryLight },
+  quickIconDanger: { backgroundColor: colors.errorLight },
+  quickText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.text },
+  quickTextDanger: { color: colors.error },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 12, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, ...shadow.raised },
+  barIcon: { width: 52, height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   tagsLabel: { marginTop: 8, marginBottom: 6, fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary },
-  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { flexBasis: '30%', flexGrow: 1, padding: 12, borderRadius: radius.lg, backgroundColor: colors.surface, ...shadow.card },
-  tileLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: colors.textSecondary },
-  tileValue: { marginTop: 2, fontFamily: fonts.extrabold, fontSize: 16, color: colors.text },
   short: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 20, color: colors.text },
   long: { marginTop: 8, fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 20, color: colors.textSecondary },
   infoGroup: { marginBottom: 10 },
