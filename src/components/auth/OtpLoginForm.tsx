@@ -75,12 +75,13 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
       <View style={styles.form}>
         <View style={styles.fieldGroup}>
           <TextField
-            label="Email or Mobile Number"
+            label="Mobile Number or Email"
             hideLabel
-            placeholder="Email or mobile number"
+            placeholder="Enter mobile number or email"
             icon={<MailIcon size={20} color={colors.primary} />}
             fieldStyle={styles.field}
             style={styles.input}
+            placeholderTextColor="#64748b"
             value={identifier}
             onChangeText={setIdentifier}
             autoCapitalize="none"
@@ -96,11 +97,12 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
           </Text>
         </View>
         <Button
-          title="Send Code"
+          title="Send OTP"
           loadingTitle="Sending..."
           loading={isLoading}
           onPress={sendCode}
           icon={<ArrowRightIcon size={18} color={colors.white} />}
+        style={styles.sendButton}
         />
       </View>
     );
@@ -128,6 +130,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
         <OtpInput
           value={otp}
           autoFocus
+          dark
           disabled={isLoading}
           onChange={next => {
             setOtp(next);
@@ -141,6 +144,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
           label="Remember me"
           checked={remember}
           onChange={setRemember}
+          labelColor="#d3dced"
         />
         {resendIn > 0 ? (
           <Text style={styles.muted}>Resend in {resendIn}s</Text>
@@ -163,14 +167,16 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 }
 
 const styles = StyleSheet.create({
-  form: { marginTop: 18, gap: 14 },
-  field: { height: 52, borderRadius: 14, paddingHorizontal: 16, gap: 12 },
-  input: { fontSize: 15.5, letterSpacing: -0.1 },
+  form: { marginTop: 48, gap: 20 },
+  field: { height: 62, borderRadius: 18, paddingHorizontal: 16, gap: 12, borderColor: '#cbd5e1', backgroundColor: colors.white },
+  input: { fontSize: 16, letterSpacing: -0.1, color: colors.primary },
+  fieldLabel: { fontFamily: fonts.semibold, fontSize: 15, color: '#d3dced', marginBottom: -10 },
+  sendButton: { height: 64, borderRadius: 20 },
   hint: {
     fontFamily: fonts.regular,
     fontSize: 12.5,
     lineHeight: 18,
-    color: colors.textSecondary,
+    color: '#aebbd1',
   },
   row: {
     flexDirection: 'row',
@@ -182,10 +188,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.semibold,
-    color: colors.text,
+    color: '#e6edf8',
   },
-  link: { fontSize: 14, fontFamily: fonts.semibold, color: colors.secondary },
-  muted: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted },
+  link: { fontSize: 14, fontFamily: fonts.semibold, color: '#ff9a4d' },
+  muted: { fontFamily: fonts.regular, fontSize: 14, color: '#aebbd1' },
   fieldGroup: { gap: 6 },
   codeGroup: { gap: 10 },
 });

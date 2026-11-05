@@ -13,13 +13,15 @@ export interface TextFieldProps extends TextInputProps {
   error?: string | null;
   /** No label above the field: the placeholder says what it is (the label is still read out). */
   hideLabel?: boolean;
+  /** Use light text and a translucent input on dark screens. */
+  dark?: boolean;
   /** Extra style for the bordered box. */
   fieldStyle?: StyleProp<ViewStyle>;
   ref?: Ref<TextInputInstance>;
 }
 
 /** A labelled input with a leading icon; the border turns orange on focus. */
-export function TextField({ label, icon, labelExtra, trailing, error, hideLabel, fieldStyle, style, onFocus, onBlur, ref, ...inputProps }: TextFieldProps) {
+export function TextField({ label, icon, labelExtra, trailing, error, hideLabel, dark = false, fieldStyle, style, onFocus, onBlur, ref, ...inputProps }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const reveal = useRevealFocused();
   const borderColor = error ? colors.error : focused ? colors.borderFocus : colors.border;
@@ -32,14 +34,14 @@ export function TextField({ label, icon, labelExtra, trailing, error, hideLabel,
           {labelExtra}
         </View>
       )}
-      <View style={[styles.field, fieldStyle, { borderColor }, focused && styles.fieldFocused]}>
+      <View style={[styles.field, dark && styles.fieldDark, fieldStyle, { borderColor }, focused && (dark ? styles.fieldFocusedDark : styles.fieldFocused)]}>
         {icon ? <View style={styles.icon}>{icon}</View> : null}
         <TextInput
           ref={ref}
           accessibilityLabel={hideLabel ? label : undefined}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={dark ? '#9eacc5' : colors.textMuted}
           selectionColor={colors.secondary}
-          style={[styles.input, style]}
+          style={[styles.input, dark && styles.inputDark, style]}
           onFocus={e => {
             setFocused(true);
             // Inside a KeyboardScroll: keep the field above the keyboard.
@@ -74,7 +76,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   fieldFocused: { backgroundColor: colors.white, borderWidth: 1.5 },
+  fieldDark: { backgroundColor: 'rgba(255,255,255,0.08)' },
+  fieldFocusedDark: { backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1.5 },
   icon: { width: 20, alignItems: 'center' },
   input: { flex: 1, height: '100%', fontFamily: fonts.regular, fontSize: 15, color: colors.text, paddingVertical: 0 },
+  inputDark: { color: colors.white },
   error: { fontFamily: fonts.regular, fontSize: 12, color: colors.error },
 });

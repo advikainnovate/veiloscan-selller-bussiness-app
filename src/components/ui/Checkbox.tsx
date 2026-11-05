@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../../theme';
 import { CheckIcon } from '../icons';
 
-export function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
+export function Checkbox({ label, checked, onChange, labelColor }: { label: string; checked: boolean; onChange: (next: boolean) => void; labelColor?: string }) {
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -13,7 +13,7 @@ export function Checkbox({ label, checked, onChange }: { label: string; checked:
       style={styles.row}
     >
       <View style={[styles.box, checked && styles.boxChecked]}>{checked ? <CheckIcon size={13} color={colors.white} strokeWidth={3} /> : null}</View>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, labelColor ? { color: labelColor } : null]}>{label}</Text>
     </Pressable>
   );
 }

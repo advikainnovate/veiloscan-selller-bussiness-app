@@ -1,5 +1,8 @@
-import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ImageBackground,
+  Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,65 +12,65 @@ import {
   type ScrollViewInstance,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius } from '../../theme';
 import { Gradient } from '../ui/Gradient';
+import { marketingBannerService, type MarketingBanner } from '../../services/marketing-banner-service';
 import { ChartArt, DeliveryArt, StorefrontArt } from './Illustrations';
 
 const AUTO_ADVANCE_MS = 5000;
 const SIDE_PADDING = 16;
+const TONE_COLORS: Record<string, readonly string[]> = {
+  gold: ['#b8460a', '#e85d00', '#ff8a33'],
+  navy: ['#031329', '#0b2a55', '#163f78'],
+  light: ['#c2410c', '#ea580c', '#fb923c'],
+};
 
-interface Slide {
-  /** Line one, then line two's plain start and its highlighted end. */
-  title: [string, string, string];
-  text: string;
-  colors: readonly string[];
-  art: (width: number) => ReactNode;
-}
-
-const SLIDES: Slide[] = [
-  {
-    title: ['Your Store.', 'Your ', 'Growth.'],
-    text: 'Manage orders, products, stock and customers — all in one place.',
-    colors: ['#b8460a', '#e85d00', '#ff8a33'],
-    art: width => <StorefrontArt width={width} />,
-  },
-  {
-    title: ['Every Order.', '', 'On Time.'],
-    text: 'See new orders the moment they arrive and keep deliveries moving.',
-    colors: ['#031329', '#0b2a55', '#163f78'],
-    art: width => <DeliveryArt width={width} />,
-  },
-  {
-    title: ['Know Your', '', 'Numbers.'],
-    text: 'Daily sales and reports that show what to stock and promote next.',
-    colors: ['#c2410c', '#ea580c', '#fb923c'],
-    art: width => <ChartArt width={width} />,
-  },
-];
-
-/** The Home banner: three brand slides that advance on their own, with page dots. */
+/** Admin managed Home banners that advance on their own, with page dots. */
 export function HeroCarousel() {
   const { width: screenWidth } = useWindowDimensions();
   const slideWidth = screenWidth - SIDE_PADDING * 2;
-  const artWidth = Math.min(150, slideWidth * 0.42);
   const scrollRef = useRef<ScrollViewInstance>(null);
+  const [slides, setSlides] = useState<MarketingBanner[]>([]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const refresh = () => {
+        marketingBannerService.listSellerHome().then(items => {
+          if (active) {
+            setSlides(items);
+            setIndex(0);
+            scrollRef.current?.scrollTo({ x: 0, animated: false });
+          }
+        }).catch(() => {
+          // Keep the last successful result visible if the network is temporarily unavailable.
+        });
+      };
+      refresh();
+      const timer = setInterval(refresh, 60_000);
+      return () => { active = false; clearInterval(timer); };
+    }, []),
+  );
+
   useEffect(() => {
-    if (paused) return;
+    if (paused || slides.length < 2) return;
     const timer = setTimeout(() => {
-      const next = (index + 1) % SLIDES.length;
+      const next = (index + 1) % slides.length;
       scrollRef.current?.scrollTo({ x: next * screenWidth, animated: true });
       setIndex(next);
     }, AUTO_ADVANCE_MS);
     return () => clearTimeout(timer);
-  }, [index, paused, screenWidth]);
+  }, [index, paused, screenWidth, slides.length]);
 
   function onScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
     setIndex(Math.round(event.nativeEvent.contentOffset.x / screenWidth));
     setPaused(false);
   }
+
+  if (!slides.length) return null;
 
   return (
     <View>
@@ -79,33 +82,72 @@ export function HeroCarousel() {
         onScrollBeginDrag={() => setPaused(true)}
         onMomentumScrollEnd={onScrollEnd}
         accessibilityRole="adjustable"
-        accessibilityLabel={`Banner ${index + 1} of ${SLIDES.length}`}
+        accessibilityLabel={`Banner ${index + 1} of ${slides.length}`}
       >
-        {SLIDES.map((slide, i) => (
-          <View key={i} style={[styles.page, { width: screenWidth }]}>
-            <View style={[styles.slide, { width: slideWidth }]}>
-              <Gradient colors={slide.colors} direction="diagonal" borderRadius={radius.xl} />
-              <View style={styles.ring} />
-              <View style={styles.copy}>
-                <Text style={styles.title}>
-                  {slide.title[0]}
-                  {'\n'}
-                  {slide.title[1]}
-                  <Text style={styles.titleAccent}>{slide.title[2]}</Text>
-                </Text>
-                <Text style={styles.text}>{slide.text}</Text>
-              </View>
-              <View style={styles.art}>{slide.art(artWidth)}</View>
+        {slides.map(slide => {
+          const gradient = TONE_COLORS[slide.tone ?? 'gold'] ?? TONE_COLORS.gold;
+          const artWidth = Math.min(150, slideWidth * 0.42);
+          const slideStyle = [
+            styles.slide,
+            { width: slideWidth },
+            slide.imageUrl ? { height: slideWidth * 3 / 8, minHeight: 0, paddingLeft: 0 } : null,
+          ];
+          const art = slide.imageLabel?.toLowerCase().includes('delivery')
+            ? <DeliveryArt width={artWidth} />
+            : slide.imageLabel?.toLowerCase().includes('chart')
+              ? <ChartArt width={artWidth} />
+              : <StorefrontArt width={artWidth} />;
+          const content = (
+            <>
+              <Gradient colors={gradient} direction="diagonal" borderRadius={radius.xl} />
+              {slide.imageUrl ? (
+                <ImageBackground
+                  source={{ uri: slide.imageUrl }}
+                  accessibilityLabel={slide.imageLabel ?? undefined}
+                  resizeMode="cover"
+                  style={styles.image}
+                  imageStyle={styles.imageRadius}
+                />
+              ) : (
+                <>
+                  <View style={styles.art}>{art}</View>
+                  <View style={styles.ring} />
+                  <View style={styles.copy}>
+                    <Text style={styles.title}>
+                      {slide.titleLine1}
+                      {slide.titleLine2 ? <><Text>{'\n'}</Text><Text style={styles.titleAccent}>{slide.titleLine2}</Text></> : null}
+                    </Text>
+                    {slide.detail ? <Text style={styles.text}>{slide.detail}</Text> : null}
+                  </View>
+                </>
+              )}
+            </>
+          );
+          return (
+            <View key={slide.id} style={[styles.page, { width: screenWidth }]}>
+              {slide.ctaHref ? (
+                <Pressable
+                  style={slideStyle}
+                  onPress={() => { void Linking.openURL(slide.ctaHref!).catch(() => {}); }}
+                  accessibilityRole="link"
+                >
+                  {content}
+                </Pressable>
+              ) : (
+                <View style={slideStyle}>{content}</View>
+              )}
             </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
-      <View style={styles.dots}>
-        {SLIDES.map((_, i) => (
-          <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
-        ))}
-      </View>
+      {slides.length > 1 ? (
+        <View style={styles.dots}>
+          {slides.map((slide, i) => (
+            <View key={slide.id} style={[styles.dot, i === index && styles.dotActive]} />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -120,6 +162,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingLeft: 20,
   },
+  image: { ...StyleSheet.absoluteFill },
+  imageRadius: { borderRadius: radius.xl },
+  art: { position: 'absolute', right: 6, bottom: 0 },
   ring: {
     position: 'absolute',
     width: 220,
@@ -133,7 +178,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, lineHeight: 28, fontFamily: fonts.extrabold, color: colors.white, letterSpacing: -0.4 },
   titleAccent: { color: '#ffd166' },
   text: { marginTop: 8, fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,0.92)' },
-  art: { paddingRight: 6, alignSelf: 'flex-end' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 10 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.border },
   dotActive: { width: 18, backgroundColor: colors.secondary },

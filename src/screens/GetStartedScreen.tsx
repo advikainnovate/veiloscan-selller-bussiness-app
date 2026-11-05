@@ -1,199 +1,123 @@
-import React, { type ComponentType } from 'react';
-import { Image, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, Pressable, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, featureTones, radius, type FeatureTone, fonts } from '../theme';
+import { colors, fonts, shadow } from '../theme';
 import { Logo } from '../components/ui/Logo';
-import { Button } from '../components/ui/Button';
 import { Gradient } from '../components/ui/Gradient';
-import {
-  ArrowRightIcon,
-  BoxIcon,
-  ChartTrendIcon,
-  HelpCircleIcon,
-  LayersIcon,
-  LockIcon,
-  ShieldCheckIcon,
-  StoreIcon,
-  type IconProps,
-} from '../components/icons';
+import { ArrowRightIcon, CheckIcon } from '../components/icons';
+import { BottomWaves } from '../components/auth/LoginArt';
 import { setOnboarded } from '../lib/session';
 import type { ScreenProps } from '../navigation/types';
 
-const hero = require('../assets/brand/login-hero.jpg');
-// The artwork's width / height; the seller sits in its lower half.
-const HERO_RATIO = 581 / 760;
-
-// The Seller Panel login's story, for a phone.
-const features: { Icon: ComponentType<IconProps>; tone: FeatureTone; title: string; description: string }[] = [
-  { Icon: StoreIcon, tone: 'orange', title: 'Store Management', description: 'Products and categories' },
-  { Icon: BoxIcon, tone: 'green', title: 'Order Tracking', description: 'Real-time order updates' },
-  { Icon: LayersIcon, tone: 'blue', title: 'Inventory Control', description: 'Stock always in sync' },
-  { Icon: ChartTrendIcon, tone: 'violet', title: 'Business Insights', description: 'Reports to help you grow' },
-];
-
-const promises: { Icon: ComponentType<IconProps>; label: string }[] = [
-  { Icon: ShieldCheckIcon, label: 'Trusted Platform' },
-  { Icon: LockIcon, label: 'Secure & Reliable' },
-  { Icon: HelpCircleIcon, label: 'Dedicated Support' },
+const slides = [
+  {
+    image: require('../assets/onboarding/store.jpg'),
+    title: 'Manage Your Store',
+    description: 'Add products, update inventory and handle orders easily.',
+  },
+  {
+    image: require('../assets/onboarding/orders.jpg'),
+    title: 'Track Orders',
+    description: 'Stay updated with new orders, payments and order status in real time.',
+  },
+  {
+    image: require('../assets/onboarding/growth.jpg'),
+    title: 'Grow Your Business',
+    description: 'See sales, customers and reports to make smarter decisions.',
+  },
 ];
 
 export function GetStartedScreen({ navigation }: ScreenProps<'GetStarted'>) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const heroHeight = Math.min(Math.max(height * 0.36, 230), 360);
+  const [index, setIndex] = useState(0);
+  const compact = height < 760;
+  const slide = slides[index];
+  const artWidth = Math.min(width - 28, height * (compact ? 0.34 : 0.43) * (670 / 600));
+  const artHeight = artWidth * (600 / 670);
 
-  async function goToLogin() {
+  async function finishOnboarding() {
     await setOnboarded();
     navigation.replace('Login');
+  }
+
+  function next() {
+    if (index === slides.length - 1) {
+      void finishOnboarding();
+      return;
+    }
+    setIndex(current => current + 1);
   }
 
   return (
     <View style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView bounces={false} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* The seller photo, fading into the navy below it. */}
-        <View style={[styles.hero, { height: heroHeight + insets.top }]}>
-          {/* Full width and pinned to the bottom, so the crop keeps the seller, not the sky. */}
-          <Image source={hero} style={[styles.heroImage, { width, height: width / HERO_RATIO }]} resizeMode="cover" />
-          <Gradient colors={[colors.primaryDeep, colors.primaryDeep]} opacities={[0.55, 0]} direction="vertical" style={styles.heroTopShade} />
-          <Gradient
-            colors={[colors.primaryDeep, colors.primaryDeep]}
-            opacities={[0, 1]}
-            direction="vertical"
-            style={styles.heroBottomShade}
-          />
-          <View style={[styles.logoRow, { paddingTop: insets.top + 14 }]}>
-            <Logo variant="white" size={38} tagline={null} />
-          </View>
+      <View style={[styles.header, { paddingTop: insets.top + (compact ? 5 : 12) }]}>
+        <Logo variant="white" layout="stacked" size={compact ? 54 : 62} tagline={null} />
+        <View style={styles.appTitleRow}>
+          <View style={styles.headerRule} />
+          <Text style={styles.appTitle}>Seller App</Text>
+          <View style={styles.headerRule} />
         </View>
-
-        <View style={styles.body}>
-          <View style={styles.pill}>
-            <View style={styles.pillIcon}>
-              <StoreIcon size={14} color="#ff8a33" />
-            </View>
-            <Text style={styles.pillText} numberOfLines={1}>
-              LOCAL SHOPS <Text style={styles.pillDivider}>|</Text> RETAIL <Text style={styles.pillDivider}>|</Text> GROWING BRANDS
-            </Text>
-          </View>
-
-          <Text style={styles.title}>
-            Your Store.{'\n'}
-            <Text style={styles.titleAccent}>Your Growth.</Text>
-          </Text>
-          <View style={styles.rule} />
-          <Text style={styles.lead}>
-            Manage your products, orders, inventory and customers with ease — your whole VeiloScan store, in your pocket.
-          </Text>
-
-          <View style={styles.grid}>
-            {features.map(({ Icon, tone, title, description }) => (
-              <View key={title} style={styles.card}>
-                <View style={styles.cardIcon}>
-                  <Gradient colors={featureTones[tone]} direction="diagonal" borderRadius={12} />
-                  <Icon size={20} color={colors.white} />
-                </View>
-                <Text style={styles.cardTitle}>{title}</Text>
-                <Text style={styles.cardText}>{description}</Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.promises}>
-            {promises.map(({ Icon, label }, i) => (
-              <View key={label} style={[styles.promise, i < promises.length - 1 && styles.promiseDivider]}>
-                <Icon size={18} color={colors.secondary} />
-                <Text style={styles.promiseText}>{label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-
-      <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) + 4 }]}>
-        <Button title="Get Started" onPress={goToLogin} icon={<ArrowRightIcon size={18} color={colors.white} />} />
-        <Text style={styles.signInHint}>
-          Already selling on VeiloScan?{' '}
-          <Text style={styles.signInLink} onPress={goToLogin} accessibilityRole="link">
-            Sign In
-          </Text>
-        </Text>
       </View>
+
+      <View style={styles.artStage}>
+        <Image source={slide.image} style={{ width: artWidth, height: artHeight }} resizeMode="contain" />
+      </View>
+
+      <View style={styles.copy}>
+        <Text style={[styles.title, compact && styles.titleCompact]} accessibilityRole="header">
+          {slide.title}
+        </Text>
+        <Text style={[styles.description, compact && styles.descriptionCompact]}>{slide.description}</Text>
+      </View>
+
+      <View style={styles.dots} accessibilityLabel={`Onboarding page ${index + 1} of ${slides.length}`}>
+        {slides.map((item, dotIndex) => (
+          <View key={item.title} style={[styles.dot, dotIndex === index && styles.dotActive]} />
+        ))}
+      </View>
+
+      <View style={[styles.actions, { marginBottom: compact ? 8 : 14 }]}>
+        <Pressable accessibilityRole="button" onPress={() => { void finishOnboarding(); }} hitSlop={12} style={styles.skip}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={next} style={styles.nextButton}>
+          <Gradient colors={['#ff9c00', '#ff5b00']} borderRadius={32} />
+          <View style={styles.nextContent}>
+            <Text style={styles.nextText}>{index === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
+            {index === slides.length - 1
+              ? <CheckIcon size={22} color={colors.white} strokeWidth={2.8} />
+              : <ArrowRightIcon size={22} color={colors.white} strokeWidth={2.4} />}
+          </View>
+        </Pressable>
+      </View>
+
+      <BottomWaves height={(compact ? 45 : 58) + insets.bottom} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.primaryDeep },
-  scroll: { paddingBottom: 24 },
-  hero: { overflow: 'hidden' },
-  heroImage: { position: 'absolute', left: 0, bottom: 0 },
-  heroTopShade: { height: '40%' },
-  heroBottomShade: { top: '45%' },
-  logoRow: { paddingHorizontal: 22 },
-  body: { paddingHorizontal: 22, marginTop: -28 },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 8,
-    paddingVertical: 5,
-    paddingLeft: 5,
-    paddingRight: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    maxWidth: '100%',
-  },
-  pillIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,138,51,0.6)',
-    backgroundColor: 'rgba(255,107,0,0.15)',
-  },
-  pillText: { flexShrink: 1, fontSize: 10.5, fontFamily: fonts.bold, letterSpacing: 0.6, color: 'rgba(255,255,255,0.9)' },
-  pillDivider: { color: 'rgba(255,255,255,0.4)' },
-  title: { marginTop: 18, fontSize: 36, lineHeight: 40, fontFamily: fonts.extrabold, letterSpacing: -0.8, color: colors.white },
-  titleAccent: { color: colors.secondary },
-  rule: { marginTop: 14, width: 56, height: 4, borderRadius: 2, backgroundColor: colors.secondary },
-  lead: { marginTop: 14, fontFamily: fonts.regular, fontSize: 15, lineHeight: 23, color: 'rgba(255,255,255,0.82)' },
-  grid: { marginTop: 22, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    padding: 14,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  cardIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  cardTitle: { fontSize: 14, fontFamily: fonts.bold, color: colors.white },
-  cardText: { marginTop: 3, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: 'rgba(255,255,255,0.62)' },
-  promises: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.18)',
-    flexDirection: 'row',
-  },
-  promise: { flex: 1, alignItems: 'center', gap: 6, paddingHorizontal: 4 },
-  promiseDivider: { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: 'rgba(255,255,255,0.18)' },
-  promiseText: { fontFamily: fonts.regular, fontSize: 11.5, textAlign: 'center', color: 'rgba(255,255,255,0.82)' },
-  actions: {
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    gap: 14,
-    backgroundColor: colors.primaryDeep,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  signInHint: { textAlign: 'center', fontFamily: fonts.regular, fontSize: 14, color: 'rgba(255,255,255,0.7)' },
-  signInLink: { color: colors.secondary, fontFamily: fonts.bold },
+  screen: { flex: 1, overflow: 'hidden', backgroundColor: '#031b43' },
+  header: { alignItems: 'center', paddingHorizontal: 20 },
+  appTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 5 },
+  headerRule: { width: 28, height: 1.5, backgroundColor: 'rgba(255,255,255,0.82)' },
+  appTitle: { color: colors.white, fontFamily: fonts.semibold, fontSize: 19, letterSpacing: -0.3 },
+  artStage: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 0 },
+  copy: { alignItems: 'center', paddingHorizontal: 26 },
+  title: { color: colors.white, fontFamily: fonts.bold, fontSize: 31, lineHeight: 38, textAlign: 'center', letterSpacing: -0.6 },
+  titleCompact: { fontSize: 27, lineHeight: 33 },
+  description: { marginTop: 8, color: '#d4def4', fontFamily: fonts.regular, fontSize: 17, lineHeight: 23, textAlign: 'center' },
+  descriptionCompact: { fontSize: 15, lineHeight: 20, marginTop: 5 },
+  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 18 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#536b9f' },
+  dotActive: { backgroundColor: '#ff7900' },
+  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 26 },
+  skip: { paddingVertical: 14, paddingRight: 18 },
+  skipText: { color: '#d9e2f7', fontFamily: fonts.medium, fontSize: 19 },
+  nextButton: { minWidth: 174, height: 58, borderRadius: 32, overflow: 'hidden', justifyContent: 'center', ...shadow.button },
+  nextContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  nextText: { color: colors.white, fontFamily: fonts.bold, fontSize: 18 },
 });

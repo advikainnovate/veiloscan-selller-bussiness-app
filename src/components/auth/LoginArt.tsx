@@ -4,13 +4,13 @@ import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 const NAVY = '#0b2a52';
 
-/** The soft grey sweep at the top right of the login screen. */
+/** Navy and orange corner sweep from the seller login design. */
 export function TopSweep({ style }: { style?: StyleProp<ViewStyle> }) {
   return (
     <View pointerEvents="none" style={[styles.top, style]}>
       <Svg width="100%" height="100%" viewBox="0 0 400 260" preserveAspectRatio="none">
-        <Path d="M230 0 C 250 90, 320 150, 400 170 L400 0 Z" fill="#e9eef7" />
-        <Path d="M300 0 C 310 50, 350 80, 400 90 L400 0 Z" fill="#dfe6f2" opacity={0.7} />
+        <Path d="M220 0 L400 0 L400 184 C 330 164, 278 99, 220 0 Z" fill="#ff6b00" />
+        <Path d="M250 0 L400 0 L400 117 C 341 102, 296 58, 250 0 Z" fill="#061b3a" />
       </Svg>
     </View>
   );
