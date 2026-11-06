@@ -93,7 +93,7 @@ android {
     productFlavors {
         dev {
             dimension "environment"
-            buildConfigField "String", "API_BASE_URL", '"https://stuff-tanks-scratch-lights.trycloudflare.com"'
+            buildConfigField "String", "API_BASE_URL", '"https://asapi.advikainnovate.cloud"'
         }
         prod {
             dimension "environment"
