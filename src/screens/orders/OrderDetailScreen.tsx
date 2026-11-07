@@ -207,15 +207,26 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
               {PICKUP_STEPS.map((step, index) => {
                 const done = index < currentStep || status === 'DELIVERED';
                 const current = index === currentStep && status !== 'DELIVERED';
+                // The step reaching the next one is lit once that one is reached.
+                const nextReached = index + 1 <= currentStep || status === 'DELIVERED';
                 return (
                   <View key={step.status} style={styles.step}>
-                    {index > 0 ? <View style={[styles.stepLine, (done || current) && styles.stepLineDone]} /> : null}
-                    <View style={[styles.stepDot, done && styles.stepDotDone, current && styles.stepDotCurrent]}>
-                      {done ? (
-                        <CheckIcon size={12} color={colors.white} strokeWidth={3} />
-                      ) : (
-                        <Text style={[styles.stepNum, current && styles.stepNumCurrent]}>{index + 1}</Text>
-                      )}
+                    {/* Each step draws its own half of the connectors, before its
+                        circle, so a line never runs over a circle. */}
+                    {index > 0 ? (
+                      <View style={[styles.stepLine, styles.stepLineLeft, (done || current) && styles.stepLineDone]} />
+                    ) : null}
+                    {index < PICKUP_STEPS.length - 1 ? (
+                      <View style={[styles.stepLine, styles.stepLineRight, nextReached && styles.stepLineDone]} />
+                    ) : null}
+                    <View style={[styles.stepDotMask, current && styles.stepDotMaskCurrent]}>
+                      <View style={[styles.stepDot, done && styles.stepDotDone, current && styles.stepDotCurrent]}>
+                        {done ? (
+                          <CheckIcon size={12} color={colors.white} strokeWidth={3} />
+                        ) : (
+                          <Text style={[styles.stepNum, current && styles.stepNumCurrent]}>{index + 1}</Text>
+                        )}
+                      </View>
                     </View>
                     <Text style={[styles.stepLabel, (done || current) && styles.stepLabelActive]} numberOfLines={2}>
                       {step.label}
@@ -539,11 +550,16 @@ const styles = StyleSheet.create({
   cancelledText: { marginTop: 2, fontFamily: fonts.regular, fontSize: 13, color: '#fecaca' },
   steps: { marginTop: 18, flexDirection: 'row' },
   step: { flex: 1, alignItems: 'center' },
-  stepLine: { position: 'absolute', top: 12, right: '50%', width: '100%', height: 2, backgroundColor: 'rgba(255,255,255,0.15)' },
+  stepLine: { position: 'absolute', top: 12, width: '50%', height: 2, backgroundColor: 'rgba(255,255,255,0.15)' },
+  stepLineLeft: { left: 0 },
+  stepLineRight: { right: 0 },
   stepLineDone: { backgroundColor: '#4ade80' },
+  // Opaque backing (the hero's colour) so the translucent circles hide the line.
+  stepDotMask: { borderRadius: 15, backgroundColor: colors.primary },
+  stepDotMaskCurrent: { marginTop: -2 },
   stepDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' },
   stepDotDone: { backgroundColor: colors.success },
-  stepDotCurrent: { width: 30, height: 30, borderRadius: 15, marginTop: -2, borderWidth: 4, borderColor: 'rgba(255,107,0,0.35)', backgroundColor: colors.secondary },
+  stepDotCurrent: { width: 30, height: 30, borderRadius: 15, borderWidth: 4, borderColor: 'rgba(255,107,0,0.35)', backgroundColor: colors.secondary },
   stepNum: { fontFamily: fonts.bold, fontSize: 11.5, color: 'rgba(255,255,255,0.55)' },
   stepNumCurrent: { color: colors.white },
   stepLabel: { marginTop: 6, paddingHorizontal: 2, fontFamily: fonts.medium, fontSize: 11, textAlign: 'center', color: 'rgba(255,255,255,0.5)' },

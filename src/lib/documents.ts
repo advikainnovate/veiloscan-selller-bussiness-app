@@ -22,6 +22,20 @@ export async function openPdf(path: string, fileName: string) {
     await ReactNativeBlobUtil.fs.unlink(target).catch(() => {});
     throw new Error(status === 404 ? 'This document is no longer available.' : `Couldn't download the document (${status}).`);
   }
-  if (Platform.OS === 'ios') ReactNativeBlobUtil.ios.previewDocument(target);
-  else await ReactNativeBlobUtil.android.actionViewIntent(target, 'application/pdf', 'Open with');
+  if (Platform.OS === 'ios') {
+    ReactNativeBlobUtil.ios.previewDocument(target);
+    return;
+  }
+  // No chooser title: blob-util wraps the intent in a chooser that lacks
+  // FLAG_ACTIVITY_NEW_TASK, so starting it from the app context fails. The
+  // plain ACTION_VIEW intent carries the flag (Android still lets the user pick
+  // an app when there's no default).
+  try {
+    await ReactNativeBlobUtil.android.actionViewIntent(target, 'application/pdf');
+  } catch (err) {
+    if ((err as { code?: string })?.code === 'ENOAPP' || /No app installed/i.test(String((err as Error)?.message))) {
+      throw new Error('No PDF viewer app is installed. Install one (e.g. Google Drive PDF Viewer) to open this document.');
+    }
+    throw err;
+  }
 }
