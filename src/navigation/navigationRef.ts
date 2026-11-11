@@ -7,7 +7,7 @@ import { OFFER_KINDS, type OfferKind } from '../lib/offers';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'InventoryLedger' | 'SupportTickets' | 'SupportDashboard' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs';
+type ModuleRoute = 'InventoryLedger' | 'SupportTickets' | 'SupportDashboard' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs' | 'Users';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'inventory-transactions': 'InventoryLedger',
   'support-tickets': 'SupportTickets',
@@ -32,6 +32,7 @@ const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
   'product-variants': 'ProductVariants',
   'business-variants': 'BusinessVariants',
   'product-specs': 'ProductSpecs',
+  users: 'Users',
 };
 
 // Inventory's menu children: one screen, one tab each.
@@ -97,6 +98,10 @@ export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> 
   CreateStore: 'store-settings',
   ProductDetail: 'products',
   ProductEditor: 'products',
+  Users: 'users',
+  UserDetail: 'users',
+  UserForm: 'users',
+  CustomerDetail: 'customers',
 };
 
 const isOfferKind = (key: string): key is OfferKind => (OFFER_KINDS as string[]).includes(key);

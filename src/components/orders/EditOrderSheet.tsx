@@ -1,0 +1,102 @@
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { colors, fonts, radius } from '../../theme';
+import { useToast } from '../../context/ToastContext';
+import { extractErrorMessage } from '../../lib/api';
+import { isPickupOrder, orderStatusLabel, type OrderRow } from '../../lib/orders';
+import { orderService } from '../../services/order-service';
+import { Sheet } from '../ui/Sheet';
+import { Button } from '../ui/Button';
+import { Field, Input, SelectField } from '../form/Fields';
+import { confirmAction } from '../operations/OpsParts';
+
+// The Seller Panel's order edit form (src/app/dashboard/orders/_config.ts).
+const DELIVERY_STATUSES = ['CREATED', 'CONFIRMED', 'PACKED', 'READY_TO_SHIP', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED', 'REPLACED'];
+const PICKUP_STATUSES = ['CREATED', 'CONFIRMED', 'PACKED', 'DELIVERED', 'CANCELLED'];
+const PAYMENT_STATUSES = ['PENDING', 'PARTIAL', 'PAID', 'CREDIT', 'OVERDUE', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED'];
+
+const titleCase = (s: string) => s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase());
+
+/** Edit an order's status, payment status and remarks. */
+export function EditOrderSheet({ order, visible, onClose, onSaved }: { order: OrderRow; visible: boolean; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const [status, setStatus] = useState(order.orderStatus);
+  const [payment, setPayment] = useState(order.paymentStatus ?? '');
+  const [remarks, setRemarks] = useState(order.remarks ?? '');
+  const [saving, setSaving] = useState(false);
+  // Start from the order as it is each time the sheet opens.
+  useEffect(() => {
+    if (!visible) return;
+    setStatus(order.orderStatus);
+    setPayment(order.paymentStatus ?? '');
+    setRemarks(order.remarks ?? '');
+  }, [visible, order.orderStatus, order.paymentStatus, order.remarks]);
+
+  const pickup = isPickupOrder(order);
+  const statuses = pickup ? PICKUP_STATUSES : DELIVERY_STATUSES;
+  const statusOptions = [...new Set([...statuses, order.orderStatus])].map(v => ({ value: v, label: orderStatusLabel({ orderStatus: v, fulfillmentType: order.fulfillmentType }) }));
+  const paymentOptions = [...new Set([...PAYMENT_STATUSES, ...(order.paymentStatus ? [order.paymentStatus] : [])])].map(v => ({ value: v, label: titleCase(v) }));
+  const statusChanged = status !== order.orderStatus;
+  const paymentChanged = !!payment && payment !== (order.paymentStatus ?? '');
+  const remarksChanged = remarks.trim() !== (order.remarks ?? '').trim();
+  const changed = statusChanged || paymentChanged || remarksChanged;
+
+  async function save() {
+    if (!changed) return onClose();
+    if (statusChanged) {
+      const label = orderStatusLabel({ orderStatus: status, fulfillmentType: order.fulfillmentType });
+      const ok = await confirmAction(
+        `Change the status to ${label}?`,
+        'This sets the status directly, without the usual steps (payment collection, stock and notifications that the action buttons handle).',
+        'Change status',
+        status === 'CANCELLED',
+      );
+      if (!ok) return;
+    }
+    setSaving(true);
+    try {
+      await orderService.update(order.id, {
+        ...(statusChanged ? { orderStatus: status } : {}),
+        ...(paymentChanged ? { paymentStatus: payment } : {}),
+        ...(remarksChanged ? { remarks: remarks.trim() || null } : {}),
+      });
+      toast('Order updated');
+      onSaved();
+    } catch (err) {
+      toast(extractErrorMessage(err), 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Sheet
+      visible={visible}
+      title="Edit order"
+      subtitle={order.uniqueOrderId}
+      onClose={onClose}
+      footer={<Button title={changed ? 'Save changes' : 'Done'} loading={saving} onPress={save} />}
+    >
+      <View style={styles.body}>
+        <SelectField label="Order status" value={status} options={statusOptions} onChange={setStatus} />
+        {statusChanged ? (
+          <View style={styles.warn}>
+            <Text style={styles.warnText}>
+              {pickup ? 'For pickup orders, the Accept / Ready / Picked up buttons are the usual way to move an order on.' : 'Changing the status here skips the usual order steps.'}
+            </Text>
+          </View>
+        ) : null}
+        <SelectField label="Payment status" value={payment} options={paymentOptions} onChange={setPayment} placeholder="Select payment status" />
+        <Field label="Remarks" hint="Internal note — the customer doesn't see this.">
+          <Input value={remarks} onChangeText={setRemarks} placeholder="e.g. Customer will collect after 6 pm" multiline maxLength={1000} accessibilityLabel="Remarks" />
+        </Field>
+      </View>
+    </Sheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  body: { gap: 4 },
+  warn: { marginBottom: 8, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: colors.warningBorder, backgroundColor: colors.warningLight },
+  warnText: { fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17, color: colors.warningDark },
+});

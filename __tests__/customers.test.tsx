@@ -32,7 +32,14 @@ jest.mock('../src/services/dashboard-service', () => ({
 }));
 
 jest.mock('../src/services/customer-service', () => ({
-  customerService: { list: jest.fn(), summary: jest.fn() },
+  customerService: { list: jest.fn(), summary: jest.fn(), get: jest.fn(), orders: jest.fn(), addresses: jest.fn() },
+}));
+
+jest.mock('../src/services/customer-credit-service', () => ({
+  ...jest.requireActual('../src/services/customer-credit-service'),
+  customerCreditService: {
+    customer: jest.fn(async () => ({ totalCredit: 6500, totalPaid: 0, outstanding: 6500, overdueAmount: 2000, credits: [] })),
+  },
 }));
 
 const customer = (id: string, firstName: string, lastName: string, extra: object) => ({
@@ -70,6 +77,11 @@ beforeEach(() => {
     page,
     limit: 50,
   }) as never);
+  mocked.get.mockImplementation(async id => ({ ...(id === SURESH.id ? SURESH : RAJESH) }) as never);
+  mocked.orders.mockResolvedValue([
+    { id: 'o1', uniqueOrderId: 'ORD-501', orderStatus: 'DELIVERED', fulfillmentType: 'PICKUP', paymentStatus: 'PAID', totalAmount: 7980, orderDateTime: '2026-11-01T09:00:00Z' },
+  ] as never);
+  mocked.addresses.mockResolvedValue([]);
 });
 
 async function openCustomers() {
@@ -115,10 +127,15 @@ test('switches tabs and searches on the server', async () => {
   await act(() => new Promise<void>(resolve => setTimeout(resolve, 400)));
   expect(mocked.list).toHaveBeenLastCalledWith({ page: 1, limit: 50, view: 'credit', search: 'suresh' });
 
+  // A customer opens their own page: account, orders with you, addresses and credit.
   await press(tree, 'Suresh Patel, lifetime purchase ₹7,980');
+  expect(mocked.get).toHaveBeenCalledWith('10022');
   const text = textOf(tree);
-  expect(text).toContain('Call customer');
+  expect(text).toContain('Call');
   expect(text).toContain('No email (store customer)');
+  expect(text).toContain('₹6,500 due');
+  expect(text).toContain('Orders with you');
+  expect(mocked.orders).toHaveBeenCalledWith('10022');
 
   await act(async () => tree.unmount());
 });

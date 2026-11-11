@@ -99,7 +99,32 @@ export interface UpdateCreditPayload {
   notes: string;
 }
 
+/** GET /customer-credit/customers/:id: one customer's credit with the seller's stores. */
+export interface CustomerCreditSummary {
+  totalCredit: number;
+  totalPaid: number;
+  outstanding: number;
+  overdueAmount: number;
+  credits: {
+    id: string;
+    idd: string;
+    orderId: string;
+    orderNumber: string;
+    creditAmount: number;
+    paidAmount: number;
+    outstandingAmount: number;
+    dueDate: string;
+    status: string;
+    overdueDays: number;
+    dueInDays: number | null;
+    lastPaymentDate: string | null;
+  }[];
+}
+
 export const customerCreditService = {
+  customer(customerId: string): Promise<CustomerCreditSummary> {
+    return api.get(`/customer-credit/customers/${customerId}`).then(res => res.data);
+  },
   summary(): Promise<CreditSummary> {
     return api.get('/customer-credit/summary').then(res => res.data);
   },

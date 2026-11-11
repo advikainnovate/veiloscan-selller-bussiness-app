@@ -18,6 +18,8 @@ export interface OrderRow {
   customerPhone?: string | null;
   customerAddress?: unknown;
   customerNote?: string | null;
+  /** The seller's internal note on the order. */
+  remarks?: string | null;
   totalAmount?: number | string | null;
   /** A seller's share of a multi-seller order. */
   clientAmount?: number | string | null;

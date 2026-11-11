@@ -44,6 +44,10 @@ import { CreateStoreScreen } from '../screens/store/CreateStoreScreen';
 import { WarehousesScreen } from '../screens/catalog/WarehousesScreen';
 import { WarehouseDetailScreen } from '../screens/catalog/WarehouseDetailScreen';
 import { WarehouseFormScreen } from '../screens/catalog/WarehouseFormScreen';
+import { UsersScreen } from '../screens/users/UsersScreen';
+import { UserDetailScreen } from '../screens/users/UserDetailScreen';
+import { UserFormScreen } from '../screens/users/UserFormScreen';
+import { CustomerDetailScreen } from '../screens/customers/CustomerDetailScreen';
 import { BrandApprovalsScreen } from '../screens/catalog/BrandApprovalsScreen';
 import { BrandRequestDetailScreen } from '../screens/catalog/BrandRequestDetailScreen';
 import { BrandRequestFormScreen } from '../screens/catalog/BrandRequestFormScreen';
@@ -291,6 +295,26 @@ export function RootNavigator() {
                   name="CreateStore"
                   component={CreateStoreScreen}
                   options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="Users"
+                  component={UsersScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="UserDetail"
+                  component={UserDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="UserForm"
+                  component={UserFormScreen}
+                  options={{ animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="CustomerDetail"
+                  component={CustomerDetailScreen}
+                  options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                   name="Warehouses"

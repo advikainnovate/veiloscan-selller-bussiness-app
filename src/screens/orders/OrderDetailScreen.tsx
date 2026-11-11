@@ -30,12 +30,15 @@ import { Sheet } from '../../components/ui/Sheet';
 import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { CollectPaymentSheet } from '../../components/orders/CollectPaymentSheet';
 import { OrderDocuments } from '../../components/orders/OrderDocuments';
+import { EditOrderSheet } from '../../components/orders/EditOrderSheet';
 import {
   AlertCircleIcon,
   BoxIcon,
   CheckCircleIcon,
   CheckIcon,
   ClockIcon,
+  EditIcon,
+  FileTextIcon,
   MapPinIcon,
   PhoneIcon,
   UserIcon,
@@ -56,6 +59,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
   const [collecting, setCollecting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [editing, setEditing] = useState(false);
 
   const reloadAll = async (asRefresh = false) => {
     await Promise.all([order.reload(asRefresh), payments.reload(asRefresh)]);
@@ -378,6 +382,25 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
           </View>
         ) : null}
 
+        {/* The seller's own note, and the panel's edit (status, payment status, remarks) */}
+        <View style={styles.card}>
+          <View style={styles.remarksHead}>
+            <FileTextIcon size={16} color={colors.textSecondary} />
+            <Text style={styles.remarksTitle}>Remarks</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit order"
+              hitSlop={8}
+              onPress={() => setEditing(true)}
+              style={({ pressed }) => [styles.editBtn, pressed && styles.pressed]}
+            >
+              <EditIcon size={14} color={colors.secondary} />
+              <Text style={styles.editText}>Edit order</Text>
+            </Pressable>
+          </View>
+          <Text style={o.remarks ? styles.remarksText : styles.meta}>{o.remarks || 'No remarks. Tap Edit order to add an internal note or change the status.'}</Text>
+        </View>
+
         <OrderDocuments orderId={id} delivered={status === 'DELIVERED'} />
       </ScrollView>
 
@@ -432,6 +455,16 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
           }}
         />
       ) : null}
+
+      <EditOrderSheet
+        order={o}
+        visible={editing}
+        onClose={() => setEditing(false)}
+        onSaved={() => {
+          setEditing(false);
+          reloadAll();
+        }}
+      />
 
       <Sheet
         visible={cancelling}
@@ -530,6 +563,11 @@ function ItemRow({ item, last }: { item: OrderItem; last: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  remarksHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  remarksTitle: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  remarksText: { fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19, color: colors.text },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1, borderColor: colors.secondarySoft },
+  editText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.secondary },
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: 16, gap: 12 },

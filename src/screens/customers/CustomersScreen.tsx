@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { useFetch } from '../../hooks/useFetch';
 import { formatNumber, formatRupees } from '../../lib/format';
 import { formatDay } from '../../lib/date';
-import { customerEmail, customerInitials, customerName, customerPhone } from '../../lib/customers';
+import { customerInitials, customerName, customerPhone } from '../../lib/customers';
 import { customerService, type CustomerRow, type CustomerView } from '../../services/customer-service';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
@@ -14,7 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Gradient } from '../../components/ui/Gradient';
 import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, ListSkeleton, SearchBar } from '../../components/list/ListParts';
-import { ChevronRightIcon, PhoneIcon, PlusIcon, UserPlusIcon, UsersIcon, WalletIcon } from '../../components/icons';
+import { ChevronRightIcon, PlusIcon, UserPlusIcon, UsersIcon, WalletIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
 
 const PAGE_SIZE = 50;
@@ -43,7 +43,6 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<CustomerRow | null>(null);
   const [adding, setAdding] = useState(false);
   const listRef = useRef<FlatList<CustomerRow>>(null);
 
@@ -185,7 +184,7 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
         ref={listRef}
         data={list.loading || (list.error && !list.data) ? [] : rows}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => <CustomerCard customer={item} onPress={() => setSelected(item)} />}
+        renderItem={({ item }) => <CustomerCard customer={item} onPress={() => navigation.navigate('CustomerDetail', { id: item.id })} />}
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         ListEmptyComponent={
@@ -232,8 +231,6 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
         <PlusIcon size={20} color={colors.white} strokeWidth={2.4} />
         <Text style={styles.fabText}>Add customer</Text>
       </Pressable>
-
-      <CustomerSheet customer={selected} onClose={() => setSelected(null)} />
 
       {/* Customers are saved with their first order; there is no separate sign-up. */}
       <Sheet
@@ -362,59 +359,6 @@ function CustomerCard({ customer, onPress }: { customer: CustomerRow; onPress: (
   );
 }
 
-/** A customer's contact details and figures, with a call button. */
-function CustomerSheet({ customer, onClose }: { customer: CustomerRow | null; onClose: () => void }) {
-  // Keep the last customer while the sheet slides away.
-  const last = useRef(customer);
-  if (customer) last.current = customer;
-  const shown = customer ?? last.current;
-  if (!shown) return null;
-
-  const phone = customerPhone(shown);
-  const email = customerEmail(shown.email);
-  const rows: [string, string][] = [
-    ['Mobile', phone ?? '—'],
-    ['Email', email ?? 'No email (store customer)'],
-    ['Orders', formatNumber(shown.orderCount)],
-    ['Lifetime purchase', formatRupees(shown.lifetimePurchase)],
-    ['Last order', formatDay(shown.lastOrderAt)],
-    ...(shown.creditOutstanding != null
-      ? ([['Credit due', formatRupees(shown.creditOutstanding)]] as [string, string][])
-      : []),
-    ...(shown.creditOverdue ? ([['Overdue', formatRupees(shown.creditOverdue)]] as [string, string][]) : []),
-    ['Customer since', formatDay(shown.createdAt)],
-  ];
-
-  return (
-    <Sheet
-      visible={!!customer}
-      title={customerName(shown)}
-      subtitle={shown.idd}
-      onClose={onClose}
-      footer={
-        phone ? (
-          <Button
-            title="Call customer"
-            icon={<PhoneIcon size={18} color={colors.white} />}
-            onPress={() => Linking.openURL(`tel:${phone.replace(/\s/g, '')}`)}
-          />
-        ) : undefined
-      }
-    >
-      <View style={styles.details}>
-        {rows.map(([label, text], i) => (
-          <View key={label} style={[styles.detailRow, i > 0 && styles.detailDivider]}>
-            <Text style={styles.detailLabel}>{label}</Text>
-            <Text style={styles.detailValue} numberOfLines={1}>
-              {text}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </Sheet>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
   flip: { transform: [{ rotate: '180deg' }] },
@@ -477,9 +421,4 @@ const styles = StyleSheet.create({
   },
   pageBtnDisabled: { opacity: 0.4 },
   pageBtnPressed: { backgroundColor: colors.background },
-  details: { borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 12 },
-  detailDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  detailLabel: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.textSecondary },
-  detailValue: { flexShrink: 1, fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text, textAlign: 'right' },
 });

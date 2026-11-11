@@ -68,6 +68,10 @@ export const orderService = {
     return api.get(`/orders/${id}`).then(res => res.data);
   },
   /** Pickup orders: CONFIRMED (accept), PACKED (ready for pickup), DELIVERED (picked up) or CANCELLED. */
+  /** The panel's order edit: status, payment status and remarks. */
+  update(id: string, payload: { orderStatus?: string; paymentStatus?: string; remarks?: string | null }): Promise<OrderRow> {
+    return api.patch(`/orders/${id}`, payload).then(res => res.data);
+  },
   updatePickupStatus(id: string, status: string, reason?: string) {
     return api.patch(`/orders/${id}/pickup-status`, { status, ...(reason ? { reason } : {}) }).then(res => res.data);
   },

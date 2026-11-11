@@ -102,6 +102,12 @@ export type RootStackParamList = {
   QuantitySlabs: undefined;
   /** Create (no id) or edit a quantity discount scheme. */
   QuantitySlabForm: { id?: string } | undefined;
+  /** Management › Users: staff accounts, one user, add (no id) / edit. */
+  Users: undefined;
+  UserDetail: { id: string };
+  UserForm: { id?: string } | undefined;
+  /** One customer (from the Customers tab), on one of its tabs. */
+  CustomerDetail: { id: string; tab?: 'overview' | 'orders' | 'addresses' | 'credit' };
   /** Add New Store, or continue a draft's onboarding (`storeId`). */
   CreateStore: { storeId?: string } | undefined;
 };
