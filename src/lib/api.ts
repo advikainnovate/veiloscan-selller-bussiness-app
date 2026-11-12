@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_URL } from '../config/env';
+import { DEMO_MODE } from '../demo/flag';
 import { clearSession, getAccessToken, getRefreshToken, updateTokens, type SessionTokens } from './session';
 
 // The app names itself, so the API skips the web forms' Cloudflare Turnstile
@@ -8,6 +9,11 @@ export const CLIENT_APP_HEADER = 'X-Client-App';
 export const CLIENT_APP = 'veiloscan-business';
 
 export const api = axios.create({ baseURL: API_URL, timeout: 20000, headers: { [CLIENT_APP_HEADER]: CLIENT_APP } });
+
+// Store screenshots: a made-up store instead of the server (development builds only).
+if (__DEV__ && DEMO_MODE) {
+  api.defaults.adapter = require('../demo/demo-api').demoAdapter;
+}
 
 // The store picked in the header (as the Seller Panel's store switcher):
 // store-linked lists (orders, customers, products, reports…) are narrowed
