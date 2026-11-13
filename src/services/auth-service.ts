@@ -42,4 +42,8 @@ export const authService = {
   me(): Promise<SessionUser & { roles?: unknown; permissions?: string[] }> {
     return api.get('/auth/me').then(res => res.data);
   },
+  /** The signed-in user's own details; answers like me(). */
+  updateMe(payload: { preferredLanguage?: string }): Promise<SessionUser & { roles?: unknown; permissions?: string[] }> {
+    return api.patch('/auth/me', payload).then(res => res.data);
+  },
 };

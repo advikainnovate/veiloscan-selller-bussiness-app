@@ -14,19 +14,20 @@ import type {
   SchemeState,
   SlabDiscountType,
 } from '../services/quantity-discount-service';
+import i18n from '../i18n';
 
 export const TARGET_LABEL: Record<DiscountTargetType, string> = {
-  ALL_VARIANTS: 'All variants',
-  SPECIFIC_VARIANTS: 'Specific variants',
-  SIMPLE_PRODUCT: 'Product without variants',
+  get ALL_VARIANTS() { return i18n.t('pricing.allVariants'); },
+  get SPECIFIC_VARIANTS() { return i18n.t('pricing.specificVariants'); },
+  get SIMPLE_PRODUCT() { return i18n.t('pricing.productWithoutVariants'); },
 };
 
 export const STATES: SchemeState[] = ['RUNNING', 'SCHEDULED', 'ENDED', 'INACTIVE'];
 export const STATE_BADGE: Record<SchemeState, { label: string; tone: BadgeTone }> = {
-  RUNNING: { label: 'Running', tone: 'green' },
-  SCHEDULED: { label: 'Scheduled', tone: 'amber' },
-  ENDED: { label: 'Ended', tone: 'slate' },
-  INACTIVE: { label: 'Inactive', tone: 'slate' },
+  RUNNING: { get label() { return i18n.t('pricing.running'); }, tone: 'green' },
+  SCHEDULED: { get label() { return i18n.t('common.scheduled'); }, tone: 'amber' },
+  ENDED: { get label() { return i18n.t('common.ended'); }, tone: 'slate' },
+  INACTIVE: { get label() { return i18n.t('common.inactive'); }, tone: 'slate' },
 };
 
 /** Search covers the scheme name, the product and the ID. */
@@ -42,25 +43,25 @@ export const asSlab = (s: SchemeSlab) => ({ ...s, id: s.id ?? '', flatMethod: s.
 export const slabLabel = (s: SchemeSlab) => `${slabRangeLabel(asSlab(s), s.quantityUnit)} · ${slabDiscountLabel(asSlab(s), s.quantityUnit)}`;
 
 export const AUDIT_LABEL: Record<string, string> = {
-  CREATED: 'Created',
-  UPDATED: 'Details changed',
-  VARIANTS_CHANGED: 'Variants changed',
-  SLABS_CHANGED: 'Slabs changed',
-  STATUS_CHANGED: 'Status changed',
-  DELETED: 'Deleted',
+  get CREATED() { return i18n.t('common.created'); },
+  get UPDATED() { return i18n.t('pricing.detailsChanged'); },
+  get VARIANTS_CHANGED() { return i18n.t('pricing.variantsChanged'); },
+  get SLABS_CHANGED() { return i18n.t('pricing.slabsChanged'); },
+  get STATUS_CHANGED() { return i18n.t('common.statusChanged'); },
+  get DELETED() { return i18n.t('common.deleted'); },
 };
 
 export function auditSummary(entry: SchemeAuditEntry, skus: SchemeSku[]): string | null {
   const c = entry.changes as Record<string, unknown> | null;
   if (!c) return null;
-  const name = (id: string) => skus.find(s => s.id === id)?.label ?? 'a variant';
+  const name = (id: string) => skus.find(s => s.id === id)?.label ?? i18n.t('pricing.aVariant');
   if (entry.action === 'VARIANTS_CHANGED') {
     const added = (c.added as string[]) ?? [];
     const removed = (c.removed as string[]) ?? [];
-    return [added.length ? `Added ${added.map(name).join(', ')}` : null, removed.length ? `Removed ${removed.map(name).join(', ')}` : null].filter(Boolean).join(' · ');
+    return [added.length ? i18n.t('pricing.addedJoin', { join: added.map(name).join(', ') }) : null, removed.length ? i18n.t('pricing.removedJoin', { join: removed.map(name).join(', ') }) : null].filter(Boolean).join(' · ');
   }
   if (entry.action === 'STATUS_CHANGED') return `${String(c.before)} → ${String(c.after)}`;
-  if (entry.action === 'UPDATED' && c.after && typeof c.after === 'object') return `Changed ${Object.keys(c.after).join(', ')}`;
+  if (entry.action === 'UPDATED' && c.after && typeof c.after === 'object') return i18n.t('pricing.changedJoin', { join: Object.keys(c.after).join(', ') });
   return null;
 }
 
@@ -113,17 +114,17 @@ export function slabPreview(rows: SlabRow[], unit: string) {
  * server, which explains what to change.
  */
 export function slabsProblem(rows: SlabRow[], whole: boolean): string | null {
-  if (!rows.length) return 'Add at least one slab';
+  if (!rows.length) return i18n.t('pricing.addAtLeastOneSlab');
   for (const [i, s] of rows.entries()) {
-    const n = `Slab ${i + 1}`;
+    const n = i18n.t('pricing.slabI', { i: i + 1 });
     const min = num(s.min);
     const max = num(s.max);
     const value = num(s.value);
-    if (min === null || Number.isNaN(min) || min < 0) return `${n}: enter the quantity it starts from`;
-    if (max !== null && (Number.isNaN(max) || max < min)) return `${n}: the maximum can't be below the minimum`;
-    if (whole && (!Number.isInteger(min) || (max !== null && !Number.isInteger(max)))) return `${n}: quantities are whole numbers in this unit`;
-    if (value === null || Number.isNaN(value) || value < 0) return `${n}: enter the discount`;
-    if (s.type === 'PERCENTAGE' && value > 100) return `${n}: a percentage can be at most 100`;
+    if (min === null || Number.isNaN(min) || min < 0) return i18n.t('pricing.nEnterTheQuantityItStarts', { n });
+    if (max !== null && (Number.isNaN(max) || max < min)) return i18n.t('pricing.nTheMaximumCanTBe', { n });
+    if (whole && (!Number.isInteger(min) || (max !== null && !Number.isInteger(max)))) return i18n.t('pricing.nQuantitiesAreWholeNumbersIn', { n });
+    if (value === null || Number.isNaN(value) || value < 0) return i18n.t('pricing.nEnterTheDiscount', { n });
+    if (s.type === 'PERCENTAGE' && value > 100) return i18n.t('pricing.nAPercentageCanBeAt', { n });
   }
   return null;
 }
@@ -159,15 +160,15 @@ export function joinDateTime(date: string, time: string): Date | null {
 
 /** The panel's checks before saving, then the request body. */
 export function schemeProblem(f: SchemeForm, whole: boolean): string | null {
-  if (!f.productId) return 'Choose the product';
-  if (!f.schemeName.trim()) return 'Give the scheme a name';
-  if (f.schemeName.trim().length > 150) return 'The scheme name can be at most 150 characters';
-  if (f.targetType === 'SPECIFIC_VARIANTS' && !f.variantIds.length) return 'Select at least one variant';
-  if (!f.startDate) return 'Choose when the scheme starts';
+  if (!f.productId) return i18n.t('pricing.chooseTheProduct');
+  if (!f.schemeName.trim()) return i18n.t('pricing.giveTheSchemeAName');
+  if (f.schemeName.trim().length > 150) return i18n.t('pricing.theSchemeNameCanBeAt');
+  if (f.targetType === 'SPECIFIC_VARIANTS' && !f.variantIds.length) return i18n.t('pricing.selectAtLeastOneVariant');
+  if (!f.startDate) return i18n.t('pricing.chooseWhenTheSchemeStarts');
   const starts = joinDateTime(f.startDate, f.startTime)!;
   const ends = joinDateTime(f.endDate, f.endTime || '23:59');
-  if (ends && ends <= starts) return 'The end must be after the start';
-  if (!f.unit) return 'Choose the quantity unit';
+  if (ends && ends <= starts) return i18n.t('pricing.theEndMustBeAfterThe');
+  if (!f.unit) return i18n.t('pricing.chooseTheQuantityUnit');
   return slabsProblem(f.slabs, whole);
 }
 

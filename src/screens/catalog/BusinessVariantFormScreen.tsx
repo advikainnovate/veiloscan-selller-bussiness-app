@@ -17,11 +17,13 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, ImageIcon, LayersIcon, PercentIcon, PlusIcon, SettingsIcon, TrashIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const amount = (v: string) => v.replace(/[^\d.]/g, '');
 
 /** Add or edit a business variant: a sellable SKU with its own price, as the panel's form. */
 export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'BusinessVariantForm'>) {
+  const { t: tr } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -68,7 +70,7 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
     try {
       if (id) await productSkuService.update(id, { ...skuPayload(form), status: Number(form.status) });
       else await productSkuService.create(skuPayload(form));
-      toast(id ? 'Business variant updated' : 'Business variant created');
+      toast(id ? tr('catalog.businessVariantUpdated') : tr('catalog.businessVariantCreated'));
       navigation.goBack();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -78,12 +80,12 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
     }
   }
 
-  const title = id ? 'Edit Business Variant' : 'Add Business Variant';
+  const title = id ? tr('catalog.editBusinessVariant') : tr('catalog.addBusinessVariant');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Business Variants" icon={LayersIcon} allowed={false} />
+        <ComingSoon label={tr('common.businessVariants')} icon={LayersIcon} allowed={false} />
       </View>
     );
   }
@@ -98,44 +100,44 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Business Variants" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={tr('common.businessVariants')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>Define a sellable SKU with its own price for a product.</Text>
+        <Text style={opsStyles.meta}>{tr('catalog.defineASellableSkuWithIts')}</Text>
 
-        <SectionCard icon={SettingsIcon} title="Basic Information">
-          <SelectField label="Product" required value={form.productId} options={productOptions} onChange={v => set('productId', v)} placeholder={products.loading ? 'Loading…' : 'Select product'} />
+        <SectionCard icon={SettingsIcon} title={tr('common.basicInformation')}>
+          <SelectField label={tr('common.product')} required value={form.productId} options={productOptions} onChange={v => set('productId', v)} placeholder={products.loading ? tr('common.loading') : tr('common.selectProduct')} />
           {id ? (
-            <Field label="Status">
+            <Field label={tr('common.status')}>
               <Choices
                 options={[
-                  { value: '1', label: 'Active' },
-                  { value: '0', label: 'Inactive' },
+                  { value: '1', label: tr('common.active') },
+                  { value: '0', label: tr('common.inactive') },
                 ]}
                 value={form.status}
                 onChange={v => set('status', v)}
               />
             </Field>
           ) : null}
-          <Field label="SKU Item Number" required>
-            <Input value={form.skuItemNumber} onChangeText={v => set('skuItemNumber', v)} placeholder="e.g. SKU-IP15-128-BLK" autoCapitalize="characters" maxLength={100} accessibilityLabel="SKU Item Number" />
+          <Field label={tr('catalog.skuItemNumber')} required>
+            <Input value={form.skuItemNumber} onChangeText={v => set('skuItemNumber', v)} placeholder="e.g. SKU-IP15-128-BLK" autoCapitalize="characters" maxLength={100} accessibilityLabel={tr('catalog.skuItemNumber')} />
           </Field>
-          <Field label="Barcode">
-            <Input value={form.barcode} onChangeText={v => set('barcode', v)} placeholder="e.g. 8901234567890" keyboardType="number-pad" maxLength={64} accessibilityLabel="Barcode" />
+          <Field label={tr('common.barcode')}>
+            <Input value={form.barcode} onChangeText={v => set('barcode', v)} placeholder="e.g. 8901234567890" keyboardType="number-pad" maxLength={64} accessibilityLabel={tr('common.barcode')} />
           </Field>
         </SectionCard>
 
-        <SectionCard icon={LayersIcon} title="Variant Attributes" subtitle="The variant values that make up this SKU, e.g. Color: Black, Storage: 128GB.">
+        <SectionCard icon={LayersIcon} title={tr('catalog.variantAttributes')} subtitle={tr('catalog.theVariantValuesThatMakeUp')}>
           {form.attributes.map((a, i) => (
             <View key={i} style={styles.row}>
               <View style={styles.flex}>
-                <Input value={a.key} onChangeText={v => setAttr(i, { key: v })} placeholder="Attribute (e.g. Color)" accessibilityLabel={`Attribute ${i + 1}`} />
+                <Input value={a.key} onChangeText={v => setAttr(i, { key: v })} placeholder={tr('catalog.attributeEGColor')} accessibilityLabel={tr('catalog.attributeI', { i: i + 1 })} />
               </View>
               <View style={styles.flex}>
-                <Input value={a.value} onChangeText={v => setAttr(i, { value: v })} placeholder="Value (e.g. Black)" accessibilityLabel={`Attribute ${i + 1} value`} />
+                <Input value={a.value} onChangeText={v => setAttr(i, { value: v })} placeholder={tr('catalog.valueEGBlack')} accessibilityLabel={tr('catalog.attributeIValue', { i: i + 1 })} />
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Remove attribute ${i + 1}`}
+                accessibilityLabel={tr('catalog.removeAttributeI', { i: i + 1 })}
                 disabled={form.attributes.length === 1}
                 hitSlop={6}
                 onPress={() => set('attributes', form.attributes.filter((_, j) => j !== i))}
@@ -147,15 +149,15 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
           ))}
           <Pressable accessibilityRole="button" onPress={() => set('attributes', [...form.attributes, { key: '', value: '' }])} style={styles.add}>
             <PlusIcon size={15} color={colors.secondary} />
-            <Text style={styles.addText}>Add Attribute</Text>
+            <Text style={styles.addText}>{tr('catalog.addAttribute')}</Text>
           </Pressable>
         </SectionCard>
 
-        <SectionCard icon={PercentIcon} title="Pricing">
+        <SectionCard icon={PercentIcon} title={tr('catalog.pricing')}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <Field label="Selling Price" required>
-                <Input value={form.businessPrice} onChangeText={v => set('businessPrice', amount(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel="Selling Price" />
+              <Field label={tr('catalog.sellingPrice')} required>
+                <Input value={form.businessPrice} onChangeText={v => set('businessPrice', amount(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('catalog.sellingPrice')} />
               </Field>
             </View>
             <View style={styles.flex}>
@@ -164,14 +166,14 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
               </Field>
             </View>
           </View>
-          <Field label="Cost Price">
-            <Input value={form.costPrice} onChangeText={v => set('costPrice', amount(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel="Cost Price" />
+          <Field label={tr('catalog.costPrice')}>
+            <Input value={form.costPrice} onChangeText={v => set('costPrice', amount(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('catalog.costPrice')} />
           </Field>
-          <Field label="Quantity Pricing">
+          <Field label={tr('catalog.quantityPricing')}>
             <Choices
               options={[
-                { value: 'FIXED', label: 'Fixed (one price)' },
-                { value: 'SLAB', label: 'Slab (by quantity)' },
+                { value: 'FIXED', label: tr('catalog.fixedOnePrice') },
+                { value: 'SLAB', label: tr('catalog.slabByQuantity') },
               ]}
               value={form.quantityPriceType}
               onChange={v => set('quantityPriceType', v as SkuForm['quantityPriceType'])}
@@ -179,15 +181,15 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
           </Field>
           {form.quantityPriceType === 'SLAB' ? (
             <View style={styles.tiers}>
-              <Text style={opsStyles.muted}>A lower price per unit as the order quantity increases — up to 5 tiers.</Text>
+              <Text style={opsStyles.muted}>{tr('catalog.aLowerPricePerUnitAs')}</Text>
               {form.tiers.map((t, i) => (
                 <View key={i} style={styles.row}>
-                  <Text style={styles.tier}>{`Tier ${i + 1}`}</Text>
+                  <Text style={styles.tier}>{tr('catalog.tierI', { i: i + 1 })}</Text>
                   <View style={styles.flex}>
-                    <Input value={t.lowerBound} onChangeText={v => setTier(i, { lowerBound: v.replace(/\D/g, '') })} keyboardType="number-pad" placeholder="Min qty" accessibilityLabel={`Tier ${i + 1} minimum quantity`} />
+                    <Input value={t.lowerBound} onChangeText={v => setTier(i, { lowerBound: v.replace(/\D/g, '') })} keyboardType="number-pad" placeholder={tr('catalog.minQty')} accessibilityLabel={tr('catalog.tierIMinimumQuantity', { i: i + 1 })} />
                   </View>
                   <View style={styles.flex}>
-                    <Input value={t.price} onChangeText={v => setTier(i, { price: amount(v) })} keyboardType="decimal-pad" placeholder="Price" accessibilityLabel={`Tier ${i + 1} price`} />
+                    <Input value={t.price} onChangeText={v => setTier(i, { price: amount(v) })} keyboardType="decimal-pad" placeholder={tr('common.price')} accessibilityLabel={tr('catalog.tierIPrice', { i: i + 1 })} />
                   </View>
                 </View>
               ))}
@@ -195,21 +197,21 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
           ) : null}
         </SectionCard>
 
-        <SectionCard icon={ImageIcon} title="SKU Image">
+        <SectionCard icon={ImageIcon} title={tr('catalog.skuImage')}>
           <View style={styles.row}>
             <View style={styles.image}>{form.productImageUrl ? <Image source={{ uri: form.productImageUrl }} style={styles.fill} /> : <ImageIcon size={22} color={colors.textMuted} />}</View>
             <View style={styles.imageActions}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Upload SKU image" disabled={uploading} onPress={pickImage} style={opsStyles.smallBtn}>
-                <Text style={opsStyles.smallBtnText}>{uploading ? 'Uploading…' : form.productImageUrl ? 'Change' : 'Upload'}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={tr('catalog.uploadSkuImage')} disabled={uploading} onPress={pickImage} style={opsStyles.smallBtn}>
+                <Text style={opsStyles.smallBtnText}>{uploading ? tr('common.uploading') : form.productImageUrl ? tr('common.change') : tr('common.upload')}</Text>
               </Pressable>
               {form.productImageUrl ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Remove image" onPress={() => setForm(f => ({ ...f, productImageFileId: '', productImageUrl: '' }))}>
-                  <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Remove</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={tr('catalog.removeImage')} onPress={() => setForm(f => ({ ...f, productImageFileId: '', productImageUrl: '' }))}>
+                  <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{tr('common.remove')}</Text>
                 </Pressable>
               ) : null}
             </View>
           </View>
-          <Text style={opsStyles.muted}>A business variant is the unit customers actually buy; its attributes say which variant combination it is (e.g. Color: Red, Size: L).</Text>
+          <Text style={opsStyles.muted}>{tr('catalog.aBusinessVariantIsTheUnit')}</Text>
         </SectionCard>
 
         {error ? (
@@ -219,7 +221,7 @@ export function BusinessVariantFormScreen({ navigation, route }: ScreenProps<'Bu
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : 'Add Business Variant'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? tr('common.saveChanges') : tr('catalog.addBusinessVariant')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

@@ -9,11 +9,13 @@ import { fileService } from '../../../services/products-service';
 import { Sheet } from '../../../components/ui/Sheet';
 import { Button } from '../../../components/ui/Button';
 import { CloseIcon, StarIcon } from '../../../components/icons';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 const FALLBACK_TEXT: Record<VariantGallery['fallback'], string> = {
-  SKU_IMAGE: 'No photos of its own yet — the store shows the image picked for this SKU, then the product’s photos.',
-  PRODUCT: 'No photos of its own yet — the store shows the product’s photos.',
-  NONE: 'No photos yet — the store shows a placeholder.',
+  get SKU_IMAGE() { return i18n.t('products.noPhotosOfItsOwnYet'); },
+  get PRODUCT() { return i18n.t('products.noPhotosOfItsOwnYet2'); },
+  get NONE() { return i18n.t('products.noPhotosYetTheStoreShows'); },
 };
 
 /**
@@ -33,6 +35,7 @@ export function VariantPhotosSheet({
   /** New photo count and main photo, for the SKU list. */
   onChange: (count: number, primaryUrl: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [gallery, setGallery] = useState<VariantGallery | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -88,27 +91,27 @@ export function VariantPhotosSheet({
   }
 
   function remove(image: VariantImage) {
-    NativeAlert.alert('Remove this photo?', undefined, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => run(image.id, () => productBuilderService.removeVariantImage(productId, variant.id, image.id)) },
+    NativeAlert.alert(t('products.removeThisPhoto'), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => run(image.id, () => productBuilderService.removeVariantImage(productId, variant.id, image.id)) },
     ]);
   }
 
   function applyToSameLook() {
     const sameLook = gallery?.sameLook ?? [];
     NativeAlert.alert(
-      `Give ${sameLook.length === 1 ? sameLook[0].label : `all ${sameLook.length} variants of this colour`} these photos?`,
-      "Photos they already have aren't added twice.",
+      t('products.giveThesePhotos', { target: sameLook.length === 1 ? sameLook[0].label : t('products.allVariantsOfColour', { count: sameLook.length }) }),
+      t('products.photosTheyAlreadyHaveArenT'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Apply',
+          text: t('common.apply'),
           onPress: async () => {
             setBusy('apply');
             try {
               await productBuilderService.applyVariantImagesToSameLook(productId, variant.id);
               setGallery(await productBuilderService.variantImages(productId, variant.id));
-              toast('Photos applied to the same colour');
+              toast(t('products.photosAppliedToTheSameColour'));
             } catch (err) {
               setError(extractErrorMessage(err));
             } finally {
@@ -121,7 +124,7 @@ export function VariantPhotosSheet({
   }
 
   return (
-    <Sheet visible title={`${variant.label} photos`} subtitle={variant.sku} onClose={onClose} footer={<Button title="Add photos" loading={busy === 'upload'} loadingTitle="Uploading…" onPress={add} />}>
+    <Sheet visible title={t('products.labelPhotos', { label: variant.label })} subtitle={variant.sku} onClose={onClose} footer={<Button title={t('products.addPhotos')} loading={busy === 'upload'} loadingTitle={t('common.uploading')} onPress={add} />}>
       {!gallery && !error ? <ActivityIndicator color={colors.secondary} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {gallery && !images.length ? <Text style={styles.muted}>{FALLBACK_TEXT[gallery.fallback]}</Text> : null}
@@ -131,21 +134,21 @@ export function VariantPhotosSheet({
             {image.url ? <Image source={{ uri: image.url }} style={styles.img} /> : <View style={styles.img} />}
             {i === 0 ? (
               <View style={styles.main}>
-                <Text style={styles.mainText}>Main</Text>
+                <Text style={styles.mainText}>{t('common.main')}</Text>
               </View>
             ) : (
-              <Pressable accessibilityLabel="Make main photo" onPress={() => makePrimary(image)} style={[styles.btn, styles.topLeft]}>
+              <Pressable accessibilityLabel={t('products.makeMainPhoto')} onPress={() => makePrimary(image)} style={[styles.btn, styles.topLeft]}>
                 <StarIcon size={13} color={colors.white} />
               </Pressable>
             )}
-            <Pressable accessibilityLabel="Remove photo" onPress={() => remove(image)} style={[styles.btn, styles.topRight]}>
+            <Pressable accessibilityLabel={t('products.removePhoto')} onPress={() => remove(image)} style={[styles.btn, styles.topRight]}>
               <CloseIcon size={13} color={colors.white} />
             </Pressable>
             <View style={styles.moves}>
-              <Pressable accessibilityLabel="Move earlier" disabled={i === 0} onPress={() => move(image, -1)} style={[styles.move, i === 0 && styles.hidden]}>
+              <Pressable accessibilityLabel={t('products.moveEarlier')} disabled={i === 0} onPress={() => move(image, -1)} style={[styles.move, i === 0 && styles.hidden]}>
                 <Text style={styles.moveText}>‹</Text>
               </Pressable>
-              <Pressable accessibilityLabel="Move later" disabled={i === images.length - 1} onPress={() => move(image, 1)} style={[styles.move, i === images.length - 1 && styles.hidden]}>
+              <Pressable accessibilityLabel={t('products.moveLater')} disabled={i === images.length - 1} onPress={() => move(image, 1)} style={[styles.move, i === images.length - 1 && styles.hidden]}>
                 <Text style={styles.moveText}>›</Text>
               </Pressable>
             </View>
@@ -158,20 +161,20 @@ export function VariantPhotosSheet({
         ))}
       </View>
       {gallery?.sameLook.length && images.length ? (
-        <Button title={busy === 'apply' ? 'Applying…' : `Use these for ${gallery.sameLook.length === 1 ? gallery.sameLook[0].label : `all ${gallery.sameLook.length} same-colour variants`}`} variant="ghost" disabled={!!busy} onPress={applyToSameLook} />
+        <Button title={busy === 'apply' ? t('products.applying') : t('products.useTheseFor', { target: gallery.sameLook.length === 1 ? gallery.sameLook[0].label : t('products.allSameColourVariants', { count: gallery.sameLook.length }) })} variant="ghost" disabled={!!busy} onPress={applyToSameLook} />
       ) : null}
       {gallery?.reusableFrom.length ? (
         <View style={styles.reuse}>
-          <Text style={styles.reuseTitle}>Reuse photos from the same colour</Text>
+          <Text style={styles.reuseTitle}>{t('products.reusePhotosFromTheSameColour')}</Text>
           {gallery.reusableFrom.map(source => (
             <Pressable
               key={source.variantId}
               disabled={!!busy}
-              onPress={() => run(`copy-${source.variantId}`, () => productBuilderService.copyVariantImages(productId, variant.id, source.variantId), `Added ${source.label}'s photos`)}
+              onPress={() => run(`copy-${source.variantId}`, () => productBuilderService.copyVariantImages(productId, variant.id, source.variantId), t('products.addedLabelSPhotos', { label: source.label }))}
               style={styles.reuseRow}
             >
               <Text style={styles.reuseText}>{source.label}</Text>
-              <Text style={styles.link}>{busy === `copy-${source.variantId}` ? 'Adding…' : `Add ${source.imageCount} photo${source.imageCount === 1 ? '' : 's'}`}</Text>
+              <Text style={styles.link}>{busy === `copy-${source.variantId}` ? t('products.adding') : t('products.addPhotos', { count: source.imageCount })}</Text>
             </Pressable>
           ))}
         </View>

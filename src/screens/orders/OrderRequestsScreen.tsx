@@ -19,11 +19,13 @@ import { Badge } from '../../components/ui/Badge';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { CheckCircleIcon, ClipboardListIcon, ClockIcon, ShoppingBagIcon, StoreIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const SEARCH_DELAY_MS = 300;
 
 /** Order requests customers send to the store: product lists without prices, billed by the store. */
 export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('orders:manage');
   const [status, setStatus] = useState<OrderRequestStatus | ''>('');
@@ -54,16 +56,16 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
   const count = (st: OrderRequestStatus) => (counts ? String(counts[st] ?? 0) : '…');
   const chips = useMemo(() => {
     return [
-      { value: '', label: 'All', count: all },
+      { value: '', label: t('common.all'), count: all },
       ...ORDER_REQUEST_STATUSES.map(s => ({ value: s.value, label: s.label, count: counts?.[s.value] })),
     ];
-  }, [counts, all]);
+  }, [counts, all, t]);
 
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order Requests" onBack={navigation.goBack} />
-        <ComingSoon label="Order Requests" icon={ClipboardListIcon} allowed={false} />
+        <AppHeader title={t('common.orderRequests')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.orderRequests')} icon={ClipboardListIcon} allowed={false} />
       </View>
     );
   }
@@ -71,7 +73,7 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
   const rows = data?.items ?? [];
   return (
     <View style={styles.screen}>
-      <AppHeader title="Order Requests" subtitle={data ? `${data.total} request${data.total === 1 ? '' : 's'}` : undefined} onBack={navigation.goBack} />
+      <AppHeader title={t('common.orderRequests')} subtitle={data ? t('common.requestCount', { count: data.total }) : undefined} onBack={navigation.goBack} />
       <FlatList
         data={loading || (error && !data) ? [] : rows}
         keyExtractor={item => item.id}
@@ -80,25 +82,23 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
           <View style={styles.headerBlock}>
             <View>
               <Text style={styles.pageTitle} accessibilityRole="header">
-                Order Requests
-              </Text>
+                {t('common.orderRequests')}</Text>
               <Text style={styles.pageSubtitle}>
-                Lists customers sent to your order-request stores. Check availability, confirm the items, generate the final bill and complete them.
-              </Text>
+                {t('orders.listsCustomersSentToYourOrder')}</Text>
             </View>
             <View style={styles.cards}>
-              <SummaryCard icon={ShoppingBagIcon} tone={['#fffbeb', '#d97706']} label="New requests" value={count('REQUESTED')} hint="Waiting for you to check" />
-              <SummaryCard icon={ClockIcon} tone={['#f0f9ff', '#0284c7']} label="Under review" value={count('UNDER_REVIEW')} hint="Checking availability" />
-              <SummaryCard icon={CheckCircleIcon} tone={['#fff7ed', '#ea580c']} label="Confirmed" value={count('CONFIRMED')} hint="Ready for the final bill" />
+              <SummaryCard icon={ShoppingBagIcon} tone={['#fffbeb', '#d97706']} label={t('orders.newRequests')} value={count('REQUESTED')} hint={t('orders.waitingForYouToCheck')} />
+              <SummaryCard icon={ClockIcon} tone={['#f0f9ff', '#0284c7']} label={t('common.underReview')} value={count('UNDER_REVIEW')} hint={t('orders.checkingAvailability')} />
+              <SummaryCard icon={CheckCircleIcon} tone={['#fff7ed', '#ea580c']} label={t('common.confirmed')} value={count('CONFIRMED')} hint={t('orders.readyForTheFinalBill')} />
               <SummaryCard
                 icon={StoreIcon}
                 tone={['#ecfdf5', '#059669']}
-                label="Completed"
+                label={t('common.completed')}
                 value={count('COMPLETED')}
-                hint={all != null ? `Billed as orders · ${all} request${all === 1 ? '' : 's'} in all` : 'Billed as orders'}
+                hint={all != null ? t('orders.billedAsOrdersInAll', { count: all }) : t('orders.billedAsOrders')}
               />
             </View>
-            <SearchBar value={query} onChange={setQuery} placeholder="Search request, customer or mobile…" />
+            <SearchBar value={query} onChange={setQuery} placeholder={t('orders.searchRequestCustomerOrMobile')} />
             <FilterChips options={chips} value={status} onChange={value => setStatus(value as OrderRequestStatus | '')} />
           </View>
         }
@@ -110,11 +110,11 @@ export function OrderRequestsScreen({ navigation }: ScreenProps<'OrderRequests'>
           ) : (
             <EmptyState
               icon={ClipboardListIcon}
-              title={status || debounced ? 'No requests match' : 'No order requests yet'}
+              title={status || debounced ? t('common.noRequestsMatch') : t('orders.noOrderRequestsYet')}
               text={
                 status || debounced
-                  ? 'Try another filter or search term.'
-                  : 'They arrive when a store is set to take order requests (Store › Settings) and a customer sends their list.'
+                  ? t('common.tryAnotherFilterOrSearchTerm')
+                  : t('orders.theyArriveWhenAStoreIs')
               }
             />
           )
@@ -164,10 +164,11 @@ function Separator() {
 }
 
 function RequestCard({ request, onPress }: { request: OrderRequestRow; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Request ${request.requestNumber}, ${requestStatusLabel(request.status)}`}
+      accessibilityLabel={t('orders.requestRequestnumberStatus', { requestNumber: request.requestNumber, status: requestStatusLabel(request.status) })}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
@@ -177,7 +178,7 @@ function RequestCard({ request, onPress }: { request: OrderRequestRow; onPress: 
         </Text>
         <Badge label={requestStatusLabel(request.status)} tone={requestStatusTone(request.status)} />
         <Text style={styles.items}>
-          {request.itemCount} item{request.itemCount === 1 ? '' : 's'}
+          {t('common.itemCount', { count: request.itemCount })}
         </Text>
       </View>
       <Text style={styles.meta} numberOfLines={1}>
@@ -190,7 +191,7 @@ function RequestCard({ request, onPress }: { request: OrderRequestRow; onPress: 
           </Text>
           <Text style={styles.phone}>{request.customerMobile}</Text>
         </View>
-        {request.orderNumber ? <Badge label={`Bill ${request.orderNumber}`} tone="green" /> : null}
+        {request.orderNumber ? <Badge label={t('orders.billOrdernumber', { orderNumber: request.orderNumber })} tone="green" /> : null}
       </View>
       {request.customerNote ? (
         <Text style={styles.note} numberOfLines={2}>

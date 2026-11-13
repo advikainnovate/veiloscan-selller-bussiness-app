@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { Sheet } from '../ui/Sheet';
 import { PlusIcon, type IconProps } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 // The compact, app-native list layout (Quantity Discount Slabs, the catalog
 // pages): search and count tiles fixed on top, tight row cards, and a
@@ -73,6 +74,7 @@ export function ListTop({ children }: { children: ReactNode }) {
 
 /** "3 warehouses" or, while filtering, "Clear · 2 of 5". */
 export function SummaryLine({ hint, filtered, shown, total, noun, onClear, extra }: { hint?: string; filtered: boolean; shown: number; total: number; noun: string; onClear: () => void; extra?: ReactNode }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.summary}>
       <Text style={[styles.hint, styles.flex]} numberOfLines={2}>
@@ -81,7 +83,7 @@ export function SummaryLine({ hint, filtered, shown, total, noun, onClear, extra
       {extra}
       {filtered ? (
         <Pressable accessibilityRole="button" hitSlop={8} onPress={onClear}>
-          <Text style={styles.clear}>{`Clear · ${shown} of ${total}`}</Text>
+          <Text style={styles.clear}>{t('ui.clearShownOfTotal', { shown, total })}</Text>
         </Pressable>
       ) : (
         <Text style={styles.hint}>{`${total} ${noun}${total === 1 ? '' : 's'}`}</Text>

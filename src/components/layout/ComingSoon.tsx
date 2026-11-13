@@ -2,27 +2,29 @@ import React, { type ComponentType } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius, shadow, fonts } from '../../theme';
 import { LockIcon, type IconProps } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The body of a page whose module isn't in the app yet, or that the user's
  * role can't open.
  */
 export function ComingSoon({ label, icon: Icon, allowed }: { label: string; icon: ComponentType<IconProps>; allowed: boolean }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
       <View style={styles.card}>
         <View style={[styles.badge, !allowed && styles.badgeLocked]}>
           {allowed ? <Icon size={30} color={colors.secondary} /> : <LockIcon size={28} color={colors.textSecondary} />}
         </View>
-        <Text style={styles.title}>{allowed ? label : 'No access'}</Text>
+        <Text style={styles.title}>{allowed ? label : t('layout.noAccess')}</Text>
         <Text style={styles.text}>
           {allowed
-            ? `${label} is coming to the app soon. Until then you can manage it from the Seller Panel on the web.`
-            : `Your role doesn't include ${label}. Ask your store owner to give you access.`}
+            ? t('layout.labelIsComingToTheApp', { label })
+            : t('layout.yourRoleDoesnTIncludeLabel', { label })}
         </Text>
         {allowed ? (
           <View style={styles.chip}>
-            <Text style={styles.chipText}>Coming soon</Text>
+            <Text style={styles.chipText}>{t('layout.comingSoon')}</Text>
           </View>
         ) : null}
       </View>

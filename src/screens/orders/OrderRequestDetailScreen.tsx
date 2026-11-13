@@ -26,23 +26,25 @@ import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { ProductPicker } from '../../components/create-order/ProductPicker';
 import { BoxIcon, CloseIcon, FileTextIcon, MapPinIcon, PhoneIcon, PlusIcon, UserIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const ACTIONS: Record<OrderRequestStatus, { label: string; tone: 'primary' | 'ghost' | 'danger'; needsReason?: boolean }> = {
   REQUESTED: { label: '', tone: 'ghost' },
-  UNDER_REVIEW: { label: 'Start review', tone: 'ghost' },
-  CONFIRMED: { label: 'Confirm request', tone: 'primary' },
-  COMPLETED: { label: 'Mark completed', tone: 'primary' },
-  REJECTED: { label: 'Reject', tone: 'danger', needsReason: true },
-  CANCELLED: { label: 'Cancel request', tone: 'danger', needsReason: true },
+  UNDER_REVIEW: { get label() { return i18n.t('orders.startReview'); }, tone: 'ghost' },
+  CONFIRMED: { get label() { return i18n.t('orders.confirmRequest'); }, tone: 'primary' },
+  COMPLETED: { get label() { return i18n.t('orders.markCompleted'); }, tone: 'primary' },
+  REJECTED: { get label() { return i18n.t('orders.reject'); }, tone: 'danger', needsReason: true },
+  CANCELLED: { get label() { return i18n.t('orders.cancelRequest'); }, tone: 'danger', needsReason: true },
 };
 
 /** How the item stands now: in stock, short, or not for sale. */
 function availability(catalogItem: CatalogItem | null, sellingQuantity: number): { label: string; color: string } {
-  if (!catalogItem) return { label: "Can't be sold now (no price or inactive)", color: colors.error };
-  if (catalogItem.stock === null) return { label: 'Stock not tracked', color: colors.textSecondary };
-  if (catalogItem.stock <= 0) return { label: 'Out of stock', color: colors.error };
-  if (catalogItem.stock < sellingQuantity) return { label: `Only ${catalogItem.stock} in stock`, color: colors.warningDark };
-  return { label: `In stock (${catalogItem.stock})`, color: colors.successDark };
+  if (!catalogItem) return { label: i18n.t('orders.canTBeSoldNowNo'), color: colors.error };
+  if (catalogItem.stock === null) return { label: i18n.t('orders.stockNotTracked'), color: colors.textSecondary };
+  if (catalogItem.stock <= 0) return { label: i18n.t('common.outOfStock2'), color: colors.error };
+  if (catalogItem.stock < sellingQuantity) return { label: i18n.t('orders.onlyStockInStock', { stock: catalogItem.stock }), color: colors.warningDark };
+  return { label: i18n.t('orders.inStockStock', { stock: catalogItem.stock }), color: colors.successDark };
 }
 
 interface DraftLine {
@@ -58,6 +60,7 @@ interface DraftLine {
 
 /** One order request: review its items, move its status, and bill it as an order. */
 export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'OrderRequestDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const toast = useToast();
   const { data: request, error, loading, refreshing, reload } = useFetch(() => orderRequestService.get(id), [id]);
@@ -79,7 +82,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
   if (loading || (!request && !error)) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order request" onBack={navigation.goBack} />
+        <AppHeader title={t('orders.orderRequest')} onBack={navigation.goBack} />
         <View style={styles.content}>
           <ListSkeleton rows={3} height={120} />
         </View>
@@ -89,8 +92,8 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
   if (!request) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order request" onBack={navigation.goBack} />
-        <ErrorState message={error ?? "This request couldn't be loaded."} onRetry={() => reload()} />
+        <AppHeader title={t('orders.orderRequest')} onBack={navigation.goBack} />
+        <ErrorState message={error ?? t('orders.thisRequestCouldnTBeLoaded')} onRetry={() => reload()} />
       </View>
     );
   }
@@ -104,7 +107,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
     setActionError(null);
     try {
       await orderRequestService.updateStatus(id, status, note);
-      toast(`Request ${requestStatusLabel(status).toLowerCase()}`);
+      toast(t('orders.requestLowercase', { lowerCase: requestStatusLabel(status).toLowerCase() }));
       setReasonFor(null);
       setReason('');
       await reload();
@@ -146,7 +149,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
     if (!draft) return;
     const lines = draft.filter(l => Number(l.quantity) > 0);
     if (!lines.length) {
-      setActionError('Keep at least one item — reject or cancel the request instead');
+      setActionError(t('orders.keepAtLeastOneItemReject'));
       return;
     }
     setBusy('items');
@@ -156,7 +159,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
         id,
         lines.map(l => ({ productId: l.productId, variantId: l.variantId, quantity: Number(l.quantity), ...(l.uom ? { uom: l.uom } : {}) })),
       );
-      toast('Items updated');
+      toast(t('orders.itemsUpdated'));
       setDraft(null);
       await reload();
     } catch (err) {
@@ -176,14 +179,14 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
         <Card>
           <View style={styles.statusRow}>
             <Badge label={requestStatusLabel(request.status)} tone={requestStatusTone(request.status)} />
-            <Text style={styles.when}>Sent {formatWhen(request.createdAt)}</Text>
+            <Text style={styles.when}>{t('orders.sentCreatedat', { createdAt: formatWhen(request.createdAt) })}</Text>
           </View>
-          {request.statusNote ? <Text style={styles.reason}>Reason: {request.statusNote}</Text> : null}
+          {request.statusNote ? <Text style={styles.reason}>{t('orders.reasonStatusnote', { statusNote: request.statusNote })}</Text> : null}
           {statusActions.length || request.canEdit ? (
             <View style={styles.actions}>
               {request.canEdit && !draft ? (
                 <Button
-                  title="Generate final bill"
+                  title={t('orders.generateFinalBill')}
                   disabled={!!busy || request.items.length === unbillable}
                   onPress={() => navigation.navigate('CreateOrder', { requestId: request.id })}
                   style={styles.fullWidth}
@@ -212,7 +215,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
                           action.tone === 'danger' && styles.actionTextDanger,
                         ]}
                       >
-                        {busy === status ? 'Saving…' : action.label}
+                        {busy === status ? t('common.saving') : action.label}
                       </Text>
                     </Pressable>
                   );
@@ -235,28 +238,28 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
           >
             <FileTextIcon size={18} color={colors.successDark} />
             <Text style={styles.billText}>
-              Final bill {request.bill.orderNumber}
+              {t('orders.finalBillNumber', { number: request.bill.orderNumber })}
               {request.bill.totalAmount !== null ? ` · ${formatRupees(request.bill.totalAmount)}` : ''}
             </Text>
-            <Text style={styles.billLink}>View</Text>
+            <Text style={styles.billLink}>{t('common.view')}</Text>
           </Pressable>
         ) : null}
 
         <Card
-          title={`Items (${draft ? draft.length : request.items.length})`}
+          title={t('orders.itemsValue', { value: draft ? draft.length : request.items.length })}
           icon={BoxIcon}
           padded={false}
           action={
             request.canEdit && !draft ? (
               <Pressable onPress={startEditing} hitSlop={8}>
-                <Text style={styles.link}>Edit</Text>
+                <Text style={styles.link}>{t('common.edit')}</Text>
               </Pressable>
             ) : null
           }
         >
           {!draft ? (
             <>
-              <Text style={styles.cardNote}>The customer sees no prices. Check stock, adjust quantities, then generate the final bill.</Text>
+              <Text style={styles.cardNote}>{t('orders.theCustomerSeesNoPricesCheck')}</Text>
               {request.items.map(item => {
                 const avail = availability(item.catalogItem, item.sellingQuantity);
                 return (
@@ -286,9 +289,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
               })}
               {unbillable ? (
                 <Text style={styles.unbillable}>
-                  {unbillable === 1 ? 'One product' : `${unbillable} products`} can't be billed now (no price, inactive or no longer sold here)
-                  and will be left out of the bill.
-                </Text>
+                  {t('orders.productsCantBeBilled', { count: unbillable })}</Text>
               ) : null}
             </>
           ) : (
@@ -305,30 +306,30 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
                     value={line.quantity}
                     onChangeText={text => setDraft(d => d!.map(l => (l === line ? { ...l, quantity: text.replace(/[^0-9.]/g, '') } : l)))}
                     keyboardType="decimal-pad"
-                    accessibilityLabel={`Quantity of ${line.name}`}
+                    accessibilityLabel={t('orders.quantityOfName', { name: line.name })}
                     style={styles.qtyInput}
                   />
                   <Text style={styles.uom}>{line.uom || 'unit'}</Text>
-                  <Pressable accessibilityLabel={`Remove ${line.name}`} hitSlop={8} onPress={() => setDraft(d => d!.filter(l => l !== line))}>
+                  <Pressable accessibilityLabel={t('common.removeName', { name: line.name })} hitSlop={8} onPress={() => setDraft(d => d!.filter(l => l !== line))}>
                     <CloseIcon size={18} color={colors.textMuted} />
                   </Pressable>
                 </View>
               ))}
               <Pressable onPress={() => setPickerOpen(true)} style={styles.addItem}>
                 <PlusIcon size={16} color={colors.secondary} strokeWidth={2.4} />
-                <Text style={styles.link}>Add a product</Text>
+                <Text style={styles.link}>{t('common.addAProduct')}</Text>
               </Pressable>
               <View style={styles.actionRow}>
                 <Pressable onPress={() => setDraft(null)} style={styles.action}>
-                  <Text style={styles.actionText}>Discard</Text>
+                  <Text style={styles.actionText}>{t('common.discard')}</Text>
                 </Pressable>
-                <Button title="Save items" loading={busy === 'items'} onPress={saveItems} style={styles.flex} />
+                <Button title={t('orders.saveItems')} loading={busy === 'items'} onPress={saveItems} style={styles.flex} />
               </View>
             </View>
           )}
         </Card>
 
-        <Card title="Customer" icon={UserIcon}>
+        <Card title={t('common.customer')} icon={UserIcon}>
           <Text style={styles.customerName}>{request.customer.name}</Text>
           <Pressable onPress={() => Linking.openURL(`tel:+${request.customer.countryCode}${request.customer.mobile}`)} style={styles.line}>
             <PhoneIcon size={16} color={colors.secondary} />
@@ -344,28 +345,28 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
           ) : null}
           {request.customer.note ? (
             <View style={styles.note}>
-              <Text style={styles.noteLabel}>Customer note</Text>
+              <Text style={styles.noteLabel}>{t('orders.customerNote')}</Text>
               <Text style={styles.noteText}>{request.customer.note}</Text>
             </View>
           ) : null}
           {/* As on the Seller Panel: call, WhatsApp or email the customer about their list. */}
           <View style={styles.contactRow}>
-            <ContactButton label="Call" onPress={() => Linking.openURL(`tel:+${phoneDigits}`)} />
+            <ContactButton label={t('common.call')} onPress={() => Linking.openURL(`tel:+${phoneDigits}`)} />
             <ContactButton
               label="WhatsApp"
               onPress={() =>
                 Linking.openURL(
                   `https://wa.me/${phoneDigits}?text=${encodeURIComponent(
-                    `Hi ${request.customer.name}, about your order request ${request.requestNumber} at ${request.store.name}: `,
+                    t('orders.hiNameAboutYourOrderRequest', { name: request.customer.name, requestNumber: request.requestNumber, name2: request.store.name }),
                   )}`,
                 )
               }
             />
             {request.customer.email ? (
               <ContactButton
-                label="Email"
+                label={t('common.email')}
                 onPress={() =>
-                  Linking.openURL(`mailto:${request.customer.email}?subject=${encodeURIComponent(`Your order request ${request.requestNumber}`)}`)
+                  Linking.openURL(`mailto:${request.customer.email}?subject=${encodeURIComponent(t('orders.yourOrderRequestRequestnumber', { requestNumber: request.requestNumber }))}`)
                 }
               />
             ) : null}
@@ -375,12 +376,12 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
 
       <Sheet
         visible={!!reasonFor}
-        title={reasonFor === 'REJECTED' ? 'Reject request' : 'Cancel request'}
-        subtitle="The customer sees this reason."
+        title={reasonFor === 'REJECTED' ? t('orders.rejectRequest') : t('orders.cancelRequest')}
+        subtitle={t('orders.theCustomerSeesThisReason')}
         onClose={() => setReasonFor(null)}
         footer={
           <Button
-            title={reasonFor === 'REJECTED' ? 'Reject' : 'Cancel request'}
+            title={reasonFor === 'REJECTED' ? t('orders.reject') : t('orders.cancelRequest')}
             loading={!!reasonFor && busy === reasonFor}
             disabled={!reason.trim()}
             onPress={() => reasonFor && changeStatus(reasonFor, reason.trim())}
@@ -390,7 +391,7 @@ export function OrderRequestDetailScreen({ navigation, route }: ScreenProps<'Ord
         <TextInput
           value={reason}
           onChangeText={setReason}
-          placeholder="Reason — e.g. items not available"
+          placeholder={t('orders.reasonEGItemsNotAvailable')}
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.secondary}
           multiline

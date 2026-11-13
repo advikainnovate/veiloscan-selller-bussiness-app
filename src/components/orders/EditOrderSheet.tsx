@@ -9,6 +9,7 @@ import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { Field, Input, SelectField } from '../form/Fields';
 import { confirmAction } from '../operations/OpsParts';
+import { useTranslation } from 'react-i18next';
 
 // The Seller Panel's order edit form (src/app/dashboard/orders/_config.ts).
 const DELIVERY_STATUSES = ['CREATED', 'CONFIRMED', 'PACKED', 'READY_TO_SHIP', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED', 'REPLACED'];
@@ -19,6 +20,7 @@ const titleCase = (s: string) => s.replace(/_/g, ' ').toLowerCase().replace(/^\w
 
 /** Edit an order's status, payment status and remarks. */
 export function EditOrderSheet({ order, visible, onClose, onSaved }: { order: OrderRow; visible: boolean; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [status, setStatus] = useState(order.orderStatus);
   const [payment, setPayment] = useState(order.paymentStatus ?? '');
@@ -46,9 +48,9 @@ export function EditOrderSheet({ order, visible, onClose, onSaved }: { order: Or
     if (statusChanged) {
       const label = orderStatusLabel({ orderStatus: status, fulfillmentType: order.fulfillmentType });
       const ok = await confirmAction(
-        `Change the status to ${label}?`,
-        'This sets the status directly, without the usual steps (payment collection, stock and notifications that the action buttons handle).',
-        'Change status',
+        t('orders.changeTheStatusToLabel', { label }),
+        t('orders.thisSetsTheStatusDirectlyWithout'),
+        t('common.changeStatus'),
         status === 'CANCELLED',
       );
       if (!ok) return;
@@ -60,7 +62,7 @@ export function EditOrderSheet({ order, visible, onClose, onSaved }: { order: Or
         ...(paymentChanged ? { paymentStatus: payment } : {}),
         ...(remarksChanged ? { remarks: remarks.trim() || null } : {}),
       });
-      toast('Order updated');
+      toast(t('orders.orderUpdated'));
       onSaved();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -72,23 +74,23 @@ export function EditOrderSheet({ order, visible, onClose, onSaved }: { order: Or
   return (
     <Sheet
       visible={visible}
-      title="Edit order"
+      title={t('orders.editOrder')}
       subtitle={order.uniqueOrderId}
       onClose={onClose}
-      footer={<Button title={changed ? 'Save changes' : 'Done'} loading={saving} onPress={save} />}
+      footer={<Button title={changed ? t('common.saveChanges2') : t('common.done')} loading={saving} onPress={save} />}
     >
       <View style={styles.body}>
-        <SelectField label="Order status" value={status} options={statusOptions} onChange={setStatus} />
+        <SelectField label={t('orders.orderStatus')} value={status} options={statusOptions} onChange={setStatus} />
         {statusChanged ? (
           <View style={styles.warn}>
             <Text style={styles.warnText}>
-              {pickup ? 'For pickup orders, the Accept / Ready / Picked up buttons are the usual way to move an order on.' : 'Changing the status here skips the usual order steps.'}
+              {pickup ? t('orders.forPickupOrdersTheAcceptReady') : t('orders.changingTheStatusHereSkipsThe')}
             </Text>
           </View>
         ) : null}
-        <SelectField label="Payment status" value={payment} options={paymentOptions} onChange={setPayment} placeholder="Select payment status" />
-        <Field label="Remarks" hint="Internal note — the customer doesn't see this.">
-          <Input value={remarks} onChangeText={setRemarks} placeholder="e.g. Customer will collect after 6 pm" multiline maxLength={1000} accessibilityLabel="Remarks" />
+        <SelectField label={t('orders.paymentStatus')} value={payment} options={paymentOptions} onChange={setPayment} placeholder={t('orders.selectPaymentStatus')} />
+        <Field label={t('orders.remarks')} hint={t('orders.internalNoteTheCustomerDoesnT')}>
+          <Input value={remarks} onChangeText={setRemarks} placeholder="e.g. Customer will collect after 6 pm" multiline maxLength={1000} accessibilityLabel={t('orders.remarks')} />
         </Field>
       </View>
     </Sheet>

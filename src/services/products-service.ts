@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import i18n from '../i18n';
 
 // The Seller Panel's products-master-service plus the product sub-resources
 // its list and detail pages read (images, tags, documents, SEO, measures,
@@ -107,13 +108,13 @@ export interface StockConfigView {
 }
 
 export const STOCK_TYPES = [
-  { value: 'PIECE', label: 'Pieces' },
-  { value: 'WEIGHT', label: 'Weight' },
-  { value: 'VOLUME', label: 'Volume' },
-  { value: 'LENGTH', label: 'Length' },
-  { value: 'AREA', label: 'Area' },
-  { value: 'CUBIC_VOLUME', label: 'Cubic volume' },
-  { value: 'PACK', label: 'Packs / boxes' },
+  { value: 'PIECE', get label() { return i18n.t('products.pieces'); } },
+  { value: 'WEIGHT', get label() { return i18n.t('products.weight'); } },
+  { value: 'VOLUME', get label() { return i18n.t('products.volume'); } },
+  { value: 'LENGTH', get label() { return i18n.t('products.length'); } },
+  { value: 'AREA', get label() { return i18n.t('common.area'); } },
+  { value: 'CUBIC_VOLUME', get label() { return i18n.t('products.cubicVolume'); } },
+  { value: 'PACK', get label() { return i18n.t('products.packsBoxes'); } },
 ];
 
 export const inventoryService = {
@@ -215,16 +216,16 @@ export interface SellingConfigView {
 export type SellingPreview = { valid: true; quantity: string; baseQuantity: string; price: string; amount: number } | { valid: false; message: string };
 
 export const SELLING_TYPES: { value: SellingType; label: string; method: SellingMethod; stock: string[] }[] = [
-  { value: 'FIXED_UNIT', label: 'Piece / unit', method: 'FIXED', stock: ['PIECE', 'WEIGHT', 'VOLUME', 'LENGTH', 'AREA', 'CUBIC_VOLUME', 'PACK'] },
-  { value: 'PACK', label: 'Pack', method: 'FIXED', stock: ['PACK', 'PIECE'] },
-  { value: 'BOX', label: 'Box', method: 'FIXED', stock: ['PACK', 'PIECE'] },
-  { value: 'DOZEN', label: 'Dozen', method: 'FIXED', stock: ['PIECE'] },
-  { value: 'BUNDLE', label: 'Bundle', method: 'FIXED', stock: ['PACK', 'PIECE'] },
-  { value: 'VARIABLE_WEIGHT', label: 'Weight', method: 'VARIABLE', stock: ['WEIGHT'] },
-  { value: 'VARIABLE_VOLUME', label: 'Volume', method: 'VARIABLE', stock: ['VOLUME', 'CUBIC_VOLUME'] },
-  { value: 'VARIABLE_LENGTH', label: 'Length', method: 'VARIABLE', stock: ['LENGTH'] },
-  { value: 'VARIABLE_AREA', label: 'Area', method: 'VARIABLE', stock: ['AREA'] },
-  { value: 'VARIABLE_COUNT', label: 'Count', method: 'VARIABLE', stock: ['PIECE'] },
+  { value: 'FIXED_UNIT', get label() { return i18n.t('products.pieceUnit'); }, method: 'FIXED', stock: ['PIECE', 'WEIGHT', 'VOLUME', 'LENGTH', 'AREA', 'CUBIC_VOLUME', 'PACK'] },
+  { value: 'PACK', get label() { return i18n.t('products.pack'); }, method: 'FIXED', stock: ['PACK', 'PIECE'] },
+  { value: 'BOX', get label() { return i18n.t('products.box'); }, method: 'FIXED', stock: ['PACK', 'PIECE'] },
+  { value: 'DOZEN', get label() { return i18n.t('products.dozen'); }, method: 'FIXED', stock: ['PIECE'] },
+  { value: 'BUNDLE', get label() { return i18n.t('products.bundle'); }, method: 'FIXED', stock: ['PACK', 'PIECE'] },
+  { value: 'VARIABLE_WEIGHT', get label() { return i18n.t('products.weight'); }, method: 'VARIABLE', stock: ['WEIGHT'] },
+  { value: 'VARIABLE_VOLUME', get label() { return i18n.t('products.volume'); }, method: 'VARIABLE', stock: ['VOLUME', 'CUBIC_VOLUME'] },
+  { value: 'VARIABLE_LENGTH', get label() { return i18n.t('products.length'); }, method: 'VARIABLE', stock: ['LENGTH'] },
+  { value: 'VARIABLE_AREA', get label() { return i18n.t('common.area'); }, method: 'VARIABLE', stock: ['AREA'] },
+  { value: 'VARIABLE_COUNT', get label() { return i18n.t('products.count'); }, method: 'VARIABLE', stock: ['PIECE'] },
 ];
 
 export const sellingConfigService = {

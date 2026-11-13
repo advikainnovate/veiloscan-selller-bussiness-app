@@ -7,8 +7,9 @@ import { OFFER_KINDS, type OfferKind } from '../lib/offers';
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 // Menu pages that have their own screen (the rest open the "coming soon" module page).
-type ModuleRoute = 'InventoryLedger' | 'SupportTickets' | 'SupportDashboard' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs' | 'Users';
+type ModuleRoute = 'LanguageSettings' | 'InventoryLedger' | 'SupportTickets' | 'SupportDashboard' | 'OrderRequests' | 'CustomerCredit' | 'Coupons' | 'AllStores' | 'BusinessOverview' | 'DailyBusiness' | 'Expenses' | 'Notes' | 'QuantitySlabs' | 'Profile' | 'Notifications' | 'Subscription' | 'StockHealth' | 'PendingStock' | 'Shipping' | 'Warehouses' | 'BrandApprovals' | 'ProductVariants' | 'BusinessVariants' | 'ProductSpecs' | 'Users';
 const MODULE_ROUTES: Partial<Record<string, ModuleRoute>> = {
+  language: 'LanguageSettings',
   'inventory-transactions': 'InventoryLedger',
   'support-tickets': 'SupportTickets',
   'support-dashboard': 'SupportDashboard',
@@ -46,6 +47,7 @@ const INVENTORY_KEY_TABS = Object.fromEntries(Object.entries(INVENTORY_TAB_KEYS)
 
 /** The menu key a screen belongs to, for highlighting it in the drawer. */
 export const ROUTE_MENU_KEYS: Partial<Record<keyof RootStackParamList, string>> = {
+  LanguageSettings: 'language',
   OrderDetail: 'orders',
   CreateOrder: 'orders',
   OrderRequests: 'order-requests',

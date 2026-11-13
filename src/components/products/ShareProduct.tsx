@@ -15,6 +15,8 @@ import { Sheet } from '../ui/Sheet';
 import { Choices, DateField, Field, Input, SelectField } from '../form/Fields';
 import { SwitchRow } from './ProductEditors';
 import { CheckIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Private, expiring links to chosen variants of a product (eshop-backend /product-share-links).
 type ShareLinkStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED';
@@ -43,19 +45,19 @@ const shareLinks = {
 };
 
 const EXPIRY_PRESETS = [
-  { minutes: 60, label: '1 hour' },
-  { minutes: 6 * 60, label: '6 hours' },
-  { minutes: 12 * 60, label: '12 hours' },
-  { minutes: 24 * 60, label: '24 hours' },
-  { minutes: 3 * 24 * 60, label: '3 days' },
-  { minutes: 7 * 24 * 60, label: '7 days' },
+  { minutes: 60, get label() { return i18n.t('products.n1Hour'); } },
+  { minutes: 6 * 60, get label() { return i18n.t('products.n6Hours'); } },
+  { minutes: 12 * 60, get label() { return i18n.t('products.n12Hours'); } },
+  { minutes: 24 * 60, get label() { return i18n.t('products.n24Hours'); } },
+  { minutes: 3 * 24 * 60, get label() { return i18n.t('products.n3Days'); } },
+  { minutes: 7 * 24 * 60, get label() { return i18n.t('products.n7Days'); } },
 ];
 const MAX_DAYS = 30;
 
 const PRICE_CHOICES: { value: PriceVisibility; label: string; hint: string }[] = [
-  { value: 'SHOW', label: 'Show prices', hint: "Each variant's live price, even if the store hides prices." },
-  { value: 'HIDE', label: 'Hide prices', hint: 'No prices, bag or checkout — only details.' },
-  { value: 'STORE', label: 'Same as store', hint: 'Prices show only if the store shows them.' },
+  { value: 'SHOW', get label() { return i18n.t('products.showPrices'); }, get hint() { return i18n.t('products.eachVariantsLivePriceEvenIf'); } },
+  { value: 'HIDE', get label() { return i18n.t('products.hidePrices'); }, get hint() { return i18n.t('products.noPricesBagOrCheckoutOnly'); } },
+  { value: 'STORE', get label() { return i18n.t('products.sameAsStore'); }, get hint() { return i18n.t('products.pricesShowOnlyIfTheStore'); } },
 ];
 
 const STATUS_TONE = { ACTIVE: 'green', EXPIRED: 'slate', REVOKED: 'red' } as const;
@@ -63,12 +65,13 @@ const STATUS_TONE = { ACTIVE: 'green', EXPIRED: 'slate', REVOKED: 'red' } as con
 const linkUrl = (link: ShareLink) => link.url ?? `${SHOP_URL}${link.path}`;
 const variantsText = (link: ShareLink) => {
   const labels = link.variants.map(v => v.label ?? v.sku);
-  if (!labels.length) return 'Variant removed';
-  return labels.length > 2 ? `${labels.slice(0, 2).join(', ')} +${labels.length - 2} more` : labels.join(', ');
+  if (!labels.length) return i18n.t('products.variantRemoved');
+  return labels.length > 2 ? i18n.t('products.joinLengthMore', { join: labels.slice(0, 2).join(', '), length: labels.length - 2 }) : labels.join(', ');
 };
 
 /** Share a product: a private expiring link to chosen variants, or its public store page (the Seller Panel's Share). */
 export function ShareProductSheet({ visible, product, variants, onClose }: { visible: boolean; product: Row; variants: ProductVariant[]; onClose: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const productId = product.id;
   const name = String(product.productName ?? '');
@@ -105,11 +108,11 @@ export function ShareProductSheet({ visible, product, variants, onClose }: { vis
     if (!store || !chosen.length) return;
     let expiryPayload: Record<string, unknown>;
     if (expiry === 'custom') {
-      if (!customDate) return toast('Pick the expiry date', 'error');
+      if (!customDate) return toast(t('products.pickTheExpiryDate'), 'error');
       // The end of the chosen day, within 30 days.
       const at = new Date(`${customDate}T23:59:00`);
       const days = (at.getTime() - Date.now()) / 86_400_000;
-      if (days <= 0 || days > MAX_DAYS) return toast(`Pick an expiry within ${MAX_DAYS} days`, 'error');
+      if (days <= 0 || days > MAX_DAYS) return toast(t('products.pickAnExpiryWithinMaxDays', { MAX_DAYS }), 'error');
       expiryPayload = { expiresAt: at.toISOString() };
     } else expiryPayload = { expiresInMinutes: expiry };
     setCreating(true);
@@ -148,21 +151,21 @@ export function ShareProductSheet({ visible, product, variants, onClose }: { vis
   }
 
   return (
-    <Sheet visible={visible} title="Share product" subtitle={name} onClose={onClose}>
+    <Sheet visible={visible} title={t('products.shareProduct')} subtitle={name} onClose={onClose}>
       <Choices
         options={[
-          { value: 'variant', label: 'Share variants' },
-          { value: 'store', label: 'Store page' },
-          { value: 'links', label: `Links${links.data?.length ? ` (${links.data.length})` : ''}` },
+          { value: 'variant', label: t('products.shareVariants') },
+          { value: 'store', label: t('products.storePage') },
+          { value: 'links', label: links.data?.length ? t('products.linksWithCount', { count: links.data.length }) : t('products.links') },
         ]}
         value={tab}
         onChange={v => setTab(v as typeof tab)}
       />
 
-      {!live.length && !stores.loading ? <Text style={styles.muted}>The product isn't sold in an active store yet, so it can't be shared.</Text> : null}
+      {!live.length && !stores.loading ? <Text style={styles.muted}>{t('products.theProductIsnTSoldIn')}</Text> : null}
 
       {tab !== 'links' && live.length > 1 ? (
-        <SelectField label="Store" value={store?.id ?? ''} options={live.map(s => ({ value: s.id, label: s.name }))} onChange={setStoreId} />
+        <SelectField label={t('common.store')} value={store?.id ?? ''} options={live.map(s => ({ value: s.id, label: s.name }))} onChange={setStoreId} />
       ) : null}
 
       {tab === 'store' && store ? (
@@ -170,15 +173,15 @@ export function ShareProductSheet({ visible, product, variants, onClose }: { vis
           <Text style={styles.url} selectable>
             {storeUrl}
           </Text>
-          <Button title="Share store page" onPress={() => share(storeUrl, `${name} at ${store.name}`)} />
+          <Button title={t('products.shareStorePage')} onPress={() => share(storeUrl, t('products.nameAtName2', { name, name2: store.name }))} />
         </>
       ) : null}
 
       {tab === 'variant' && store ? (
         <>
-          <Text style={styles.muted}>A private link that expires. It always shows live prices (when prices are shown).</Text>
+          <Text style={styles.muted}>{t('products.aPrivateLinkThatExpiresIt')}</Text>
           {sellable.length > 1 ? (
-            <Field label="Variants">
+            <Field label={t('products.variants')}>
               {sellable.map(v => {
                 const on = variantIds.includes(v.id);
                 return (
@@ -197,24 +200,24 @@ export function ShareProductSheet({ visible, product, variants, onClose }: { vis
               })}
             </Field>
           ) : null}
-          <Field label="Prices">
+          <Field label={t('products.prices')}>
             <Choices options={PRICE_CHOICES} value={priceVisibility} onChange={v => setPriceVisibility(v as PriceVisibility)} />
             <Text style={styles.muted}>{PRICE_CHOICES.find(p => p.value === priceVisibility)?.hint}</Text>
           </Field>
-          <SwitchRow label="Show specifications" value={showSpecifications} onChange={setShowSpecifications} />
-          <Field label="Expires in">
+          <SwitchRow label={t('products.showSpecifications')} value={showSpecifications} onChange={setShowSpecifications} />
+          <Field label={t('products.expiresIn')}>
             <Choices
-              options={[...EXPIRY_PRESETS.map(p => ({ value: String(p.minutes), label: p.label })), { value: 'custom', label: 'Pick a date' }]}
+              options={[...EXPIRY_PRESETS.map(p => ({ value: String(p.minutes), label: p.label })), { value: 'custom', label: t('products.pickADate') }]}
               value={String(expiry)}
               onChange={v => setExpiry(v === 'custom' ? 'custom' : Number(v))}
             />
           </Field>
-          {expiry === 'custom' ? <DateField label="Expires at the end of" value={customDate} onChange={setCustomDate} minimumDate={new Date()} /> : null}
-          <Field label="For (optional)" hint="A note to recognise the link, e.g. the customer's name.">
+          {expiry === 'custom' ? <DateField label={t('products.expiresAtTheEndOf')} value={customDate} onChange={setCustomDate} minimumDate={new Date()} /> : null}
+          <Field label={t('products.forOptional')} hint={t('products.aNoteToRecogniseTheLink')}>
             <Input value={recipient} onChangeText={setRecipient} placeholder="e.g. Ravi — bulk enquiry" />
           </Field>
           <Button
-            title={chosen.length ? `Create & share link (${chosen.length})` : 'Choose the variants to share'}
+            title={chosen.length ? t('products.createAndShareLinkChosencount', { chosenCount: chosen.length }) : t('products.chooseTheVariantsToShare')}
             loading={creating}
             disabled={!chosen.length}
             onPress={create}
@@ -233,30 +236,29 @@ export function ShareProductSheet({ visible, product, variants, onClose }: { vis
                 </Text>
               </View>
               <Text style={styles.muted}>
-                {variantsText(link)} · {link.viewCount} view{link.viewCount === 1 ? '' : 's'}
-                {link.lastViewedAt ? ` · last ${formatWhen(link.lastViewedAt)}` : ''}
+                {[variantsText(link), t('products.viewCount', { count: link.viewCount }), link.lastViewedAt ? t('products.lastViewedOn', { date: formatWhen(link.lastViewedAt) }) : null].filter(Boolean).join(' · ')}
               </Text>
               <Text style={styles.muted}>
-                {link.status === 'ACTIVE' ? 'Expires' : 'Ended'} {formatWhen(link.expiresAt)}
+                {link.status === 'ACTIVE' ? t('products.expiresOn', { date: formatWhen(link.expiresAt) }) : t('products.endedOn', { date: formatWhen(link.expiresAt) })}
                 {link.store ? ` · ${link.store.name}` : ''}
               </Text>
               {link.status === 'ACTIVE' ? (
                 <View style={styles.linkActions}>
                   <Pressable onPress={() => share(linkUrl(link), `${name} — ${variantsText(link)}`)} hitSlop={6}>
-                    <Text style={styles.action}>Share</Text>
+                    <Text style={styles.action}>{t('common.share')}</Text>
                   </Pressable>
-                  <Pressable disabled={busyLink === link.id} onPress={() => act(link, () => shareLinks.extend(link.id, 24 * 60), 'Link extended by 24 hours')} hitSlop={6}>
-                    <Text style={styles.action}>+24 hours</Text>
+                  <Pressable disabled={busyLink === link.id} onPress={() => act(link, () => shareLinks.extend(link.id, 24 * 60), t('products.linkExtendedBy24Hours'))} hitSlop={6}>
+                    <Text style={styles.action}>{t('products.n24Hours2')}</Text>
                   </Pressable>
-                  <Pressable disabled={busyLink === link.id} onPress={() => act(link, () => shareLinks.revoke(link.id), 'Link revoked')} hitSlop={6}>
-                    <Text style={[styles.action, styles.danger]}>Revoke</Text>
+                  <Pressable disabled={busyLink === link.id} onPress={() => act(link, () => shareLinks.revoke(link.id), t('products.linkRevoked'))} hitSlop={6}>
+                    <Text style={[styles.action, styles.danger]}>{t('products.revoke')}</Text>
                   </Pressable>
                 </View>
               ) : null}
             </View>
           ))
         ) : (
-          <Text style={styles.muted}>{links.loading ? 'Loading…' : 'No links yet.'}</Text>
+          <Text style={styles.muted}>{links.loading ? t('common.loading') : t('products.noLinksYet')}</Text>
         )
       ) : null}
     </Sheet>

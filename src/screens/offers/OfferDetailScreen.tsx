@@ -18,9 +18,11 @@ import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { BanIcon, CheckCircleIcon, EditIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One freebie / gift card / promotion: its details by section, with Activate / Deactivate and Edit. */
 export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetail'>) {
+  const { t } = useTranslation();
   const { kind, id } = route.params;
   const c = OFFERS[kind];
   const service = offerService(kind);
@@ -50,7 +52,7 @@ export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetai
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Not found.'} onRetry={reload} />
+        <ErrorState message={error || t('common.notFound')} onRetry={reload} />
       </View>
     );
   }
@@ -63,7 +65,7 @@ export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetai
   const Icon = c.icon;
 
   async function toggle() {
-    if (!(await confirmAction(`${on ? 'Deactivate' : 'Activate'} this ${c.singular.toLowerCase()}?`, undefined, on ? 'Deactivate' : 'Activate', on))) return;
+    if (!(await confirmAction(t(on ? 'offers.deactivateThisKind' : 'offers.activateThisKind', { kind: c.singular.toLowerCase() }), undefined, on ? t('common.deactivate') : t('common.activate'), on))) return;
     try {
       await service.update(id, { status: on ? 0 : 1 });
       toast(`${c.singular} ${on ? 'deactivated' : 'activated'}`);
@@ -82,8 +84,8 @@ export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetai
           <View style={styles.flex}>
             <Text style={styles.title}>{offerTitle(c, r)}</Text>
             <View style={styles.wrap}>
-              <Badge label={on ? 'Active' : 'Inactive'} tone={on ? 'green' : 'slate'} />
-              {expired ? <Badge label="Expired" tone="amber" /> : null}
+              <Badge label={on ? t('common.active') : t('common.inactive')} tone={on ? 'green' : 'slate'} />
+              {expired ? <Badge label={t('common.expired')} tone="amber" /> : null}
               {kind === 'promotions' && r.discountValue ? <Badge label={discountLabel(r)} tone="blue" /> : null}
             </View>
           </View>
@@ -93,11 +95,11 @@ export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetai
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={toggle} style={[opsStyles.smallBtn, styles.grow]}>
             {on ? <BanIcon size={14} color={colors.text} /> : <CheckCircleIcon size={14} color={colors.text} />}
-            <Text style={opsStyles.smallBtnText}>{on ? 'Deactivate' : 'Activate'}</Text>
+            <Text style={opsStyles.smallBtnText}>{on ? t('common.deactivate') : t('common.activate')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={() => navigation.navigate('OfferForm', { kind, id })} style={[opsStyles.primaryBtn, styles.grow]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.edit')} onPress={() => navigation.navigate('OfferForm', { kind, id })} style={[opsStyles.primaryBtn, styles.grow]}>
             <EditIcon size={14} color={colors.white} />
-            <Text style={opsStyles.primaryBtnText}>Edit</Text>
+            <Text style={opsStyles.primaryBtnText}>{t('common.edit')}</Text>
           </Pressable>
         </View>
 
@@ -121,9 +123,9 @@ export function OfferDetailScreen({ navigation, route }: ScreenProps<'OfferDetai
           );
         })}
 
-        <Group title="Record">
-          <InfoRow label="Created" value={formatDay(r.createdAt)} />
-          <InfoRow label="Updated" value={formatDay(r.updatedAt)} last />
+        <Group title={t('offers.record')}>
+          <InfoRow label={t('common.created')} value={formatDay(r.createdAt)} />
+          <InfoRow label={t('common.updated')} value={formatDay(r.updatedAt)} last />
         </Group>
       </ScrollView>
     </View>

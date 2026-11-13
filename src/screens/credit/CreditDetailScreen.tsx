@@ -31,9 +31,11 @@ import {
   WalletIcon,
 } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One credit: amounts, payment history, customer, order and reminders. */
 export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDetail'>) {
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -53,21 +55,21 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Customer Credit" onBack={navigation.goBack} />
-        <ComingSoon label="Customer Credit" icon={WalletIcon} allowed={false} />
+        <AppHeader title={tr('common.customerCredit')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.customerCredit')} icon={WalletIcon} allowed={false} />
       </View>
     );
   }
   if (loading || (error && !credit) || !credit) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Credit" onBack={navigation.goBack} />
+        <AppHeader title={tr('common.credit')} onBack={navigation.goBack} />
         {loading ? (
           <View style={styles.content}>
             <ListSkeleton rows={4} height={140} />
           </View>
         ) : (
-          <ErrorState message={error ?? "It may not exist, or it isn't one of your stores' credits."} onRetry={() => reload()} />
+          <ErrorState message={error ?? tr('credit.itMayNotExistOrIt')} onRetry={() => reload()} />
         )}
       </View>
     );
@@ -86,8 +88,8 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
     try {
       const updated = await customerCreditService.sendReminder(id, reminderType);
       const latest = updated?.reminders?.find(r => r.daysBeforeDue === null && r.notificationType === reminderType);
-      if (latest?.status === 'FAILED') toast(`${reminderTypeLabel(reminderType)} reminder failed: ${latest.failureReason ?? 'unknown error'}`, 'error');
-      else toast(`${reminderTypeLabel(reminderType)} reminder sent to ${credit!.customer.name}`);
+      if (latest?.status === 'FAILED') toast(tr('credit.reminderFailed', { reminderType: reminderTypeLabel(reminderType), reason: latest.failureReason ?? tr('credit.unknownError') }), 'error');
+      else toast(tr('credit.remindertypeReminderSentToName', { reminderType: reminderTypeLabel(reminderType), name: credit!.customer.name }));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -109,16 +111,16 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
 
   // Oldest first: order → paid at order → credit → payments.
   const timeline: { key: string; date: string; title: string; amount?: string; detail?: string; tone: string; receiptId?: string | null }[] = [
-    { key: 'order', date: credit.order.orderDate, title: 'Order placed', amount: formatRupees(credit.order.totalAmount), detail: credit.order.orderNumber, tone: colors.textMuted },
+    { key: 'order', date: credit.order.orderDate, title: tr('common.orderPlaced'), amount: formatRupees(credit.order.totalAmount), detail: credit.order.orderNumber, tone: colors.textMuted },
     ...(credit.order.paidAtOrder > 0
-      ? [{ key: 'paid', date: credit.createdAt, title: 'Paid at order', amount: formatRupees(credit.order.paidAtOrder), tone: colors.success, receiptId: credit.order.receiptId }]
+      ? [{ key: 'paid', date: credit.createdAt, title: tr('credit.paidAtOrder'), amount: formatRupees(credit.order.paidAtOrder), tone: colors.success, receiptId: credit.order.receiptId }]
       : []),
     {
       key: 'credit',
       date: credit.createdAt,
-      title: 'Customer Credit created',
+      title: tr('credit.customerCreditCreated'),
       amount: formatRupees(credit.creditAmount),
-      detail: `Due ${formatDay(credit.dueDate)}`,
+      detail: tr('credit.dueDuedate', { dueDate: formatDay(credit.dueDate) }),
       tone: '#8b5cf6',
       // With nothing paid at order, the order receipt records the credit.
       receiptId: credit.order.paidAtOrder > 0 ? null : credit.order.receiptId,
@@ -126,9 +128,9 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
     ...[...credit.payments].reverse().map(p => ({
       key: p.id,
       date: p.paymentDate,
-      title: 'Payment received',
+      title: tr('credit.paymentReceived'),
       amount: formatRupees(p.amount),
-      detail: [methodLabel(p.paymentMethod), p.referenceNumber ? `Ref ${p.referenceNumber}` : null, p.notes].filter(Boolean).join(' · '),
+      detail: [methodLabel(p.paymentMethod), p.referenceNumber ? tr('common.refReferencenumber', { referenceNumber: p.referenceNumber }) : null, p.notes].filter(Boolean).join(' · '),
       tone: colors.success,
       receiptId: p.receiptId,
     })),
@@ -149,14 +151,14 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
             <Badge label={status.label} tone={status.tone} />
           </View>
           <Text style={styles.headMeta}>
-            {`${credit.idd} · Order ${credit.order.orderNumber}`}
+            {tr('credit.iddOrderOrdernumber', { idd: credit.idd, orderNumber: credit.order.orderNumber })}
             {hint ? <Text style={credit.overdueDays > 0 ? styles.overdueText : undefined}>{` · ${hint}`}</Text> : null}
           </Text>
           <View style={styles.actions}>
-            {phone ? <ActionButton icon={<PhoneIcon size={16} color={colors.text} />} label="Call" onPress={() => Linking.openURL(`tel:${phone}`)} /> : null}
-            {open ? <ActionButton icon={<EditIcon size={16} color={colors.text} />} label="Edit" onPress={() => setEditOpen(true)} /> : null}
+            {phone ? <ActionButton icon={<PhoneIcon size={16} color={colors.text} />} label={tr('common.call')} onPress={() => Linking.openURL(`tel:${phone}`)} /> : null}
+            {open ? <ActionButton icon={<EditIcon size={16} color={colors.text} />} label={tr('common.edit')} onPress={() => setEditOpen(true)} /> : null}
           </View>
-          {open ? <Button title="Receive Payment" onPress={() => setReceiveOpen(true)} icon={<WalletIcon size={18} color={colors.white} />} /> : null}
+          {open ? <Button title={tr('credit.receivePayment')} onPress={() => setReceiveOpen(true)} icon={<WalletIcon size={18} color={colors.white} />} /> : null}
         </View>
 
         {credit.status === 'OVERDUE' ? (
@@ -164,45 +166,45 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
             <AlertCircleIcon size={20} color={colors.error} />
             <View style={styles.flex}>
               <Text style={styles.overdueTitle}>
-                {`${credit.overdueDays} day${credit.overdueDays === 1 ? '' : 's'} overdue · ${formatRupees(credit.outstandingAmount)} outstanding`}
+                {`${tr('common.daysOverdue', { count: credit.overdueDays })} · ${tr('credit.amountOutstanding', { amount: formatRupees(credit.outstandingAmount) })}`}
               </Text>
               <Text style={styles.overdueBody}>
-                {`Was due on ${formatDay(credit.dueDate)}. Contact the customer, send a reminder or record their payment.`}
+                {tr('credit.wasDueOnDuedateContactThe', { dueDate: formatDay(credit.dueDate) })}
               </Text>
             </View>
           </View>
         ) : null}
 
-        <Card title="Amounts" icon={WalletIcon}>
+        <Card title={tr('credit.amounts')} icon={WalletIcon}>
           <View style={styles.tiles}>
-            <Tile label="Credit" value={formatRupees(credit.creditAmount)} bg="#f5f3ff" fg="#5b21b6" />
-            <Tile label="Total Paid" value={formatRupees(credit.paidAmount)} bg="#ecfdf5" fg="#065f46" />
+            <Tile label={tr('common.credit')} value={formatRupees(credit.creditAmount)} bg="#f5f3ff" fg="#5b21b6" />
+            <Tile label={tr('credit.totalPaid')} value={formatRupees(credit.paidAmount)} bg="#ecfdf5" fg="#065f46" />
             <Tile
-              label="Outstanding"
+              label={tr('common.outstanding')}
               value={formatRupees(credit.outstandingAmount)}
               bg={credit.status === 'OVERDUE' ? '#fef2f2' : '#fff7ed'}
               fg={credit.status === 'OVERDUE' ? '#991b1b' : '#9a3412'}
             />
-            <Tile label="Due Date" value={formatDay(credit.dueDate)} bg={colors.background} fg={colors.text} />
+            <Tile label={tr('credit.dueDate')} value={formatDay(credit.dueDate)} bg={colors.background} fg={colors.text} />
           </View>
           <View style={styles.progressHead}>
-            <Text style={styles.progressLabel}>Collected</Text>
+            <Text style={styles.progressLabel}>{tr('common.collected')}</Text>
             <Text style={styles.progressLabel}>{`${collectedPct}%`}</Text>
           </View>
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${collectedPct}%`, backgroundColor: collectedPct === 100 ? colors.success : colors.secondary }]} />
           </View>
           <View style={styles.rows}>
-            <Row label="Order total" value={formatRupees(credit.order.totalAmount)} />
-            <Row label="Paid at order" value={formatRupees(credit.order.paidAtOrder)} />
-            <Row label="Credit amount" value={formatRupees(credit.creditAmount)} />
-            <Row label="Paid against credit" value={formatRupees(credit.paidAmount)} />
-            <Row label="Outstanding" value={formatRupees(credit.outstandingAmount)} strong />
+            <Row label={tr('common.orderTotal')} value={formatRupees(credit.order.totalAmount)} />
+            <Row label={tr('credit.paidAtOrder')} value={formatRupees(credit.order.paidAtOrder)} />
+            <Row label={tr('credit.creditAmount')} value={formatRupees(credit.creditAmount)} />
+            <Row label={tr('credit.paidAgainstCredit')} value={formatRupees(credit.paidAmount)} />
+            <Row label={tr('common.outstanding')} value={formatRupees(credit.outstandingAmount)} strong />
           </View>
           {credit.notes ? <Text style={styles.notes}>{credit.notes}</Text> : null}
         </Card>
 
-        <Card title="Payment History" icon={CalendarIcon}>
+        <Card title={tr('common.paymentHistory')} icon={CalendarIcon}>
           <View style={styles.timeline}>
             {timeline.map(entry => (
               <TimelineItem key={entry.key} tone={entry.tone}>
@@ -220,22 +222,22 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
                     style={styles.receipt}
                   >
                     <FileTextIcon size={13} color={colors.secondary} />
-                    <Text style={styles.receiptText}>{busy === entry.receiptId ? 'Opening…' : 'Receipt'}</Text>
+                    <Text style={styles.receiptText}>{busy === entry.receiptId ? tr('credit.opening') : tr('common.receipt')}</Text>
                   </Pressable>
                 ) : null}
               </TimelineItem>
             ))}
             <TimelineItem tone={credit.outstandingAmount === 0 ? colors.successDark : colors.secondary} last>
               <View style={styles.entryTop}>
-                <Text style={styles.entryTitle}>{`Outstanding: ${formatRupees(credit.outstandingAmount)}`}</Text>
+                <Text style={styles.entryTitle}>{tr('credit.outstandingOutstandingamount', { outstandingAmount: formatRupees(credit.outstandingAmount) })}</Text>
                 <Badge label={status.label} tone={status.tone} />
               </View>
             </TimelineItem>
           </View>
-          {!credit.payments.length ? <Text style={styles.muted}>No payments received against this credit yet.</Text> : null}
+          {!credit.payments.length ? <Text style={styles.muted}>{tr('credit.noPaymentsReceivedAgainstThisCredit')}</Text> : null}
         </Card>
 
-        <Card title="Customer" icon={UserIcon} action={credit.customer.registered ? null : <Text style={styles.muted}>Walk-in</Text>}>
+        <Card title={tr('common.customer')} icon={UserIcon} action={credit.customer.registered ? null : <Text style={styles.muted}>{tr('credit.walkIn')}</Text>}>
           <Text style={styles.customerName}>{credit.customer.name}</Text>
           {phone ? (
             <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`tel:${phone}`)} style={styles.contact}>
@@ -252,41 +254,41 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
         </Card>
 
         <Card
-          title="Order"
+          title={tr('common.order')}
           icon={ShoppingBagIcon}
           action={
             canOpenOrder ? (
               <Pressable accessibilityRole="button" hitSlop={8} onPress={() => navigation.navigate('OrderDetail', { id: credit.order.id })}>
-                <Text style={styles.link}>Open order</Text>
+                <Text style={styles.link}>{tr('common.openOrder')}</Text>
               </Pressable>
             ) : null
           }
         >
-          <Row label="Order ID" value={credit.order.orderNumber} />
-          <Row label="Order date" value={formatDay(credit.order.orderDate)} />
-          <Row label="Store" value={credit.store.name ?? '—'} />
+          <Row label={tr('credit.orderId')} value={credit.order.orderNumber} />
+          <Row label={tr('credit.orderDate')} value={formatDay(credit.order.orderDate)} />
+          <Row label={tr('common.store')} value={credit.store.name ?? '—'} />
           <View style={styles.badgeRow}>
-            <Text style={styles.badgeLabel}>Payment</Text>
+            <Text style={styles.badgeLabel}>{tr('common.payment')}</Text>
             <Badge label={payment.label} tone={payment.tone} />
           </View>
         </Card>
 
-        <Card title="Reminders" icon={BellIcon}>
-          <Row label="Reminder" value={credit.reminderEnabled ? 'On' : 'Off'} />
+        <Card title={tr('credit.reminders')} icon={BellIcon}>
+          <Row label={tr('common.reminder')} value={credit.reminderEnabled ? 'On' : 'Off'} />
           {credit.reminderEnabled ? (
             <>
               <Row
-                label="When"
-                value={credit.reminderDays === 0 ? 'On the due date' : `${credit.reminderDays} day${credit.reminderDays === 1 ? '' : 's'} before`}
+                label={tr('common.when')}
+                value={credit.reminderDays === 0 ? tr('credit.onTheDueDate') : tr('orders.daysBefore', { count: credit.reminderDays })}
               />
-              <Row label="Channels" value={credit.reminderChannels.map(reminderTypeLabel).join(', ')} />
-              {pendingReminder ? <Row label="Next reminder" value={formatDay(pendingReminder.reminderDate)} /> : null}
+              <Row label={tr('credit.channels')} value={credit.reminderChannels.map(reminderTypeLabel).join(', ')} />
+              {pendingReminder ? <Row label={tr('credit.nextReminder')} value={formatDay(pendingReminder.reminderDate)} /> : null}
             </>
           ) : null}
 
           {open ? (
             <View style={styles.sendBlock}>
-              <Text style={styles.sendLabel}>Send a reminder now</Text>
+              <Text style={styles.sendLabel}>{tr('credit.sendAReminderNow')}</Text>
               <View style={styles.channels}>
                 {REMINDER_TYPES.map(t => {
                   const on = t.value === reminderType;
@@ -304,7 +306,7 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
                 })}
               </View>
               <Button
-                title="Send now"
+                title={tr('credit.sendNow')}
                 variant="ghost"
                 loading={busy === 'reminder'}
                 onPress={sendReminder}
@@ -324,10 +326,10 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
                       <Text style={styles.reminderTitle}>{`${reminderTypeLabel(r.notificationType)} · ${formatDay(r.reminderDate)}`}</Text>
                       <Text style={styles.reminderMeta}>
                         {r.daysBeforeDue === null
-                          ? 'Sent manually'
+                          ? tr('credit.sentManually')
                           : r.daysBeforeDue === 0
-                            ? 'On due date'
-                            : `${r.daysBeforeDue} day${r.daysBeforeDue === 1 ? '' : 's'} before due`}
+                            ? tr('credit.onDueDate')
+                            : tr('credit.daysBeforeDue', { count: r.daysBeforeDue })}
                         {r.failureReason ? ` · ${r.failureReason}` : ''}
                       </Text>
                     </View>
@@ -337,14 +339,14 @@ export function CreditDetailScreen({ navigation, route }: ScreenProps<'CreditDet
               })}
             </View>
           ) : (
-            <Text style={styles.muted}>No reminders.</Text>
+            <Text style={styles.muted}>{tr('credit.noReminders')}</Text>
           )}
         </Card>
 
         {/* A credit can be cancelled only before anything is paid against it. */}
         {open && credit.paidAmount === 0 ? (
           <Pressable accessibilityRole="button" onPress={() => setCancelOpen(true)} hitSlop={8} style={styles.cancel}>
-            <Text style={styles.cancelText}>Cancel this credit</Text>
+            <Text style={styles.cancelText}>{tr('credit.cancelThisCredit2')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

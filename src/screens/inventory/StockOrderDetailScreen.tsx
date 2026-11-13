@@ -20,9 +20,11 @@ import { HistoryList, opsStyles, ReasonSheet } from '../../components/operations
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, BanIcon, BoxIcon, ClockIcon, FileTextIcon, PhoneIcon, TruckIcon, WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One stock order, as the panel's dialog: what was ordered and what's arrived, receive, status, expected date, cancel, supplier bill, deliveries and history. */
 export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'StockOrderDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const { current } = useStore();
@@ -39,12 +41,12 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
   const [dating, setDating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const header = <AppHeader title={data ? `Stock Order ${data.idd}` : 'Stock Order'} subtitle="Pending Stock" onBack={navigation.goBack} />;
+  const header = <AppHeader title={data ? t('inventory.stockOrderIdd', { idd: data.idd }) : t('inventory.stockOrder')} subtitle={t('common.pendingStock')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Pending Stock" icon={TruckIcon} allowed={false} />
+        <ComingSoon label={t('common.pendingStock')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
@@ -60,7 +62,7 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Stock order not found'} onRetry={reload} />
+        <ErrorState message={error || t('inventory.stockOrderNotFound')} onRetry={reload} />
       </View>
     );
   }
@@ -89,8 +91,8 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
     if (!receiving) return;
     const problem = receiptProblem(receiving, o.items);
     if (problem) return setFormError(problem);
-    if (receivedDate > today) return setFormError("The received date can't be in the future");
-    const ok = await run(() => storeOperationsService.receiveStockOrder(storeId, id, { lines: receiptLines(receiving), receivedDate, notes: receiptNotes.trim() || undefined }), 'Stock received and added to inventory');
+    if (receivedDate > today) return setFormError(t('inventory.theReceivedDateCanTBe'));
+    const ok = await run(() => storeOperationsService.receiveStockOrder(storeId, id, { lines: receiptLines(receiving), receivedDate, notes: receiptNotes.trim() || undefined }), t('inventory.stockReceivedAndAddedToInventory'));
     if (ok) {
       setReceiving(null);
       setReceiptNotes('');
@@ -104,7 +106,7 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
         <View style={styles.head}>
           <View style={styles.flex}>
             <Text style={styles.supplier}>{o.supplierName}</Text>
-            <Text style={opsStyles.meta}>{[o.referenceNumber ? `Ref ${o.referenceNumber}` : null, `Into ${o.warehouse.title ?? 'warehouse'}`].filter(Boolean).join(' · ')}</Text>
+            <Text style={opsStyles.meta}>{[o.referenceNumber ? t('common.refReferencenumber', { referenceNumber: o.referenceNumber }) : null, t('inventory.intoWarehouse', { warehouse: o.warehouse.title ?? t('inventory.warehouseLower') })].filter(Boolean).join(' · ')}</Text>
             {o.supplierPhone ? (
               <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`tel:${o.supplierPhone}`)} style={styles.phone}>
                 <PhoneIcon size={13} color={colors.secondary} />
@@ -117,7 +119,7 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
             {o.delayed ? (
               <View style={styles.inline}>
                 <AlertCircleIcon size={13} color={colors.error} />
-                <Text style={styles.delayed}>Delayed</Text>
+                <Text style={styles.delayed}>{t('inventory.delayed')}</Text>
               </View>
             ) : null}
           </View>
@@ -125,32 +127,32 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
 
         <View style={styles.stats}>
           {[
-            ['Ordered', day(o.orderDate)],
-            ['Expected', o.expectedDate ? day(o.expectedDate) : '—'],
-            ['Amount', money(o.orderAmount)],
-            ['Units', `${qty(o.totals.receivedUnits)} / ${qty(o.totals.orderedUnits)}`],
+            [t('inventory.ordered'), day(o.orderDate)],
+            [t('inventory.expected'), o.expectedDate ? day(o.expectedDate) : '—'],
+            [t('common.amount'), money(o.orderAmount)],
+            [t('common.units'), `${qty(o.totals.receivedUnits)} / ${qty(o.totals.orderedUnits)}`],
           ].map(([k, v]) => (
             <View key={k} style={styles.stat}>
               <Text style={styles.statLabel}>{k}</Text>
-              <Text style={[styles.statValue, k === 'Expected' && o.delayed && opsStyles.danger]} numberOfLines={1}>
+              <Text style={[styles.statValue, k === t('inventory.expected') && o.delayed && opsStyles.danger]} numberOfLines={1}>
                 {v}
               </Text>
             </View>
           ))}
         </View>
 
-        <SectionCard icon={BoxIcon} title="Products" subtitle={`${o.totals.products} product${o.totals.products === 1 ? '' : 's'} · ${qty(o.totals.pendingUnits)} pending`}>
+        <SectionCard icon={BoxIcon} title={t('common.products')} subtitle={`${t('common.productCount', { count: o.totals.products })} · ${t('inventory.quantityPending', { quantity: qty(o.totals.pendingUnits) })}`}>
           {o.items.map(i => (
             <View key={i.id} style={styles.item}>
               <View style={styles.flex}>
                 <Text style={opsStyles.title} numberOfLines={1}>
                   {i.productName}
                 </Text>
-                <Text style={opsStyles.muted}>{`${i.sku ?? ''} · ordered ${qty(i.orderedQty)} ${i.uom}${i.unitCost != null && !receiving ? ` · ${money(i.unitCost)} each` : ''}`}</Text>
+                <Text style={opsStyles.muted}>{[i.sku ?? '', t('inventory.orderedQuantity', { quantity: `${qty(i.orderedQty)} ${i.uom}` }), i.unitCost != null && !receiving ? t('inventory.amountEach', { amount: money(i.unitCost) }) : null].filter(v => v !== null).join(' · ')}</Text>
                 <Text style={opsStyles.meta}>
-                  <Text style={styles.got}>{`${qty(i.receivedQty)} received`}</Text>
+                  <Text style={styles.got}>{t('inventory.receivedqtyReceived', { receivedQty: qty(i.receivedQty) })}</Text>
                   {` · `}
-                  <Text style={styles.pending}>{`${qty(i.pendingQty)} pending`}</Text>
+                  <Text style={styles.pending}>{t('inventory.pendingqtyPending', { pendingQty: qty(i.pendingQty) })}</Text>
                 </Text>
               </View>
               {receiving ? (
@@ -161,7 +163,7 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
                     editable={i.pendingQty > 0}
                     keyboardType="decimal-pad"
                     placeholder="0"
-                    accessibilityLabel={`Arrived quantity for ${i.productName}`}
+                    accessibilityLabel={t('inventory.arrivedQuantityForProductname', { productName: i.productName })}
                   />
                 </View>
               ) : null}
@@ -172,23 +174,23 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
         {receiving ? (
           <View style={styles.receive}>
             <View style={opsStyles.rowBetween}>
-              <Text style={opsStyles.title}>What arrived</Text>
+              <Text style={opsStyles.title}>{t('inventory.whatArrived')}</Text>
               <Pressable accessibilityRole="button" onPress={() => setReceiving(Object.fromEntries(o.items.filter(i => i.pendingQty > 0).map(i => [i.id, String(i.pendingQty)])))}>
-                <Text style={styles.all}>Everything pending arrived</Text>
+                <Text style={styles.all}>{t('inventory.everythingPendingArrived')}</Text>
               </Pressable>
             </View>
-            <DateField label="Received On" value={receivedDate} onChange={setReceivedDate} maximumDate={new Date()} required />
-            <Field label="Delivery Notes">
-              <Input value={receiptNotes} onChangeText={setReceiptNotes} maxLength={1000} multiline accessibilityLabel="Delivery Notes" />
+            <DateField label={t('inventory.receivedOn')} value={receivedDate} onChange={setReceivedDate} maximumDate={new Date()} required />
+            <Field label={t('inventory.deliveryNotes')}>
+              <Input value={receiptNotes} onChangeText={setReceiptNotes} maxLength={1000} multiline accessibilityLabel={t('inventory.deliveryNotes')} />
             </Field>
-            <Text style={opsStyles.muted}>Received quantities are added to the warehouse stock as a purchase receipt.</Text>
+            <Text style={opsStyles.muted}>{t('inventory.receivedQuantitiesAreAddedToThe')}</Text>
             {formError ? <ErrorLine message={formError} /> : null}
             <View style={styles.row}>
               <Pressable accessibilityRole="button" disabled={busy} onPress={() => setReceiving(null)} style={[opsStyles.smallBtn, styles.grow]}>
-                <Text style={opsStyles.smallBtnText}>Cancel</Text>
+                <Text style={opsStyles.smallBtnText}>{t('common.cancel')}</Text>
               </Pressable>
               <View style={styles.flex}>
-                <Button title="Receive Stock" loading={busy} onPress={receive} />
+                <Button title={t('inventory.receiveStock2')} loading={busy} onPress={receive} />
               </View>
             </View>
           </View>
@@ -196,56 +198,56 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" onPress={() => setReceiving({})} style={[opsStyles.primaryBtn, styles.receiveBtn]}>
               <TruckIcon size={15} color={colors.white} />
-              <Text style={opsStyles.primaryBtnText}>Receive Stock</Text>
+              <Text style={opsStyles.primaryBtnText}>{t('inventory.receiveStock2')}</Text>
             </Pressable>
             <View style={styles.row}>
               {o.status !== 'PARTIALLY_RECEIVED' ? (
                 <Pressable
                   accessibilityRole="button"
                   disabled={busy}
-                  onPress={() => run(() => storeOperationsService.updateStockOrder(storeId, id, { status: o.status === 'IN_TRANSIT' ? 'ORDERED' : 'IN_TRANSIT' }), o.status === 'IN_TRANSIT' ? 'Marked as ordered' : 'Marked in transit')}
+                  onPress={() => run(() => storeOperationsService.updateStockOrder(storeId, id, { status: o.status === 'IN_TRANSIT' ? 'ORDERED' : 'IN_TRANSIT' }), o.status === 'IN_TRANSIT' ? t('inventory.markedAsOrdered') : t('inventory.markedInTransit'))}
                   style={[opsStyles.smallBtn, styles.grow]}
                 >
-                  <Text style={opsStyles.smallBtnText}>{o.status === 'IN_TRANSIT' ? 'Back to Ordered' : 'Mark In Transit'}</Text>
+                  <Text style={opsStyles.smallBtnText}>{o.status === 'IN_TRANSIT' ? t('inventory.backToOrdered') : t('inventory.markInTransit')}</Text>
                 </Pressable>
               ) : null}
               <Pressable accessibilityRole="button" disabled={busy} onPress={() => setDating(true)} style={[opsStyles.smallBtn, styles.grow]}>
                 <ClockIcon size={14} color={colors.text} />
-                <Text style={opsStyles.smallBtnText}>Expected Date</Text>
+                <Text style={opsStyles.smallBtnText}>{t('inventory.expectedDate')}</Text>
               </Pressable>
             </View>
             <Pressable accessibilityRole="button" disabled={busy} onPress={() => setCancelling(true)} style={[opsStyles.smallBtn, styles.cancelBtn]}>
               <BanIcon size={14} color={colors.error} />
-              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Cancel Order</Text>
+              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{t('inventory.cancelOrder')}</Text>
             </Pressable>
             {formError ? <ErrorLine message={formError} /> : null}
           </View>
         ) : null}
 
-        {o.cancelReason ? <Text style={styles.cancelled}>{`Cancelled: ${o.cancelReason}`}</Text> : null}
+        {o.cancelReason ? <Text style={styles.cancelled}>{t('common.cancelledCancelreason', { cancelReason: o.cancelReason })}</Text> : null}
         {o.notes ? <Text style={styles.notes}>{o.notes}</Text> : null}
 
         <PurchaseBill storeId={storeId} order={o} today={today} canRecord={allowed} onSaved={reload} onOpen={billId => navigation.navigate('ExpenseDetail', { id: billId })} />
 
         {o.receipts.length ? (
-          <SectionCard icon={TruckIcon} title="Deliveries">
+          <SectionCard icon={TruckIcon} title={t('inventory.deliveries')}>
             {o.receipts.map(r => (
               <View key={r.id} style={styles.receipt}>
                 <View style={opsStyles.rowBetween}>
                   <Text style={styles.idd}>{r.idd}</Text>
-                  <Text style={opsStyles.muted}>{`${day(r.receivedDate)} · ${qty(r.totalUnits)} units`}</Text>
+                  <Text style={opsStyles.muted}>{t('inventory.receiveddateTotalunitsUnits', { receivedDate: day(r.receivedDate), totalUnits: qty(r.totalUnits) })}</Text>
                 </View>
                 <Text style={opsStyles.meta}>{r.lines.map(l => `${l.productName} × ${qty(l.quantity)}`).join(', ')}</Text>
                 {r.notes ? <Text style={opsStyles.muted}>{r.notes}</Text> : null}
-                <Text style={opsStyles.muted}>{`By ${r.createdByName ?? '—'}`}</Text>
+                <Text style={opsStyles.muted}>{t('inventory.byCreatedbyname', { createdByName: r.createdByName ?? '—' })}</Text>
               </View>
             ))}
           </SectionCard>
         ) : null}
 
-        <SectionCard icon={FileTextIcon} title="History">
+        <SectionCard icon={FileTextIcon} title={t('common.history')}>
           <HistoryList entries={o.history} />
-          <Text style={opsStyles.muted}>{`Created by ${o.createdByName ?? '—'} · ${dateTime(o.createdAt)}`}</Text>
+          <Text style={opsStyles.muted}>{t('inventory.createdByCreatedbynameCreatedat', { createdByName: o.createdByName ?? '—', createdAt: dateTime(o.createdAt) })}</Text>
         </SectionCard>
       </ScrollView>
 
@@ -256,21 +258,21 @@ export function StockOrderDetailScreen({ navigation, route }: ScreenProps<'Stock
         onClose={() => setDating(false)}
         onSave={async next => {
           setDating(false);
-          await run(() => storeOperationsService.updateStockOrder(storeId, id, { expectedDate: next }), 'Expected date updated');
+          await run(() => storeOperationsService.updateStockOrder(storeId, id, { expectedDate: next }), t('inventory.expectedDateUpdated'));
         }}
       />
       <ReasonSheet
         visible={cancelling}
-        title={o.totals.receivedUnits > 0 ? "Cancel what hasn't arrived?" : 'Cancel this stock order?'}
-        message={o.totals.receivedUnits > 0 ? 'Stock already received stays in inventory; only the rest is cancelled.' : 'The order is closed and nothing more is expected.'}
-        label="Reason (optional)"
-        confirmLabel="Cancel order"
+        title={o.totals.receivedUnits > 0 ? t('inventory.cancelWhatHasnTArrived') : t('inventory.cancelThisStockOrder')}
+        message={o.totals.receivedUnits > 0 ? t('inventory.stockAlreadyReceivedStaysInInventory') : t('inventory.theOrderIsClosedAndNothing')}
+        label={t('common.reasonOptional')}
+        confirmLabel={t('common.cancelOrder')}
         required={false}
         maxLength={250}
         onClose={() => setCancelling(false)}
         onConfirm={async reason => {
           setCancelling(false);
-          await run(() => storeOperationsService.cancelStockOrder(storeId, id, reason || undefined), 'Stock order cancelled');
+          await run(() => storeOperationsService.cancelStockOrder(storeId, id, reason || undefined), t('inventory.stockOrderCancelled'));
         }}
       />
     </KeyboardAvoidingView>
@@ -287,20 +289,22 @@ function ErrorLine({ message }: { message: string }) {
 }
 
 function ExpectedDateSheet({ visible, value, minimum, onClose, onSave }: { visible: boolean; value: string; minimum: string; onClose: () => void; onSave: (date: string) => void }) {
+  const { t } = useTranslation();
   const [date, setDate] = useState(value);
   React.useEffect(() => {
     if (visible) setDate(value);
   }, [visible, value]);
   const [y, m, d] = minimum.slice(0, 10).split('-').map(Number);
   return (
-    <Sheet visible={visible} title="Change expected date" subtitle="When do you expect this stock to arrive?" onClose={onClose} footer={<Button title="Update date" disabled={!date} onPress={() => onSave(date)} />}>
-      <DateField label="Expected date" required value={date} onChange={setDate} minimumDate={new Date(y, m - 1, d)} />
+    <Sheet visible={visible} title={t('inventory.changeExpectedDate')} subtitle={t('inventory.whenDoYouExpectThisStock')} onClose={onClose} footer={<Button title={t('inventory.updateDate')} disabled={!date} onPress={() => onSave(date)} />}>
+      <DateField label={t('inventory.expectedDate2')} required value={date} onChange={setDate} minimumDate={new Date(y, m - 1, d)} />
     </Sheet>
   );
 }
 
 /** The supplier's bill for the order: paid or on credit; owed like any bill, kept out of operating expenses. */
 function PurchaseBill({ storeId, order, today, canRecord, onSaved, onOpen }: { storeId: string; order: StockOrderDetail; today: string; canRecord: boolean; onSaved: () => void; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ amount: order.orderAmount ? String(order.orderAmount) : '', paymentType: 'CREDIT', method: 'BANK_TRANSFER', transactionReference: '', terms: '30', referenceNumber: order.referenceNumber ?? '' });
@@ -311,7 +315,7 @@ function PurchaseBill({ storeId, order, today, canRecord, onSaved, onOpen }: { s
 
   async function save() {
     const amount = toAmount(form.amount);
-    if (!(amount > 0)) return setError('Enter the bill amount');
+    if (!(amount > 0)) return setError(t('inventory.enterTheBillAmount'));
     setError('');
     setSaving(true);
     try {
@@ -323,7 +327,7 @@ function PurchaseBill({ storeId, order, today, canRecord, onSaved, onOpen }: { s
         payment: form.paymentType === 'PAID' ? { method: form.method, transactionReference: form.transactionReference.trim() || undefined, paymentDate: today } : undefined,
         credit: form.paymentType === 'CREDIT' ? { creditTermsDays: Number(form.terms) } : undefined,
       });
-      toast('Supplier bill recorded');
+      toast(t('inventory.supplierBillRecorded'));
       setAdding(false);
       onSaved();
     } catch (err) {
@@ -334,41 +338,41 @@ function PurchaseBill({ storeId, order, today, canRecord, onSaved, onOpen }: { s
   }
 
   return (
-    <SectionCard icon={WalletIcon} title="Supplier Bill">
+    <SectionCard icon={WalletIcon} title={t('inventory.supplierBill')}>
       {bill ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Open supplier bill ${bill.idd}`} onPress={() => onOpen(bill.id)} style={styles.bill}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.openSupplierBillIdd', { idd: bill.idd })} onPress={() => onOpen(bill.id)} style={styles.bill}>
           <View style={styles.flex}>
             <Text style={opsStyles.title}>{`${bill.idd} · ${money(bill.amount)}`}</Text>
             <Text style={opsStyles.muted}>
-              {[bill.supplierName, day(bill.expenseDate), bill.outstandingAmount ? `${money(bill.outstandingAmount)} owed` : null, dueText(bill.dueInDays, bill.dueDate)].filter(Boolean).join(' · ')}
+              {[bill.supplierName, day(bill.expenseDate), bill.outstandingAmount ? t('inventory.outstandingamountOwed', { outstandingAmount: money(bill.outstandingAmount) }) : null, dueText(bill.dueInDays, bill.dueDate)].filter(Boolean).join(' · ')}
             </Text>
           </View>
           <Badge label={expenseStatus(bill.status).label} tone={expenseStatus(bill.status).tone} />
         </Pressable>
       ) : adding ? (
         <>
-          <Field label="Bill Amount (₹)" required>
-            <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Bill Amount" />
+          <Field label={t('inventory.billAmountRs')} required>
+            <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('inventory.billAmount')} />
           </Field>
-          <Field label="Supplier Bill No.">
+          <Field label={t('inventory.supplierBillNo')}>
             <Input value={form.referenceNumber} onChangeText={v => set('referenceNumber', v)} maxLength={100} />
           </Field>
-          <Field label="Payment">
+          <Field label={t('common.payment')}>
             <Choices
               options={[
-                { value: 'CREDIT', label: 'On credit' },
-                { value: 'PAID', label: 'Paid in full' },
+                { value: 'CREDIT', label: t('common.onCredit') },
+                { value: 'PAID', label: t('inventory.paidInFull') },
               ]}
               value={form.paymentType}
               onChange={v => set('paymentType', v)}
             />
           </Field>
           {form.paymentType === 'CREDIT' ? (
-            <SelectField label="Due after" value={form.terms} options={CREDIT_TERMS.map(d => ({ value: String(d), label: `${d} days` }))} onChange={v => set('terms', v)} />
+            <SelectField label={t('common.dueAfter')} value={form.terms} options={CREDIT_TERMS.map(d => ({ value: String(d), label: t('common.dDays', { d }) }))} onChange={v => set('terms', v)} />
           ) : (
             <>
-              <SelectField label="Paid by" value={form.method} options={PAYMENT_MODES} onChange={v => set('method', v)} />
-              <Field label="Transaction Reference">
+              <SelectField label={t('common.paidBy')} value={form.method} options={PAYMENT_MODES} onChange={v => set('method', v)} />
+              <Field label={t('common.transactionReference')}>
                 <Input value={form.transactionReference} onChangeText={v => set('transactionReference', v)} maxLength={100} />
               </Field>
             </>
@@ -376,20 +380,20 @@ function PurchaseBill({ storeId, order, today, canRecord, onSaved, onOpen }: { s
           {error ? <ErrorLine message={error} /> : null}
           <View style={styles.row}>
             <Pressable accessibilityRole="button" disabled={saving} onPress={() => setAdding(false)} style={[opsStyles.smallBtn, styles.grow]}>
-              <Text style={opsStyles.smallBtnText}>Cancel</Text>
+              <Text style={opsStyles.smallBtnText}>{t('common.cancel')}</Text>
             </Pressable>
             <View style={styles.flex}>
-              <Button title="Save Bill" loading={saving} onPress={save} />
+              <Button title={t('inventory.saveBill')} loading={saving} onPress={save} />
             </View>
           </View>
-          <Text style={opsStyles.muted}>Payments, returns and the supplier's balance are then tracked under Expenses › Suppliers. It isn't counted as an operating expense.</Text>
+          <Text style={opsStyles.muted}>{t('inventory.paymentsReturnsAndTheSuppliersBalance')}</Text>
         </>
       ) : (
         <View style={styles.noBill}>
-          <Text style={[opsStyles.muted, styles.flex]}>No bill recorded for this order yet.</Text>
+          <Text style={[opsStyles.muted, styles.flex]}>{t('inventory.noBillRecordedForThisOrder')}</Text>
           {canRecord ? (
             <Pressable accessibilityRole="button" onPress={() => setAdding(true)}>
-              <Text style={styles.link}>Record supplier bill</Text>
+              <Text style={styles.link}>{t('inventory.recordSupplierBill')}</Text>
             </Pressable>
           ) : null}
         </View>

@@ -18,6 +18,7 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, ImageIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const fromDay = (d: string) => {
   const [y, m, dd] = d.split('-').map(Number);
@@ -26,6 +27,7 @@ const fromDay = (d: string) => {
 
 /** Create or edit a freebie / gift card / promotion, from its config. */
 export function OfferFormScreen({ navigation, route }: ScreenProps<'OfferForm'>) {
+  const { t } = useTranslation();
   const { kind, id } = route.params;
   const c = OFFERS[kind];
   const service = offerService(kind);
@@ -122,12 +124,12 @@ export function OfferFormScreen({ navigation, route }: ScreenProps<'OfferForm'>)
             <View style={styles.imageRow}>
               <View style={styles.image}>{form.imageUrl ? <Image source={{ uri: form.imageUrl }} style={styles.fill} resizeMode="cover" /> : <ImageIcon size={22} color={colors.textMuted} />}</View>
               <View style={styles.imageActions}>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Upload ${f.label}`} disabled={uploading} onPress={pickImage} style={opsStyles.smallBtn}>
-                  <Text style={opsStyles.smallBtnText}>{uploading ? 'Uploading…' : form.imageUrl ? 'Change' : 'Upload'}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('common.uploadLabel', { label: f.label })} disabled={uploading} onPress={pickImage} style={opsStyles.smallBtn}>
+                  <Text style={opsStyles.smallBtnText}>{uploading ? t('common.uploading') : form.imageUrl ? t('common.change') : t('common.upload')}</Text>
                 </Pressable>
                 {form.imageUrl ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${f.label}`} onPress={() => setForm(x => ({ ...x, imageFileId: '', imageUrl: '' }))}>
-                    <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Remove</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('common.removeLabel', { label: f.label })} onPress={() => setForm(x => ({ ...x, imageFileId: '', imageUrl: '' }))}>
+                    <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{t('common.remove')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -176,7 +178,7 @@ export function OfferFormScreen({ navigation, route }: ScreenProps<'OfferForm'>)
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : `Create ${c.singular}`} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? t('common.saveChanges') : t('offers.createSingular', { singular: c.singular })} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

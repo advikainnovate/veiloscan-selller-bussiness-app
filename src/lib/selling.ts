@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // Ported verbatim from the Seller Panel's src/lib/selling.ts — keep the two in step.
 /**
  * How a SKU is bought, as sent by eshop-backend (src/modules/selling), and
@@ -101,35 +102,33 @@ export function quantityProblem(
 ): string | null {
   const factor = factorOf(selling, uom);
   if (factor === null)
-    return `This is sold in ${selling.units.map(u => u.code).join(', ')}`;
+    return i18n.t('orders.thisIsSoldInJoin', { join: selling.units.map(u => u.code).join(', ') });
   if (!Number.isFinite(quantity) || quantity <= 0)
-    return 'Enter a quantity above 0';
+    return i18n.t('orders.enterAQuantityAbove0');
   const unit = selling.sellingUom;
   if (selling.method === 'FIXED' && !Number.isInteger(quantity))
-    return `This is sold in whole ${uom}`;
+    return i18n.t('orders.thisIsSoldInWholeUom', { uom });
   const inSelling = round4((quantity * factor) / selling.sellingFactor);
   if (!selling.allowDecimal && !Number.isInteger(inSelling))
-    return `Choose a whole number of ${unit}`;
+    return i18n.t('orders.chooseAWholeNumberOfUnit', { unit });
   if (selling.allowDecimal && decimalsOf(inSelling) > selling.precision)
-    return `Use at most ${selling.precision} decimal place${
-      selling.precision === 1 ? '' : 's'
-    } of ${unit}`;
+    return i18n.t('orders.useAtMostDecimalPlaces', { count: selling.precision, unit });
   if (selling.minimum !== null && inSelling < selling.minimum - 1e-9)
-    return `The minimum is ${quantityLabel(selling.minimum, unit)}`;
+    return i18n.t('orders.theMinimumIsQuantitylabel', { quantityLabel: quantityLabel(selling.minimum, unit) });
   if (selling.maximum !== null && inSelling > selling.maximum + 1e-9)
-    return `The maximum is ${quantityLabel(selling.maximum, unit)}`;
+    return i18n.t('orders.theMaximumIsQuantitylabel', { quantityLabel: quantityLabel(selling.maximum, unit) });
   if (selling.step) {
     const steps = inSelling / selling.step;
     if (Math.abs(steps - Math.round(steps)) > 1e-6)
-      return `Choose a quantity in steps of ${quantityLabel(
+      return i18n.t('orders.chooseAQuantityInStepsOf', { quantityLabel: quantityLabel(
         selling.step,
         unit,
-      )}`;
+      ) });
   }
   if (available !== null && inSelling > available + 1e-9)
     return available > 0
-      ? `Only ${quantityLabel(available, unit)} left in stock`
-      : 'Out of stock';
+      ? i18n.t('orders.onlyQuantitylabelLeftInStock', { quantityLabel: quantityLabel(available, unit) })
+      : i18n.t('common.outOfStock2');
   return null;
 }
 

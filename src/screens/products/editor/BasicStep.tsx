@@ -13,6 +13,8 @@ import { Choices, Field, Input, Section, SelectField } from '../../../components
 import { SwitchRow } from '../../../components/products/ProductEditors';
 import { CloseIcon, PlusIcon, StarIcon } from '../../../components/icons';
 import { KEY_FEATURE_COUNT, type MediaItem, type ProductFormValues, type TagItem } from './types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 const PRODUCT_ID_TYPES = ['SKU', 'UPC', 'EAN', 'ISBN', 'GTIN', 'MPN'];
 
@@ -23,7 +25,7 @@ export interface ProductScope {
 
 /** Returns a message when the scope can't be saved yet. */
 export function scopeError(scope: ProductScope): string | null {
-  if (scope.storeScope === 'SPECIFIC_STORES' && !scope.storeIds.length) return 'Select at least one store, or choose All Stores.';
+  if (scope.storeScope === 'SPECIFIC_STORES' && !scope.storeIds.length) return i18n.t('products.selectAtLeastOneStoreOr');
   return null;
 }
 
@@ -53,6 +55,7 @@ export function BasicStep({
   tags: TagItem[];
   setTags: React.Dispatch<React.SetStateAction<TagItem[]>>;
 }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const stores = useFetch(() => productsService.stores(), []);
   const storeIds = scope.storeScope === 'SPECIFIC_STORES' ? scope.storeIds : null;
@@ -83,7 +86,7 @@ export function BasicStep({
       .filter(c => type !== 'CHILD_CATEGORY' || !selectable || selectable.has(c.id) || c.id === product.categoryId)
       .map(c => ({
         value: c.id,
-        label: type === 'CHILD_CATEGORY' && selectable && !selectable.has(c.id) ? `${c.categoryTitle} (not mapped to your store)` : c.categoryTitle,
+        label: type === 'CHILD_CATEGORY' && selectable && !selectable.has(c.id) ? tr('products.categorytitleNotMappedToYourStore', { categoryTitle: c.categoryTitle }) : c.categoryTitle,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   const categoryNotMapped = !!selectable && !!product.categoryId && !selectable.has(product.categoryId);
@@ -123,11 +126,11 @@ export function BasicStep({
 
   return (
     <View style={styles.wrap}>
-      <Section title="Where it's sold" subtitle="All your stores (including ones added later), or only the stores you pick.">
+      <Section title={tr('products.whereItsSold')} subtitle={tr('products.allYourStoresIncludingOnesAdded')}>
         <Choices
           options={[
-            { value: 'ALL_STORES', label: 'All stores' },
-            { value: 'SPECIFIC_STORES', label: 'Specific stores' },
+            { value: 'ALL_STORES', label: tr('common.allStores2') },
+            { value: 'SPECIFIC_STORES', label: tr('products.specificStores') },
           ]}
           value={scope.storeScope}
           onChange={v => setScope({ ...scope, storeScope: v as ProductStoreScope })}
@@ -153,8 +156,8 @@ export function BasicStep({
         ) : null}
       </Section>
 
-      <Section title="Basic information" subtitle="The basic details about your product.">
-        <Field label="Product name" required hint="A clear, descriptive name.">
+      <Section title={tr('products.basicInformation')} subtitle={tr('products.theBasicDetailsAboutYourProduct')}>
+        <Field label={tr('products.productName')} required hint={tr('products.aClearDescriptiveName')}>
           <Input
             value={product.productName}
             placeholder="e.g. India Gate Basmati Rice 5kg"
@@ -168,7 +171,7 @@ export function BasicStep({
           label="SKU"
           required
           error={product.skuItemNumber ? skuError(product.skuItemNumber) : null}
-          hint={`Type one or generate it from the name · ${product.skuItemNumber.length}/${SKU_MAX} (min ${SKU_MIN})`}
+          hint={tr('products.typeOneOrGenerateItFrom', { skuItemNumberCount: product.skuItemNumber.length, SKU_MAX, SKU_MIN })}
         >
           <View style={styles.skuRow}>
             <Input
@@ -186,15 +189,15 @@ export function BasicStep({
               onPress={() => update('skuItemNumber', generateSku(product.productName))}
               style={[styles.generate, !product.productName.trim() && styles.disabled]}
             >
-              <Text style={styles.generateText}>Generate</Text>
+              <Text style={styles.generateText}>{tr('products.generate')}</Text>
             </Pressable>
           </View>
         </Field>
-        <Field label="Product ID type">
+        <Field label={tr('products.productIdType')}>
           <Choices options={PRODUCT_ID_TYPES.map(t => ({ value: t, label: t }))} value={product.productIdType} onChange={v => update('productIdType', v)} />
         </Field>
         <SelectField
-          label="Main category"
+          label={tr('products.mainCategory')}
           required
           value={main}
           options={optionsOf('MAIN_CATEGORY')}
@@ -204,58 +207,58 @@ export function BasicStep({
           }}
         />
         <SelectField
-          label="Sub category"
+          label={tr('products.subCategory')}
           required
           disabled={!main}
-          placeholder={main ? 'Select sub category' : 'Choose a main category first'}
+          placeholder={main ? tr('products.selectSubCategory') : tr('products.chooseAMainCategoryFirst')}
           value={sub}
           options={main ? optionsOf('SUB_CATEGORY', main) : []}
-          emptyText="No sub categories"
+          emptyText={tr('products.noSubCategories')}
           onChange={v => {
             setPicked({ main, sub: v });
             if (product.categoryId) update('categoryId', '');
           }}
         />
         <SelectField
-          label="Child category"
+          label={tr('common.childCategory')}
           required
           disabled={!sub}
-          hint="Its specifications and variants drive the next steps."
-          placeholder={sub ? 'Select child category' : 'Choose a sub category first'}
+          hint={tr('products.itsSpecificationsAndVariantsDriveThe')}
+          placeholder={sub ? tr('products.selectChildCategory') : tr('products.chooseASubCategoryFirst')}
           value={product.categoryId}
           options={sub ? optionsOf('CHILD_CATEGORY', sub) : []}
-          emptyText={pickable.data?.restricted ? 'No child categories mapped to your stores here' : 'No child categories'}
+          emptyText={pickable.data?.restricted ? tr('products.noChildCategoriesMappedToYour') : tr('products.noChildCategories')}
           onChange={v => {
             update('categoryId', v);
             update('brandId', '');
           }}
         />
-        {categoryNotMapped ? <Text style={styles.warn}>This category isn't mapped to the product's stores any more. Pick another to submit it.</Text> : null}
+        {categoryNotMapped ? <Text style={styles.warn}>{tr('products.thisCategoryIsnTMappedTo')}</Text> : null}
         {config.data ? (
           <View style={styles.preview}>
-            <Text style={styles.previewTitle}>This category loads</Text>
+            <Text style={styles.previewTitle}>{tr('products.thisCategoryLoads')}</Text>
             <Text style={styles.previewText}>
-              {config.data.specifications.length} specification{config.data.specifications.length === 1 ? '' : 's'}
-              {config.data.specifications.some(s => s.required) ? ` (${config.data.specifications.filter(s => s.required).length} required)` : ''} ·{' '}
+              {tr('products.specificationCount', { count: config.data.specifications.length })}
+              {config.data.specifications.some(s => s.required) ? tr('products.countcountRequired', { countCount: config.data.specifications.filter(s => s.required).length }) : ''} ·{' '}
               {config.data.variantAttributes.length
                 ? config.data.variantAttributes.map(a => `${a.title} (${a.options.length})`).join(', ')
-                : 'no variant attributes — sold as a single SKU'}
+                : tr('products.noVariantAttributes')}
             </Text>
           </View>
         ) : null}
         <SelectField
-          label="Brand"
+          label={tr('common.brand')}
           disabled={!product.categoryId}
-          placeholder={product.categoryId ? 'No brand' : 'Choose the category first'}
-          hint="Brands approved for this category in your stores."
-          allowClear="No brand"
+          placeholder={product.categoryId ? tr('products.noBrand') : tr('products.chooseTheCategoryFirst')}
+          hint={tr('products.brandsApprovedForThisCategoryIn')}
+          allowClear={tr('products.noBrand')}
           value={product.brandId}
-          options={brands.map(b => ({ value: b.id, label: approvedBrands.has(b.id) ? b.title : `${b.title} (not approved here)` }))}
-          emptyText="No brands approved for this category yet — request one from Brand Approvals."
+          options={brands.map(b => ({ value: b.id, label: approvedBrands.has(b.id) ? b.title : tr('products.titleNotApprovedHere', { title: b.title }) }))}
+          emptyText={tr('products.noBrandsApprovedForThisCategory')}
           onChange={v => update('brandId', v)}
         />
-        {brandNotApproved ? <Text style={styles.warn}>This brand isn't approved for the category in these stores.</Text> : null}
-        <Field label="Slug" required hint="The product's web address on the store.">
+        {brandNotApproved ? <Text style={styles.warn}>{tr('products.thisBrandIsnTApprovedFor')}</Text> : null}
+        <Field label={tr('common.slug')} required hint={tr('products.theProductsWebAddressOnThe')}>
           <Input
             value={product.productSlug}
             autoCapitalize="none"
@@ -267,31 +270,31 @@ export function BasicStep({
           />
         </Field>
         <SwitchRow
-          label="Has an expiry date"
-          hint="Perishable: expiry batches must be recorded in the Inventory step."
+          label={tr('products.hasAnExpiryDate')}
+          hint={tr('products.perishableExpiryBatchesMustBeRecorded')}
           value={product.requiresExpiry}
           onChange={v => update('requiresExpiry', v)}
         />
-        <Field label="Short description">
-          <Input value={product.productShortDescription} onChangeText={v => update('productShortDescription', v)} multiline placeholder="One or two lines shown near the price." />
+        <Field label={tr('products.shortDescription')}>
+          <Input value={product.productShortDescription} onChangeText={v => update('productShortDescription', v)} multiline placeholder={tr('products.oneOrTwoLinesShownNear')} />
         </Field>
-        <Field label="Description" hint="Shown on the product page.">
+        <Field label={tr('common.description')} hint={tr('products.shownOnTheProductPage')}>
           <Input value={product.productLongDescription} onChangeText={v => update('productLongDescription', v)} multiline style={styles.long} />
         </Field>
       </Section>
 
-      <Section title={`Photos (${media.length})`} subtitle="The first photo is the cover; tap ★ to change it.">
+      <Section title={tr('products.photosMediacount', { mediaCount: media.length })} subtitle={tr('products.theFirstPhotoIsTheCover')}>
         <View style={styles.grid}>
           {media.map((m, i) => (
             <View key={`${m.fileId}`} style={styles.photo}>
               {m.url ? <Image source={{ uri: m.url }} style={styles.photoImg} /> : <View style={styles.photoImg} />}
               {m.isPrimary ? (
                 <View style={styles.cover}>
-                  <Text style={styles.coverText}>Cover</Text>
+                  <Text style={styles.coverText}>{tr('products.cover')}</Text>
                 </View>
               ) : (
                 <Pressable
-                  accessibilityLabel="Make cover photo"
+                  accessibilityLabel={tr('products.makeCoverPhoto')}
                   onPress={() => setMedia(prev => prev.map((x, j) => ({ ...x, isPrimary: j === i })))}
                   style={[styles.photoBtn, styles.left]}
                 >
@@ -299,7 +302,7 @@ export function BasicStep({
                 </Pressable>
               )}
               <Pressable
-                accessibilityLabel="Remove photo"
+                accessibilityLabel={tr('products.removePhoto')}
                 onPress={() =>
                   setMedia(prev => {
                     const next = prev.filter((_, j) => j !== i);
@@ -313,19 +316,19 @@ export function BasicStep({
               </Pressable>
             </View>
           ))}
-          <Pressable accessibilityRole="button" accessibilityLabel="Add photos" disabled={uploading > 0} onPress={addPhotos} style={[styles.photo, styles.addPhoto]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('products.addPhotos')} disabled={uploading > 0} onPress={addPhotos} style={[styles.photo, styles.addPhoto]}>
             {uploading ? <ActivityIndicator color={colors.secondary} /> : <PlusIcon size={22} color={colors.secondary} strokeWidth={2.2} />}
-            <Text style={styles.addText}>{uploading ? `Uploading ${uploading}…` : 'Add'}</Text>
+            <Text style={styles.addText}>{uploading ? tr('products.uploadingUploading', { uploading }) : tr('common.add')}</Text>
           </Pressable>
         </View>
       </Section>
 
-      <Section title="Tags" subtitle="Type one, or several separated by commas.">
+      <Section title={tr('products.tags')} subtitle={tr('products.typeOneOrSeveralSeparatedBy')}>
         <View style={styles.tags}>
           {tags.map((t, i) => (
             <View key={`${t.tagSlug}${i}`} style={styles.tag}>
               <Text style={styles.tagText}>{t.tagTitle}</Text>
-              <Pressable accessibilityLabel={`Remove tag ${t.tagTitle}`} hitSlop={8} onPress={() => setTags(prev => prev.filter((_, j) => j !== i))}>
+              <Pressable accessibilityLabel={tr('products.removeTagTagtitle', { tagTitle: t.tagTitle })} hitSlop={8} onPress={() => setTags(prev => prev.filter((_, j) => j !== i))}>
                 <CloseIcon size={12} color="#4f46e5" />
               </Pressable>
             </View>
@@ -334,40 +337,40 @@ export function BasicStep({
         <View style={styles.skuRow}>
           <Input value={tagDraft} onChangeText={setTagDraft} placeholder="e.g. organic, gluten-free" onSubmitEditing={addTags} returnKeyType="done" style={styles.flex} />
           <Pressable accessibilityRole="button" onPress={addTags} disabled={!tagDraft.trim()} style={[styles.generate, !tagDraft.trim() && styles.disabled]}>
-            <Text style={styles.generateText}>Add</Text>
+            <Text style={styles.generateText}>{tr('common.add')}</Text>
           </Pressable>
         </View>
       </Section>
 
-      <Section title="Labels" subtitle="Highlighted on the store.">
-        <SwitchRow label="Featured" value={product.isFeatured} onChange={v => update('isFeatured', v)} />
-        <SwitchRow label="New arrival" value={product.isNewArrival} onChange={v => update('isNewArrival', v)} />
-        <SwitchRow label="Best seller" value={product.isBestSeller} onChange={v => update('isBestSeller', v)} />
+      <Section title={tr('products.labels')} subtitle={tr('products.highlightedOnTheStore')}>
+        <SwitchRow label={tr('products.featured')} value={product.isFeatured} onChange={v => update('isFeatured', v)} />
+        <SwitchRow label={tr('products.newArrival')} value={product.isNewArrival} onChange={v => update('isNewArrival', v)} />
+        <SwitchRow label={tr('products.bestSeller')} value={product.isBestSeller} onChange={v => update('isBestSeller', v)} />
       </Section>
 
       <Section
-        title="Key features"
-        subtitle={`Up to ${KEY_FEATURE_COUNT} short highlights, listed under “About this product” in the store. ${product.keyFeatures.filter(v => v.trim()).length}/${KEY_FEATURE_COUNT} added.`}
+        title={tr('products.keyFeatures')}
+        subtitle={tr('products.upToKeyFeatureCountShort', { KEY_FEATURE_COUNT, countCount: product.keyFeatures.filter(v => v.trim()).length, KEY_FEATURE_COUNT2: KEY_FEATURE_COUNT })}
       >
         {product.keyFeatures.map((v, i) => (
-          <Input key={i} value={v} maxLength={500} placeholder={`Highlight ${i + 1}`} onChangeText={t => setAt('keyFeatures', i, t)} accessibilityLabel={`Key feature ${i + 1}`} />
+          <Input key={i} value={v} maxLength={500} placeholder={tr('products.highlightI', { i: i + 1 })} onChangeText={t => setAt('keyFeatures', i, t)} accessibilityLabel={tr('products.keyFeatureI', { i: i + 1 })} />
         ))}
       </Section>
 
-      <Section title="Search" subtitle="Besides its name, store search also matches these words.">
-        <Field label="Search keywords" hint="Comma-separated, e.g. basmati, long grain, biryani rice">
+      <Section title={tr('products.search')} subtitle={tr('products.besidesItsNameStoreSearchAlso')}>
+        <Field label={tr('products.searchKeywords')} hint={tr('products.commaSeparatedEGBasmatiLong')}>
           <Input value={product.searchKeywords} maxLength={1000} onChangeText={v => update('searchKeywords', v)} multiline />
         </Field>
         {product.searchTerms.map((v, i) => (
-          <Input key={i} value={v} maxLength={255} placeholder={`Search phrase ${i + 1}`} onChangeText={t => setAt('searchTerms', i, t)} accessibilityLabel={`Search term ${i + 1}`} />
+          <Input key={i} value={v} maxLength={255} placeholder={tr('products.searchPhraseI', { i: i + 1 })} onChangeText={t => setAt('searchTerms', i, t)} accessibilityLabel={tr('products.searchTermI', { i: i + 1 })} />
         ))}
       </Section>
 
-      <Section title="Terms & legal" subtitle="Optional. Shown on the product page under “Terms & disclaimer”.">
-        <Field label="Terms & conditions" hint={`${product.termsAndConditions.length}/2000`}>
+      <Section title={tr('products.termsAndLegal')} subtitle={tr('products.optionalShownOnTheProductPage')}>
+        <Field label={tr('products.termsAndConditions')} hint={`${product.termsAndConditions.length}/2000`}>
           <Input value={product.termsAndConditions} maxLength={2000} onChangeText={v => update('termsAndConditions', v)} multiline />
         </Field>
-        <Field label="Legal disclaimer" hint={`${product.legalDisclaimer.length}/2000`}>
+        <Field label={tr('products.legalDisclaimer')} hint={`${product.legalDisclaimer.length}/2000`}>
           <Input value={product.legalDisclaimer} maxLength={2000} onChangeText={v => update('legalDisclaimer', v)} multiline />
         </Field>
       </Section>

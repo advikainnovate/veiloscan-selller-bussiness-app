@@ -14,17 +14,20 @@ import { ErrorState, FilterChips, ListSkeleton } from '../../components/list/Lis
 import { opsStyles, StatCard, StatGrid } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, BarChartIcon, CheckCircleIcon, ClockIcon, HelpCircleIcon, RefreshIcon, StarIcon, UserIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const RANGES = [
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: '90', label: 'Last 90 days' },
-  { value: '', label: 'All time' },
+  { value: '7', get label() { return i18n.t('common.last7Days'); } },
+  { value: '30', get label() { return i18n.t('common.last30Days'); } },
+  { value: '90', get label() { return i18n.t('common.last90Days'); } },
+  { value: '', get label() { return i18n.t('support.allTime'); } },
 ];
 const dayString = (d: Date) => d.toISOString().slice(0, 10);
 
 /** CRM › Support Dashboard: backlog, SLA performance and customer satisfaction. */
 export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashboard'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { stores, current } = useStore();
   const allowed = hasPermission('support-reports:view');
@@ -40,8 +43,8 @@ export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashb
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Support Dashboard" onBack={navigation.goBack} />
-        <ComingSoon label="Support Dashboard" icon={BarChartIcon} allowed={false} />
+        <AppHeader title={tr('common.supportDashboard')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.supportDashboard')} icon={BarChartIcon} allowed={false} />
       </View>
     );
   }
@@ -52,14 +55,14 @@ export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashb
   const p = data?.performance;
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Support Dashboard" subtitle="CRM" onBack={navigation.goBack} />
+      <AppHeader title={tr('common.supportDashboard')} subtitle="CRM" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={reload} tintColor={colors.secondary} colors={[colors.secondary]} />}>
-        <Text style={opsStyles.muted}>{`Backlog, SLA performance and customer satisfaction for ${everyStore ? 'all your stores' : current?.name ?? 'your store'}.`}</Text>
+        <Text style={opsStyles.muted}>{tr('support.dashboardSubtitle', { scope: everyStore ? tr('support.allYourStores') : current?.name ?? tr('support.yourStore') })}</Text>
         {stores.length > 1 ? (
           <FilterChips
             options={[
-              { value: 'one', label: current?.name ?? 'This store' },
-              { value: 'all', label: 'All my stores' },
+              { value: 'one', label: current?.name ?? tr('support.thisStore') },
+              { value: 'all', label: tr('support.allMyStores') },
             ]}
             value={everyStore ? 'all' : 'one'}
             onChange={v => setEveryStore(v === 'all')}
@@ -74,30 +77,30 @@ export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashb
         ) : data ? (
           <>
             <StatGrid>
-              <StatCard icon={HelpCircleIcon} tone="slate" label="Tickets created" value={String(t!.total)} />
-              <StatCard icon={ClockIcon} tone="orange" label="Open" value={String(t!.open)} onPress={openTickets} />
-              <StatCard icon={UserIcon} tone="blue" label="Unassigned" value={String(t!.unassigned)} />
-              <StatCard icon={AlertCircleIcon} tone="red" label="Urgent open" value={String(t!.urgent)} />
-              <StatCard icon={AlertCircleIcon} tone="red" label="Escalated" value={String(t!.escalated)} />
-              <StatCard icon={AlertCircleIcon} tone="red" label="SLA breached" value={String(t!.breached)} />
-              <StatCard icon={ClockIcon} tone="amber" label="Due within 2h" value={String(t!.approaching)} />
-              <StatCard icon={StarIcon} tone="amber" label={`CSAT (${p!.csatResponses} ratings)`} value={p!.csatAverage === null ? '—' : `${p!.csatAverage} / 5`} />
+              <StatCard icon={HelpCircleIcon} tone="slate" label={tr('support.ticketsCreated')} value={String(t!.total)} />
+              <StatCard icon={ClockIcon} tone="orange" label={tr('common.open')} value={String(t!.open)} onPress={openTickets} />
+              <StatCard icon={UserIcon} tone="blue" label={tr('support.unassigned')} value={String(t!.unassigned)} />
+              <StatCard icon={AlertCircleIcon} tone="red" label={tr('support.urgentOpen')} value={String(t!.urgent)} />
+              <StatCard icon={AlertCircleIcon} tone="red" label={tr('support.escalated')} value={String(t!.escalated)} />
+              <StatCard icon={AlertCircleIcon} tone="red" label={tr('support.slaBreached')} value={String(t!.breached)} />
+              <StatCard icon={ClockIcon} tone="amber" label={tr('support.dueWithin2h')} value={String(t!.approaching)} />
+              <StatCard icon={StarIcon} tone="amber" label={tr('support.csatCsatresponsesRatings', { csatResponses: p!.csatResponses })} value={p!.csatAverage === null ? '—' : `${p!.csatAverage} / 5`} />
             </StatGrid>
 
             <Group title="PERFORMANCE">
-              <Metric icon={ClockIcon} label="Avg first response" value={formatMinutes(p!.avgFirstResponseMinutes)} />
-              <Metric icon={CheckCircleIcon} label="Avg resolution" value={formatMinutes(p!.avgResolutionMinutes)} />
-              <Metric icon={CheckCircleIcon} label="First response on time" value={pct(p!.firstResponseSlaMetPercent)} />
-              <Metric icon={RefreshIcon} label="Reopened rate" value={pct(p!.reopenedRatePercent)} last />
+              <Metric icon={ClockIcon} label={tr('support.avgFirstResponse')} value={formatMinutes(p!.avgFirstResponseMinutes)} />
+              <Metric icon={CheckCircleIcon} label={tr('support.avgResolution')} value={formatMinutes(p!.avgResolutionMinutes)} />
+              <Metric icon={CheckCircleIcon} label={tr('support.firstResponseOnTime')} value={pct(p!.firstResponseSlaMetPercent)} />
+              <Metric icon={RefreshIcon} label={tr('support.reopenedRate')} value={pct(p!.reopenedRatePercent)} last />
             </Group>
 
-            <BarGroup title="BY STATUS" rows={data.byStatus} label={r => statusOf(r.key ?? '').label || r.label} />
-            <BarGroup title="BY PRIORITY" rows={data.byPriority} label={r => r.label} />
-            <BarGroup title="BY TICKET TYPE" rows={data.byType} label={r => r.label} />
-            <BarGroup title="BY CATEGORY" rows={data.byCategory} label={r => r.label} />
-            {everyStore ? <BarGroup title="BY STORE" rows={data.byStore.slice(0, 10)} label={r => r.label} /> : null}
+            <BarGroup title={tr('support.byStatus')} rows={data.byStatus} label={r => statusOf(r.key ?? '').label || r.label} />
+            <BarGroup title={tr('support.byPriority')} rows={data.byPriority} label={r => r.label} />
+            <BarGroup title={tr('support.byTicketType')} rows={data.byType} label={r => r.label} />
+            <BarGroup title={tr('support.byCategory')} rows={data.byCategory} label={r => r.label} />
+            {everyStore ? <BarGroup title={tr('support.byStore')} rows={data.byStore.slice(0, 10)} label={r => r.label} /> : null}
 
-            <Group title="AGENT WORKLOAD">
+            <Group title={tr('support.agentWorkload')}>
               <View style={styles.block}>
                 {data.agents.length ? (
                   data.agents.map(a => (
@@ -105,18 +108,18 @@ export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashb
                       <Text style={[opsStyles.title, styles.flex]} numberOfLines={1}>
                         {a.name || '—'}
                       </Text>
-                      <Text style={styles.agentFig}>{`${a.open} open`}</Text>
-                      <Text style={[styles.agentFig, a.breached ? styles.bad : null]}>{`${a.breached} breached`}</Text>
-                      <Text style={styles.agentFig}>{`${a.resolved} resolved · ${formatMinutes(a.avgResolutionMinutes)}`}</Text>
+                      <Text style={styles.agentFig}>{tr('support.openOpen', { open: a.open })}</Text>
+                      <Text style={[styles.agentFig, a.breached ? styles.bad : null]}>{tr('support.breachedBreached', { breached: a.breached })}</Text>
+                      <Text style={styles.agentFig}>{tr('support.resolvedResolvedAvgresolutionminutes', { resolved: a.resolved, avgResolutionMinutes: formatMinutes(a.avgResolutionMinutes) })}</Text>
                     </View>
                   ))
                 ) : (
-                  <Text style={opsStyles.muted}>No assigned tickets in this period.</Text>
+                  <Text style={opsStyles.muted}>{tr('support.noAssignedTicketsInThisPeriod')}</Text>
                 )}
               </View>
             </Group>
 
-            <Group title="HOW THESE FIGURES ARE COUNTED" action={{ label: showHow ? 'Hide' : 'Show', onPress: () => setShowHow(v => !v) }}>
+            <Group title={tr('support.howTheseFiguresAreCounted')} action={{ label: showHow ? tr('support.hide') : tr('common.show'), onPress: () => setShowHow(v => !v) }}>
               <View style={styles.block}>
                 {showHow
                   ? Object.entries(data.definitions).map(([key, text]) => (
@@ -126,7 +129,7 @@ export function SupportDashboardScreen({ navigation }: ScreenProps<'SupportDashb
                       </View>
                     ))
                   : null}
-                <Text style={opsStyles.muted}>{`Generated ${dateTime(data.generatedAt)}`}</Text>
+                <Text style={opsStyles.muted}>{tr('support.generatedGeneratedat', { generatedAt: dateTime(data.generatedAt) })}</Text>
               </View>
             </Group>
           </>
@@ -148,6 +151,7 @@ function Metric({ icon: Icon, label, value, last }: { icon: typeof ClockIcon; la
 
 /** One magnitude per row: a single orange bar, the count beside it. */
 function BarGroup({ title, rows, label }: { title: string; rows: Breakdown[]; label: (r: Breakdown) => string }) {
+  const { t } = useTranslation();
   const max = Math.max(1, ...rows.map(r => r.count));
   return (
     <Group title={title}>
@@ -161,7 +165,7 @@ function BarGroup({ title, rows, label }: { title: string; rows: Breakdown[]; la
                 </Text>
                 <Text style={opsStyles.meta}>
                   <Text style={opsStyles.title}>{r.count}</Text>
-                  {` · ${r.open} open`}
+                  {t('support.openOpen2', { open: r.open })}
                 </Text>
               </View>
               <View style={styles.track}>
@@ -170,7 +174,7 @@ function BarGroup({ title, rows, label }: { title: string; rows: Breakdown[]; la
             </View>
           ))
         ) : (
-          <Text style={opsStyles.muted}>No tickets in this period.</Text>
+          <Text style={opsStyles.muted}>{t('support.noTicketsInThisPeriod')}</Text>
         )}
       </View>
     </Group>

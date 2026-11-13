@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../theme';
+import { useTranslation } from 'react-i18next';
 
 const markWhite = require('../assets/brand/logo-mark-white.png');
 
@@ -13,6 +14,7 @@ const INTRO_MS = 1600;
  * checked. Calls `onFinish` once the intro has played and `ready` is true.
  */
 export function SplashScreen({ ready, onFinish }: { ready: boolean; onFinish: () => void }) {
+  const { t } = useTranslation();
   const markScale = useRef(new Animated.Value(0.6)).current;
   const markOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -72,10 +74,10 @@ export function SplashScreen({ ready, onFinish }: { ready: boolean; onFinish: ()
 
         <Animated.View style={[styles.center2, { opacity: textOpacity, transform: [{ translateY: textShift }] }]}>
           <Text style={styles.wordmark}>
-            Veilo<Text style={styles.accent}>Scan</Text>
+            {t('common.veilo')}<Text style={styles.accent}>{t('common.scan')}</Text>
           </Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>BUSINESS</Text>
+            <Text style={styles.badgeText}>{t('common.business')}</Text>
           </View>
         </Animated.View>
       </View>
@@ -93,7 +95,7 @@ export function SplashScreen({ ready, onFinish }: { ready: boolean; onFinish: ()
             ]}
           />
         </View>
-        <Text style={styles.tagline}>Sell · Manage · Grow</Text>
+        <Text style={styles.tagline}>{t('auth.sellManageGrow')}</Text>
       </Animated.View>
     </View>
   );

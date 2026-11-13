@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { setSessionExpiredHandler } from '../lib/api';
 import { clearSession, restoreSession, saveSession, saveUser, type SessionUser } from '../lib/session';
-import { canUseSellerApp, NOT_SELLER_MESSAGE } from '../lib/seller-access';
+import { canUseSellerApp, notSellerMessage } from '../lib/seller-access';
 import { grants, usablePermissions } from '../lib/access-policy';
 import { authService, type AuthResult } from '../services/auth-service';
 import { stopPush } from '../lib/push';
@@ -16,6 +16,8 @@ interface AuthContextValue {
   roles: string[];
   /** Fetches the signed-in user again, e.g. after editing the profile. */
   refreshUser: () => Promise<void>;
+  /** Saves the user's own preferences (PATCH /auth/me) and takes the answer as the signed-in user. */
+  updateMe: (payload: { preferredLanguage?: string }) => Promise<void>;
   /** Whether the user's role allows `permission` (e.g. 'orders:manage'). */
   hasPermission: (permission: string) => boolean;
   login: (email: string, password: string, remember: boolean) => Promise<void>;
@@ -57,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Permissions drive access; role titles are only shown.
         const { roles: freshRoles, permissions: freshPermissions, ...freshUser } = await authService.me();
-        if (!canUseSellerApp(freshUser.userType)) throw new Error(NOT_SELLER_MESSAGE);
+        if (!canUseSellerApp(freshUser.userType)) throw new Error(notSellerMessage());
         setUser(freshUser);
         setPermissions(freshPermissions ?? []);
         setRoles(roleTitles(freshRoles));
@@ -74,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const startSession = useCallback(async (data: AuthResult, remember: boolean) => {
     // The API already refuses non-seller accounts; this is a backstop.
-    if (!canUseSellerApp(data.user?.userType)) throw new Error(NOT_SELLER_MESSAGE);
+    if (!canUseSellerApp(data.user?.userType)) throw new Error(notSellerMessage());
     await saveSession(data, data.user, remember);
     setUser(data.user);
     setPermissions(data.permissions ?? []);
@@ -87,6 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(freshUser);
     setPermissions(freshPermissions ?? []);
     setRoles(roleTitles(freshRoles));
+    await saveUser(freshUser);
+  }, []);
+
+  const updateMe = useCallback(async (payload: { preferredLanguage?: string }) => {
+    const { roles: freshRoles, permissions: freshPermissions, ...freshUser } = await authService.updateMe(payload);
+    setUser(freshUser);
+    if (freshPermissions) setPermissions(freshPermissions);
+    if (freshRoles) setRoles(roleTitles(freshRoles));
     await saveUser(freshUser);
   }, []);
 
@@ -120,8 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback((permission: string) => grants(usable, permission), [usable]);
 
   const value = useMemo(
-    () => ({ status, user, permissions, roles, refreshUser, hasPermission, login, loginWithOtp, logout }),
-    [status, user, permissions, roles, refreshUser, hasPermission, login, loginWithOtp, logout],
+    () => ({ status, user, permissions, roles, refreshUser, updateMe, hasPermission, login, loginWithOtp, logout }),
+    [status, user, permissions, roles, refreshUser, updateMe, hasPermission, login, loginWithOtp, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

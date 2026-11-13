@@ -18,12 +18,14 @@ import { ActionSheet, compactStyles, CountTiles, Fab, ListTop, RowCard, Separato
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { BanIcon, CheckCircleIcon, EditIcon, LayersIcon, SlidersIcon, TrashIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 const rupees = (v: unknown) => `₹${Number(v || 0).toLocaleString('en-IN')}`;
 
 /** Catalog › Business Variants: sellable SKUs with pricing for each variant combination. */
 export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVariants'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const listPadding = useListPadding();
@@ -57,18 +59,18 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Business Variants" onBack={navigation.goBack} />
-        <ComingSoon label="Business Variants" icon={LayersIcon} allowed={false} />
+        <AppHeader title={t('common.businessVariants')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.businessVariants')} icon={LayersIcon} allowed={false} />
       </View>
     );
   }
 
   async function toggle(row: Row) {
     const active = isActiveRow(row);
-    if (!(await confirmAction(`${active ? 'Deactivate' : 'Activate'} "${String(row.skuItemNumber)}"?`, undefined, active ? 'Deactivate' : 'Activate', active))) return;
+    if (!(await confirmAction(`${active ? 'Deactivate' : 'Activate'} "${String(row.skuItemNumber)}"?`, undefined, active ? t('common.deactivate') : t('common.activate'), active))) return;
     try {
       await productSkuService.update(row.id, { status: active ? 0 : 1 });
-      toast(`Business variant ${active ? 'deactivated' : 'activated'}`);
+      toast(active ? t('catalog.businessVariantDeactivated') : t('catalog.businessVariantActivated'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -76,10 +78,10 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
   }
 
   async function remove(row: Row) {
-    if (!(await confirmAction('Delete business variant?', `"${String(row.skuItemNumber)}" will be removed from this list. Deactivate it instead if you only want to take it out of use.`, 'Delete', true))) return;
+    if (!(await confirmAction(t('catalog.deleteBusinessVariant'), t('catalog.skuitemnumberWillBeRemovedFromThis', { skuItemNumber: String(row.skuItemNumber) }), t('common.delete'), true))) return;
     try {
       await productSkuService.remove(row.id);
-      toast('Business variant deleted');
+      toast(t('catalog.businessVariantDeleted'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -88,7 +90,7 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Business Variants" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('common.businessVariants')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
         <SearchBar
           value={search}
@@ -96,14 +98,14 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
             setSearch(v);
             setShown(PAGE_SIZE);
           }}
-          placeholder="Search by SKU, barcode or product…"
+          placeholder={t('catalog.searchBySkuBarcodeOrProduct')}
         />
         <CountTiles
           tiles={[
-            { key: '1', label: 'Active', count: items.filter(isActiveRow).length, ...TILE_COLORS.green },
-            { key: '0', label: 'Inactive', count: items.filter(r => !isActiveRow(r)).length, ...TILE_COLORS.slate },
-            { key: 'products', label: 'Products', count: new Set(items.map(r => r.productId)).size, info: true, ...TILE_COLORS.amber },
-            { key: 'avg', label: 'Avg price', count: `₹${avg.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, info: true, ...TILE_COLORS.violet },
+            { key: '1', label: t('common.active'), count: items.filter(isActiveRow).length, ...TILE_COLORS.green },
+            { key: '0', label: t('common.inactive'), count: items.filter(r => !isActiveRow(r)).length, ...TILE_COLORS.slate },
+            { key: 'products', label: t('common.products'), count: new Set(items.map(r => r.productId)).size, info: true, ...TILE_COLORS.amber },
+            { key: 'avg', label: t('catalog.avgPrice'), count: `₹${avg.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, info: true, ...TILE_COLORS.violet },
           ]}
           value={status}
           onSelect={k => {
@@ -113,7 +115,7 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
           loading={loading && !data}
         />
         <SummaryLine
-          hint="Sellable SKUs with pricing for each variant combination."
+          hint={t('catalog.sellableSkusWithPricingForEach')}
           filtered={isFiltered}
           shown={rows.length}
           total={items.length}
@@ -124,9 +126,9 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
             setStatus('');
           }}
           extra={
-            <Pressable accessibilityRole="button" accessibilityLabel="More filters" hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.moreFilters')} hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
               <SlidersIcon size={14} color={productId ? colors.secondary : colors.textSecondary} />
-              <Text style={[styles.filterText, productId ? styles.accent : null]}>{productId ? 'Filters (1)' : 'Filters'}</Text>
+              <Text style={[styles.filterText, productId ? styles.accent : null]}>{productId ? t('catalog.filters1') : t('common.filters')}</Text>
             </Pressable>
           }
         />
@@ -148,7 +150,7 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
               <ListSkeleton rows={4} height={84} />
             ) : (
               <View style={compactStyles.empty}>
-                <EmptyState icon={LayersIcon} title={isFiltered ? 'No SKUs match' : 'No business variants found'} text={isFiltered ? 'Try another filter or search term.' : 'Add a SKU to sell a product variant.'} />
+                <EmptyState icon={LayersIcon} title={isFiltered ? t('catalog.noSkusMatch') : t('catalog.noBusinessVariantsFound')} text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('catalog.addASkuToSellA')} />
               </View>
             )
           }
@@ -158,7 +160,7 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
             const combo = Object.values((item.variantCombination as Record<string, unknown>) ?? {});
             const discounted = item.mrp && Number(item.mrp) > Number(item.businessPrice);
             return (
-              <RowCard label={`Edit ${String(item.skuItemNumber)}`} onPress={() => navigation.navigate('BusinessVariantForm', { id: item.id })}>
+              <RowCard label={t('catalog.editSkuitemnumber', { skuItemNumber: String(item.skuItemNumber) })} onPress={() => navigation.navigate('BusinessVariantForm', { id: item.id })}>
                 <View style={compactStyles.head}>
                   <View style={compactStyles.thumb}>{image ? <Image source={{ uri: image }} style={compactStyles.thumbImage} /> : <LayersIcon size={16} color={colors.textMuted} />}</View>
                   <View style={styles.flex}>
@@ -169,15 +171,15 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
                       {`${productName(item.productId) || '—'}${item.barcode ? ` · ${String(item.barcode)}` : ''}`}
                     </Text>
                   </View>
-                  <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
-                  <Pressable accessibilityRole="button" accessibilityLabel={`More for ${String(item.skuItemNumber)}`} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
+                  <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.moreForSkuitemnumber', { skuItemNumber: String(item.skuItemNumber) })} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
                     <Text style={compactStyles.dots}>⋮</Text>
                   </Pressable>
                 </View>
                 <View style={compactStyles.chips}>
                   <Text style={styles.price}>{rupees(item.businessPrice)}</Text>
                   {discounted ? <Text style={styles.mrp}>{rupees(item.mrp)}</Text> : null}
-                  <Text style={compactStyles.chip}>{item.quantityPriceType === 'SLAB' ? 'Slab' : 'Fixed'}</Text>
+                  <Text style={compactStyles.chip}>{item.quantityPriceType === 'SLAB' ? t('catalog.slab') : t('common.fixed')}</Text>
                   {combo.map((v, i) => (
                     <Text key={i} style={compactStyles.chip}>
                       {String(v)}
@@ -190,19 +192,19 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
         />
       )}
 
-      <Fab label="Add SKU" onPress={() => navigation.navigate('BusinessVariantForm')} />
+      <Fab label={t('catalog.addSku')} onPress={() => navigation.navigate('BusinessVariantForm')} />
 
-      <Sheet visible={moreFilters} title="Filters" onClose={() => setMoreFilters(false)}>
+      <Sheet visible={moreFilters} title={t('common.filters')} onClose={() => setMoreFilters(false)}>
         <SelectField
-          label="Product"
+          label={t('common.product')}
           value={productId}
           options={(products.data ?? []).map(p => ({ value: p.id, label: String(p.productName ?? p.id) }))}
           onChange={v => {
             setProductId(v);
             setShown(PAGE_SIZE);
           }}
-          allowClear="All Products"
-          placeholder="All Products"
+          allowClear={t('catalog.allProducts')}
+          placeholder={t('catalog.allProducts')}
         />
       </Sheet>
 
@@ -214,9 +216,9 @@ export function BusinessVariantsScreen({ navigation }: ScreenProps<'BusinessVari
         actions={
           actionsFor
             ? [
-                { label: 'Edit', icon: EditIcon, onPress: () => navigation.navigate('BusinessVariantForm', { id: actionsFor.id }) },
-                { label: isActiveRow(actionsFor) ? 'Deactivate' : 'Activate', icon: isActiveRow(actionsFor) ? BanIcon : CheckCircleIcon, onPress: () => toggle(actionsFor) },
-                { label: 'Delete', icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
+                { label: t('common.edit'), icon: EditIcon, onPress: () => navigation.navigate('BusinessVariantForm', { id: actionsFor.id }) },
+                { label: isActiveRow(actionsFor) ? t('common.deactivate') : t('common.activate'), icon: isActiveRow(actionsFor) ? BanIcon : CheckCircleIcon, onPress: () => toggle(actionsFor) },
+                { label: t('common.delete'), icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
               ]
             : []
         }

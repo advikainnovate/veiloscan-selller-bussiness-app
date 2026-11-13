@@ -42,15 +42,17 @@ import {
   type SpecificationRow,
   type TagItem,
 } from './types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 const STEPS = [
-  { key: 'basic', label: 'Basic' },
-  { key: 'variants', label: 'Variants' },
-  { key: 'specifications', label: 'Specs' },
-  { key: 'inventory', label: 'Inventory' },
-  { key: 'selling', label: 'Selling' },
-  { key: 'measurements', label: 'Measures' },
-  { key: 'review', label: 'Review' },
+  { key: 'basic', get label() { return i18n.t('products.basic'); } },
+  { key: 'variants', get label() { return i18n.t('products.variants'); } },
+  { key: 'specifications', get label() { return i18n.t('products.specs'); } },
+  { key: 'inventory', get label() { return i18n.t('common.inventory'); } },
+  { key: 'selling', get label() { return i18n.t('products.selling'); } },
+  { key: 'measurements', get label() { return i18n.t('products.measures'); } },
+  { key: 'review', get label() { return i18n.t('products.review'); } },
 ] as const;
 
 const s = (v: unknown, d = '') => (v === null || v === undefined ? d : String(v));
@@ -70,6 +72,7 @@ const pickApproval = (r: Row): Row => ({
  * (or publishes an approved product).
  */
 export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductEditor'>) {
+  const { t: tr } = useTranslation();
   const editId = route.params?.id;
   const isEdit = !!editId;
   const insets = useSafeAreaInsets();
@@ -210,7 +213,7 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
     // Only approved products can be live; everything else is saved as a draft.
     const statusValue = isApproved ? requestedStatus : 0;
     if (!product.productName.trim() || !product.skuItemNumber || !product.categoryId || !product.productSlug) {
-      throw new Error('Fill in the product name, SKU, slug and category.');
+      throw new Error(tr('products.fillInTheProductNameSku'));
     }
     const badSku = skuError(product.skuItemNumber);
     if (badSku) throw new Error(badSku);
@@ -327,7 +330,7 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
   async function assertExpiryBatches(id: string | null) {
     if (!product.requiresExpiry || !id) return;
     const batches = await productExpiryService.list({ productId: id });
-    if (!batches.length) throw new Error('This product has an expiry date: add at least one expiry batch in the Inventory step.');
+    if (!batches.length) throw new Error(tr('products.thisProductHasAnExpiryDate2'));
   }
 
   async function run(action: () => Promise<void>) {
@@ -357,7 +360,7 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
   const saveDraft = () =>
     run(async () => {
       await persistStep(isApproved ? undefined : 0);
-      toast(isApproved ? 'Product saved' : 'Product saved as draft');
+      toast(isApproved ? tr('products.productSaved') : tr('products.productSavedAsDraft'));
       navigation.goBack();
     });
 
@@ -366,7 +369,7 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
       if (!productId) return;
       await assertExpiryBatches(productId);
       await productsService.update(productId, { status: 1 });
-      toast('Product published');
+      toast(tr('products.productPublished'));
       navigation.goBack();
     });
 
@@ -375,24 +378,24 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
       if (!productId) return;
       await assertExpiryBatches(productId);
       await productsService.submitForApproval(productId);
-      toast('Product submitted for approval');
+      toast(tr('products.productSubmittedForApproval'));
       navigation.goBack();
     });
 
   function leave() {
     if (!touched) return navigation.goBack();
-    NativeAlert.alert('Leave without saving?', 'Changes on this step will be lost.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Leave', style: 'destructive', onPress: () => navigation.goBack() },
+    NativeAlert.alert(tr('products.leaveWithoutSaving'), tr('products.changesOnThisStepWillBe'), [
+      { text: tr('common.keepEditing'), style: 'cancel' },
+      { text: tr('products.leave'), style: 'destructive', onPress: () => navigation.goBack() },
     ]);
   }
 
-  const title = isEdit ? 'Edit product' : 'Add product';
+  const title = isEdit ? tr('products.editProduct') : tr('common.addProduct');
   if (!allowed) {
     return (
       <View style={styles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ErrorState message="You don't have permission to manage products." onRetry={navigation.goBack} />
+        <ErrorState message={tr('products.youDonTHavePermissionTo')} onRetry={navigation.goBack} />
       </View>
     );
   }
@@ -500,17 +503,17 @@ export function ProductEditorScreen({ navigation, route }: ScreenProps<'ProductE
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable accessibilityRole="button" onPress={saveDraft} disabled={saving} style={styles.draftBtn}>
-            <Text style={styles.draftText}>{isApproved ? 'Save' : 'Save draft'}</Text>
+            <Text style={styles.draftText}>{isApproved ? tr('common.save') : tr('products.saveDraft')}</Text>
           </Pressable>
           {!last ? (
-            <Button title={`Next: ${STEPS[step + 1].label}`} loading={saving} loadingTitle="Saving…" onPress={next} style={styles.flex} />
+            <Button title={tr('common.nextLabel', { label: STEPS[step + 1].label })} loading={saving} loadingTitle={tr('common.saving')} onPress={next} style={styles.flex} />
           ) : isApproved ? (
-            <Button title={Number(product.status) === 1 ? 'Save & close' : 'Publish'} loading={saving} disabled={!productId} onPress={publish} style={styles.flex} />
+            <Button title={Number(product.status) === 1 ? tr('products.saveAndClose') : tr('products.publish')} loading={saving} disabled={!productId} onPress={publish} style={styles.flex} />
           ) : awaitingReview ? (
-            <Button title="Awaiting approval" disabled onPress={() => {}} style={styles.flex} />
+            <Button title={tr('common.awaitingApproval')} disabled onPress={() => {}} style={styles.flex} />
           ) : (
             <Button
-              title={approvalStatusOf(approvalRecord) === 'CHANGES_REQUIRED' ? 'Resubmit for approval' : 'Submit for approval'}
+              title={approvalStatusOf(approvalRecord) === 'CHANGES_REQUIRED' ? tr('products.resubmitForApproval') : tr('products.submitForApproval')}
               loading={saving}
               disabled={!productId || !canSubmitForApproval(approvalRecord)}
               onPress={submit}

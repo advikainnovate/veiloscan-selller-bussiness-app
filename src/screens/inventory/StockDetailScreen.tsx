@@ -18,26 +18,29 @@ import { StockOperationSheet } from '../../components/inventory/StockOperationSh
 import { StockSettingsSheet } from '../products/editor/InventoryStep';
 import { WarehouseIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const LEDGER_RANGES = [
-  { value: '', label: 'All dates' },
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: 'month', label: 'This month' },
-  { value: '90', label: 'Last 90 days' },
+  { value: '', get label() { return i18n.t('inventory.allDates'); } },
+  { value: '7', get label() { return i18n.t('common.last7Days'); } },
+  { value: '30', get label() { return i18n.t('common.last30Days'); } },
+  { value: 'month', get label() { return i18n.t('inventory.thisMonth'); } },
+  { value: '90', get label() { return i18n.t('common.last90Days'); } },
 ];
 
 const ACTIONS: { op: StockOperation; label: string }[] = [
-  { op: 'adjust', label: 'Count / Adjust' },
-  { op: 'block', label: 'Damage / Block' },
-  { op: 'transfer', label: 'Transfer' },
-  { op: 'return', label: 'Return' },
+  { op: 'adjust', get label() { return i18n.t('inventory.countAdjust'); } },
+  { op: 'block', get label() { return i18n.t('inventory.damageBlock'); } },
+  { op: 'transfer', get label() { return i18n.t('inventory.transfer'); } },
+  { op: 'return', get label() { return i18n.t('common.return'); } },
 ];
 
 const RESERVATION_TONE = { RESERVED: 'orange', FULFILLED: 'green', RELEASED: 'slate', CANCELLED: 'slate', EXPIRED: 'red' } as const;
 
 /** One SKU's stock in one warehouse: balance, levels, lots, reservations and ledger. */
 export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetail'>) {
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const allowed = hasPermission('product-inventory:manage');
@@ -60,21 +63,21 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Stock" onBack={navigation.goBack} />
-        <ComingSoon label="Inventory" icon={WarehouseIcon} allowed={false} />
+        <AppHeader title={tr('common.stock')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.inventory')} icon={WarehouseIcon} allowed={false} />
       </View>
     );
   }
   if (loading || !data) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Stock" onBack={navigation.goBack} />
+        <AppHeader title={tr('common.stock')} onBack={navigation.goBack} />
         {loading ? (
           <View style={opsStyles.content}>
             <ListSkeleton rows={4} height={110} />
           </View>
         ) : (
-          <ErrorState message={error ?? 'Stock record not found.'} onRetry={() => reload()} />
+          <ErrorState message={error ?? tr('inventory.stockRecordNotFound')} onRetry={() => reload()} />
         )}
       </View>
     );
@@ -98,15 +101,15 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
             <Text style={styles.name}>{data.productName}</Text>
             <Badge label={status.label} tone={status.tone} />
           </View>
-          <Text style={opsStyles.meta}>{`SKU ${data.sku}${data.variantLabel ? ` · ${data.variantLabel}` : ''}`}</Text>
+          <Text style={opsStyles.meta}>{[tr('inventory.skuCode', { sku: data.sku }), data.variantLabel].filter(Boolean).join(' · ')}</Text>
           <View style={opsStyles.row}>
             <WarehouseIcon size={14} color={colors.textMuted} />
-            <Text style={opsStyles.meta}>{`${data.warehouseTitle} · counted in ${unitName} (${data.baseUom}) · ${data.idd}`}</Text>
+            <Text style={opsStyles.meta}>{tr('inventory.warehousetitleCountedInUnitnameBaseuomIdd', { warehouseTitle: data.warehouseTitle, unitName, baseUom: data.baseUom, idd: data.idd })}</Text>
           </View>
-          {hasPermission('products-master:manage') ? <LinkButton label="View product" onPress={() => navigation.navigate('ProductDetail', { id: data.productId })} /> : null}
+          {hasPermission('products-master:manage') ? <LinkButton label={tr('inventory.viewProduct')} onPress={() => navigation.navigate('ProductDetail', { id: data.productId })} /> : null}
         </View>
 
-        <Button title="Receive Stock" onPress={() => setOperation('receive')} />
+        <Button title={tr('inventory.receiveStock2')} onPress={() => setOperation('receive')} />
         <View style={opsStyles.chipRow}>
           {ACTIONS.map(a => (
             <Pressable key={a.op} accessibilityRole="button" onPress={() => setOperation(a.op)} style={opsStyles.smallBtn}>
@@ -114,40 +117,40 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
             </Pressable>
           ))}
           <Pressable accessibilityRole="button" onPress={() => setOperation('levels')} style={opsStyles.smallBtn}>
-            <Text style={opsStyles.smallBtnText}>Stock Levels</Text>
+            <Text style={opsStyles.smallBtnText}>{tr('inventory.stockLevels2')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => setSettings(true)} style={opsStyles.smallBtn}>
-            <Text style={opsStyles.smallBtnText}>Stock Settings</Text>
+            <Text style={opsStyles.smallBtnText}>{tr('inventory.stockSettings')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.tiles}>
-          <Tile label="On hand" value={q(data.onHand)} sub={sub(data.onHand, 'Physically in the warehouse')} />
-          <Tile label="Reserved for orders" value={q(data.reserved)} sub={sub(data.reserved, 'Allocated to open orders')} />
-          <Tile label="Blocked" value={q(data.blocked)} sub={sub(data.blocked, 'Damaged or blocked stock')} />
+          <Tile label={tr('inventory.onHand')} value={q(data.onHand)} sub={sub(data.onHand, tr('inventory.physicallyInTheWarehouse'))} />
+          <Tile label={tr('inventory.reservedForOrders')} value={q(data.reserved)} sub={sub(data.reserved, tr('inventory.allocatedToOpenOrders'))} />
+          <Tile label={tr('common.blocked')} value={q(data.blocked)} sub={sub(data.blocked, tr('inventory.damagedOrBlockedStock'))} />
           <Tile
-            label="Available"
+            label={tr('common.available')}
             value={q(data.available)}
-            sub={sub(data.available, 'On hand − reserved − blocked')}
+            sub={sub(data.available, tr('inventory.onHandReservedBlocked'))}
             color={data.available <= 0 ? colors.error : data.stockStatus === 'LOW_STOCK' ? colors.warningDark : colors.successDark}
           />
         </View>
 
-        <OpsCard title="Stock Levels" action={<LinkButton label="Edit" onPress={() => setOperation('levels')} />}>
+        <OpsCard title={tr('inventory.stockLevels2')} action={<LinkButton label={tr('common.edit')} onPress={() => setOperation('levels')} />}>
           <View style={styles.levels}>
-            <Level label="Minimum" value={q(data.minimum)} />
-            <Level label="Maximum" value={data.maximum === null ? '—' : q(data.maximum)} />
-            <Level label="Reorder quantity" value={q(data.reorder)} />
+            <Level label={tr('inventory.minimum')} value={q(data.minimum)} />
+            <Level label={tr('common.maximum')} value={data.maximum === null ? '—' : q(data.maximum)} />
+            <Level label={tr('common.reorderQuantity')} value={q(data.reorder)} />
           </View>
-          <Text style={opsStyles.muted}>At or below the minimum the stock shows as Low stock with a reorder suggestion.</Text>
+          <Text style={opsStyles.muted}>{tr('inventory.atOrBelowTheMinimumThe')}</Text>
         </OpsCard>
 
         <OpsCard
-          title={`Lots / Batches (${data.lots.length})`}
-          description={data.tracksLots ? "Stock goes out by the product's FIFO / FEFO rule." : 'Lots appear when stock is received with lot details.'}
+          title={tr('inventory.lotsBatchesLotscount', { lotsCount: data.lots.length })}
+          description={data.tracksLots ? tr('inventory.stockGoesOutByTheProducts') : tr('inventory.lotsAppearWhenStockIsReceived')}
         >
           {!data.lots.length ? (
-            <NoData text="No lots. Receive stock with lot details to track batches, expiry, etc." />
+            <NoData text={tr('inventory.noLotsReceiveStockWithLot')} />
           ) : (
             data.lots.map((l, i) => (
               <View key={l.id} style={[i > 0 && opsStyles.listRow, styles.entry]}>
@@ -156,18 +159,21 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
                   <Badge label={l.status.charAt(0) + l.status.slice(1).toLowerCase()} tone={l.status === 'ACTIVE' ? 'green' : l.status === 'BLOCKED' ? 'violet' : 'slate'} />
                 </View>
                 <Text style={opsStyles.meta}>
-                  {`${l.batchNumber && l.lotNumber ? `Batch ${l.batchNumber} · ` : ''}${q(l.remainingQty)} left of ${q(l.receivedQty)}${l.expiryDate ? ` · expires ${day(l.expiryDate)}` : ''}${
-                    l.manufactureDate ? ` · made ${day(l.manufactureDate)}` : ''
-                  }`}
+                  {[
+                    l.batchNumber && l.lotNumber ? tr('inventory.batchNumber', { batch: l.batchNumber }) : null,
+                    tr('inventory.leftOfReceived', { left: q(l.remainingQty), received: q(l.receivedQty) }),
+                    l.expiryDate ? tr('inventory.expiresOn', { date: day(l.expiryDate) }) : null,
+                    l.manufactureDate ? tr('inventory.madeOn', { date: day(l.manufactureDate) }) : null,
+                  ].filter(Boolean).join(' · ')}
                 </Text>
               </View>
             ))
           )}
         </OpsCard>
 
-        <OpsCard title={`Reservations (${openReservations.length} open)`} description="Held for orders until they're delivered or cancelled.">
+        <OpsCard title={tr('inventory.reservationsOpenreservationscountOpen', { openReservationsCount: openReservations.length })} description={tr('inventory.heldForOrdersUntilTheyRe')}>
           {!data.reservations.length ? (
-            <NoData text="No reservations. There is no stock reserved for open orders." />
+            <NoData text={tr('inventory.noReservationsThereIsNoStock')} />
           ) : (
             data.reservations.map((r, i) => (
               <Pressable
@@ -190,10 +196,10 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
           )}
         </OpsCard>
 
-        <OpsCard title="Stock Ledger" description={`Every movement of this stock, newest first (quantities in ${data.baseUom}).`}>
+        <OpsCard title={tr('inventory.stockLedger')} description={tr('inventory.everyMovementOfThisStockNewest', { baseUom: data.baseUom })}>
           <FilterChips options={LEDGER_RANGES} value={range} onChange={setRange} />
           {!ledger.length ? (
-            <NoData text={range ? 'Nothing in this date range.' : 'Receipts, sales and counts of this stock appear here.'} />
+            <NoData text={range ? tr('inventory.nothingInThisDateRange') : tr('inventory.receiptsSalesAndCountsOfThis')} />
           ) : (
             ledger.map((e, i) => {
               const [bg, fg] = movementTone(e.type);
@@ -206,15 +212,13 @@ export function StockDetailScreen({ navigation, route }: ScreenProps<'StockDetai
                     <Text style={opsStyles.meta}>{dateTime(e.createdAt)}</Text>
                   </View>
                   <Text style={opsStyles.meta}>
-                    {`Qty ${formatQuantity(e.enteredQuantity ?? e.legacyQuantity ?? 0)} ${e.enteredUom ?? data.baseUom} · on hand ${signed(e.onHandDelta)} · reserved ${signed(e.reservedDelta)} · blocked ${signed(e.blockedDelta)}`}
+                    {tr('inventory.qtyCountEntereduomOnHandOnhanddelta', { count: formatQuantity(e.enteredQuantity ?? e.legacyQuantity ?? 0), enteredUom: e.enteredUom ?? data.baseUom, onHandDelta: signed(e.onHandDelta), reservedDelta: signed(e.reservedDelta), blockedDelta: signed(e.blockedDelta) })}
                   </Text>
                   <Text style={styles.after}>
-                    {`After: ${e.onHandAfter === null ? '—' : formatQuantity(e.onHandAfter)} / ${e.reservedAfter === null ? '—' : formatQuantity(e.reservedAfter)} / ${
-                      e.blockedAfter === null ? '—' : formatQuantity(e.blockedAfter)
-                    }`}
+                    {tr('inventory.afterValueValue2Value3', { value: e.onHandAfter === null ? '—' : formatQuantity(e.onHandAfter), value2: e.reservedAfter === null ? '—' : formatQuantity(e.reservedAfter), value3: e.blockedAfter === null ? '—' : formatQuantity(e.blockedAfter) })}
                   </Text>
                   {e.referenceId || e.reason || e.notes || e.performedBy ? (
-                    <Text style={opsStyles.muted}>{[e.referenceId, e.reason ?? e.notes, e.performedBy ? `by ${e.performedBy}` : null].filter(Boolean).join(' · ')}</Text>
+                    <Text style={opsStyles.muted}>{[e.referenceId, e.reason ?? e.notes, e.performedBy ? tr('inventory.byPerformedby', { performedBy: e.performedBy }) : null].filter(Boolean).join(' · ')}</Text>
                   ) : null}
                 </View>
               );

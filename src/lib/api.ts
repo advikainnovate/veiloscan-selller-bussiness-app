@@ -2,6 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_URL } from '../config/env';
 import { DEMO_MODE } from '../demo/flag';
 import { clearSession, getAccessToken, getRefreshToken, updateTokens, type SessionTokens } from './session';
+import i18n from '../i18n';
 
 // The app names itself, so the API skips the web forms' Cloudflare Turnstile
 // check (a browser widget the app can't show) for its sign-in requests.
@@ -98,11 +99,11 @@ api.interceptors.response.use(
 export function extractErrorMessage(error: unknown): string {
   const axiosError = error as AxiosError<{ message?: string | string[] }>;
   if (axiosError?.isAxiosError && !axiosError.response) {
-    return 'Unable to reach VeiloScan. Check your internet connection and try again.';
+    return i18n.t('common.unableToReachVeiloscanCheckYour');
   }
   const data = axiosError?.response?.data;
   if (Array.isArray(data?.message)) return data.message.join(', ');
-  return data?.message || (error as Error)?.message || 'Something went wrong';
+  return data?.message || (error as Error)?.message || i18n.t('common.somethingWentWrong');
 }
 
 /** The backend's machine-readable reason for a refused request, if any. */

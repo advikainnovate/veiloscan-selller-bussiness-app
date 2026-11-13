@@ -1,13 +1,14 @@
 import { Alert } from 'react-native';
 import { launchCamera, launchImageLibrary, type Asset, type ImagePickerResponse } from 'react-native-image-picker';
 import type { PickedFile } from '../services/products-service';
+import i18n from '../i18n';
 
 // Photos are sized down on the phone; the store's own resizing does the rest.
 const OPTIONS = { mediaType: 'photo' as const, maxWidth: 2000, maxHeight: 2000, quality: 0.8 as const };
 
 function toFiles(res: ImagePickerResponse): PickedFile[] {
   if (res.didCancel) return [];
-  if (res.errorCode) throw new Error(res.errorMessage || "Couldn't open the photos");
+  if (res.errorCode) throw new Error(res.errorMessage || i18n.t('common.couldnTOpenThePhotos'));
   return (res.assets ?? [])
     .filter((a: Asset) => !!a.uri)
     .map((a: Asset, i) => ({
@@ -31,10 +32,10 @@ export function pickImages({ multiple = true }: { multiple?: boolean } = {}): Pr
           reject(err);
         }
       }, reject);
-    Alert.alert('Add photo', undefined, [
-      { text: 'Take photo', onPress: () => done(launchCamera({ ...OPTIONS, saveToPhotos: false })) },
-      { text: 'Choose from library', onPress: () => done(launchImageLibrary({ ...OPTIONS, selectionLimit: multiple ? 10 : 1 })) },
-      { text: 'Cancel', style: 'cancel', onPress: () => resolve([]) },
+    Alert.alert(i18n.t('common.addPhoto'), undefined, [
+      { text: i18n.t('common.takePhoto'), onPress: () => done(launchCamera({ ...OPTIONS, saveToPhotos: false })) },
+      { text: i18n.t('common.chooseFromLibrary'), onPress: () => done(launchImageLibrary({ ...OPTIONS, selectionLimit: multiple ? 10 : 1 })) },
+      { text: i18n.t('common.cancel'), style: 'cancel', onPress: () => resolve([]) },
     ]);
   });
 }

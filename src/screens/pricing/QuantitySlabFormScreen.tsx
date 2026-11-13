@@ -44,6 +44,7 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, BoxIcon, CheckIcon, ClockIcon, LayersIcon, PercentIcon, PlusIcon, SearchIcon, SettingsIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const SEARCH_DELAY_MS = 250;
 const MAX_SLABS = 20;
@@ -73,6 +74,7 @@ const INITIAL: SchemeForm = {
  * schemes, units) and explains what to change.
  */
 export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'QuantitySlabForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const { stores } = useStore();
@@ -148,7 +150,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
         aggregationMode: 'PER_VARIANT',
         variantIds: [],
         unit: preferredUnit(opts.units),
-        schemeName: f.schemeName.trim() ? f.schemeName : `Bulk discount — ${p.name}`.slice(0, 150),
+        schemeName: f.schemeName.trim() ? f.schemeName : t('pricing.bulkDiscountName', { name: p.name }).slice(0, 150),
       }));
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -165,7 +167,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
   }, [options, detail]);
   const preview = slabPreview(form.slabs, form.unit);
   const updateSlab = (key: number, patch: Partial<SlabRow>) => set('slabs', form.slabs.map(r => (r.key === key ? { ...r, ...patch } : r)));
-  const storeName = form.storeId ? stores.find(s => s.id === form.storeId)?.name ?? 'one store' : 'all stores';
+  const storeName = form.storeId ? stores.find(s => s.id === form.storeId)?.name ?? t('pricing.oneStore') : t('pricing.allStores');
 
   async function submit() {
     setError('');
@@ -183,7 +185,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
       } else {
         await quantityDiscountService.create(body);
       }
-      toast(id ? 'Quantity discount saved' : 'Quantity discount created');
+      toast(id ? t('pricing.quantityDiscountSaved') : t('pricing.quantityDiscountCreated'));
       navigation.goBack();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -193,12 +195,12 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
     }
   }
 
-  const title = id ? 'Edit Discount Scheme' : 'Create Discount Scheme';
+  const title = id ? t('pricing.editDiscountScheme') : t('pricing.createDiscountScheme');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Quantity Discount Slabs" icon={PercentIcon} allowed={false} />
+        <ComingSoon label={t('common.quantityDiscountSlabs')} icon={PercentIcon} allowed={false} />
       </View>
     );
   }
@@ -221,9 +223,9 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={id && form.schemeName ? form.schemeName : title} subtitle="Quantity Discount Slabs" onBack={navigation.goBack} />
+      <AppHeader title={id && form.schemeName ? form.schemeName : title} subtitle={t('common.quantityDiscountSlabs')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>Set the quantities that earn a discount; it applies by itself in the shop and at the counter.</Text>
+        <Text style={opsStyles.meta}>{t('pricing.setTheQuantitiesThatEarnA')}</Text>
         {detail ? (
           <View style={opsStyles.row}>
             <Text style={styles.idd}>{detail.idd}</Text>
@@ -232,42 +234,42 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
         ) : null}
 
         {/* 1 · Basic information */}
-        <SectionCard icon={SettingsIcon} title="1 · Basic Information" subtitle="What the scheme is called, its product and when it runs.">
-          <Field label="Scheme name" required>
-            <Input value={form.schemeName} onChangeText={v => set('schemeName', v)} maxLength={150} accessibilityLabel="Scheme name" />
+        <SectionCard icon={SettingsIcon} title={t('pricing.n1BasicInformation')} subtitle={t('pricing.whatTheSchemeIsCalledIts')}>
+          <Field label={t('pricing.schemeName')} required>
+            <Input value={form.schemeName} onChangeText={v => set('schemeName', v)} maxLength={150} accessibilityLabel={t('pricing.schemeName')} />
           </Field>
-          <Field label="Product" required>
+          <Field label={t('common.product')} required>
             {id ? (
               <View style={styles.fixed}>
                 <Text style={[opsStyles.title, styles.flex]} numberOfLines={1}>
                   {product?.name}
                 </Text>
-                <Text style={opsStyles.muted}>{`SKU ${product?.sku ?? '—'} · can't be changed`}</Text>
+                <Text style={opsStyles.muted}>{t('pricing.skuSkuCanTBeChanged', { sku: product?.sku ?? '—' })}</Text>
               </View>
             ) : (
-              <Pressable accessibilityRole="button" accessibilityLabel={`Product: ${product?.name ?? 'not chosen'}`} onPress={() => setPicking(true)} style={styles.picker}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('pricing.productNamed', { name: product?.name ?? t('pricing.notChosen') })} onPress={() => setPicking(true)} style={styles.picker}>
                 <SearchIcon size={16} color={colors.textMuted} />
                 <Text style={[styles.flex, product ? opsStyles.title : opsStyles.muted]} numberOfLines={1}>
-                  {product?.name ?? 'Search by product name, SKU or barcode…'}
+                  {product?.name ?? t('pricing.searchByProductNameSkuOr')}
                 </Text>
               </Pressable>
             )}
           </Field>
-          {product ? <Text style={[opsStyles.muted, styles.tight]}>{`SKU ${product.sku ?? '—'}${product.skuCount > 1 ? ` + ${product.skuCount - 1} more` : ''}`}</Text> : null}
+          {product ? <Text style={[opsStyles.muted, styles.tight]}>{`${t('inventory.skuCode', { sku: product.sku ?? '—' })}${product.skuCount > 1 ? ` + ${t('pricing.countMore', { count: product.skuCount - 1 })}` : ''}`}</Text> : null}
           <SelectField
-            label="Store"
-            hint="Where the discount applies"
+            label={t('common.store')}
+            hint={t('pricing.whereTheDiscountApplies')}
             value={form.storeId}
             options={stores.map(s => ({ value: s.id, label: s.name }))}
             onChange={v => set('storeId', v)}
-            allowClear="All stores that sell it"
-            placeholder="All stores that sell it"
+            allowClear={t('pricing.allStoresThatSellIt')}
+            placeholder={t('pricing.allStoresThatSellIt')}
           />
-          <Field label="Status">
+          <Field label={t('common.status')}>
             <Choices
               options={[
-                { value: 'ACTIVE', label: 'Active' },
-                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'ACTIVE', label: t('common.active') },
+                { value: 'INACTIVE', label: t('common.inactive') },
               ]}
               value={form.status}
               onChange={v => set('status', v as SchemeForm['status'])}
@@ -275,41 +277,41 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
           </Field>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <DateField label="Starts" required value={form.startDate} onChange={v => set('startDate', v)} />
+              <DateField label={t('pricing.starts')} required value={form.startDate} onChange={v => set('startDate', v)} />
             </View>
-            <TimeField label="Start time" value={form.startTime} onChange={v => set('startTime', v)} />
+            <TimeField label={t('pricing.startTime')} value={form.startTime} onChange={v => set('startTime', v)} />
           </View>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <DateField label="Ends (optional)" hint="Leave empty to run until you end it" value={form.endDate} onChange={v => set('endDate', v)} minimumDate={joinDateTime(form.startDate, '') ?? undefined} />
+              <DateField label={t('pricing.endsOptional')} hint={t('pricing.leaveEmptyToRunUntilYou')} value={form.endDate} onChange={v => set('endDate', v)} minimumDate={joinDateTime(form.startDate, '') ?? undefined} />
             </View>
-            {form.endDate ? <TimeField label="End time" value={form.endTime || '23:59'} onChange={v => set('endTime', v)} /> : null}
+            {form.endDate ? <TimeField label={t('pricing.endTime')} value={form.endTime || '23:59'} onChange={v => set('endTime', v)} /> : null}
           </View>
         </SectionCard>
 
         {/* 2 · Applies to */}
-        <SectionCard icon={LayersIcon} title="2 · Discount Applies To" subtitle="Which SKUs of the product get the discount, and how quantity is counted.">
+        <SectionCard icon={LayersIcon} title={t('pricing.n2DiscountAppliesTo')} subtitle={t('pricing.whichSkusOfTheProductGet')}>
           {!options ? (
-            <Text style={[opsStyles.muted, styles.center]}>{product ? "Loading the product's variants…" : 'Choose a product first.'}</Text>
+            <Text style={[opsStyles.muted, styles.center]}>{product ? t('pricing.loadingTheProductsVariants') : t('pricing.chooseAProductFirst')}</Text>
           ) : (
             <>
-              <ChoiceCard active={form.targetType === 'ALL_VARIANTS'} disabled={!hasVariants} title={TARGET_LABEL.ALL_VARIANTS} hint="Every active variant, including ones you add later" onPress={() => set('targetType', 'ALL_VARIANTS')} />
-              <ChoiceCard active={form.targetType === 'SPECIFIC_VARIANTS'} disabled={!hasVariants} title={TARGET_LABEL.SPECIFIC_VARIANTS} hint="Only the variants you tick; new ones aren't added" onPress={() => set('targetType', 'SPECIFIC_VARIANTS')} />
-              <ChoiceCard active={form.targetType === 'SIMPLE_PRODUCT'} disabled={hasVariants} title={TARGET_LABEL.SIMPLE_PRODUCT} hint="For a product sold as one SKU" onPress={() => set('targetType', 'SIMPLE_PRODUCT')} />
+              <ChoiceCard active={form.targetType === 'ALL_VARIANTS'} disabled={!hasVariants} title={TARGET_LABEL.ALL_VARIANTS} hint={t('pricing.everyActiveVariantIncludingOnesYou')} onPress={() => set('targetType', 'ALL_VARIANTS')} />
+              <ChoiceCard active={form.targetType === 'SPECIFIC_VARIANTS'} disabled={!hasVariants} title={TARGET_LABEL.SPECIFIC_VARIANTS} hint={t('pricing.onlyTheVariantsYouTickNew')} onPress={() => set('targetType', 'SPECIFIC_VARIANTS')} />
+              <ChoiceCard active={form.targetType === 'SIMPLE_PRODUCT'} disabled={hasVariants} title={TARGET_LABEL.SIMPLE_PRODUCT} hint={t('pricing.forAProductSoldAsOne')} onPress={() => set('targetType', 'SIMPLE_PRODUCT')} />
               {form.targetType === 'SPECIFIC_VARIANTS' ? <VariantPanel skus={allSkus} selected={form.variantIds} onChange={v => set('variantIds', v)} /> : null}
               {form.targetType !== 'SIMPLE_PRODUCT' ? (
                 <>
-                  <Text style={styles.label}>HOW QUANTITY IS COUNTED</Text>
+                  <Text style={styles.label}>{t('pricing.howQuantityIsCounted')}</Text>
                   <ChoiceCard
                     active={form.aggregationMode === 'PER_VARIANT'}
-                    title="Each variant on its own"
-                    hint="6 of Size M and 4 of Size L don't add up to 10"
+                    title={t('pricing.eachVariantOnItsOwn')}
+                    hint={t('pricing.n6OfSizeMAnd4')}
                     onPress={() => set('aggregationMode', 'PER_VARIANT' as DiscountAggregationMode)}
                   />
                   <ChoiceCard
                     active={form.aggregationMode === 'COMBINED_PRODUCT'}
-                    title="All covered variants together"
-                    hint="6 of Size M + 4 of Size L count as 10; each line is discounted at its own price"
+                    title={t('pricing.allCoveredVariantsTogether')}
+                    hint={t('pricing.n6OfSizeM4Of')}
                     onPress={() => set('aggregationMode', 'COMBINED_PRODUCT' as DiscountAggregationMode)}
                   />
                 </>
@@ -319,9 +321,9 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
         </SectionCard>
 
         {/* 3 · Slabs */}
-        <SectionCard icon={PercentIcon} title="3 · Quantity Discount Slabs" subtitle="Each slab is a quantity band and what it takes off. Bands can't overlap; only the highest can be open-ended.">
-          <SelectField label="Quantity unit" value={form.unit} options={(options?.units ?? []).map(u => ({ value: u.code, label: `${u.code} · ${u.name}` }))} onChange={v => set('unit', v)} disabled={!options} />
-          <Text style={[opsStyles.muted, styles.tight]}>{whole ? `Counted in whole ${form.unit || 'units'}.` : `Decimals allowed — e.g. 1.5 ${form.unit}. Amounts in other units (GM, KG…) are converted.`}</Text>
+        <SectionCard icon={PercentIcon} title={t('pricing.n3QuantityDiscountSlabs')} subtitle={t('pricing.eachSlabIsAQuantityBand')}>
+          <SelectField label={t('pricing.quantityUnit')} value={form.unit} options={(options?.units ?? []).map(u => ({ value: u.code, label: `${u.code} · ${u.name}` }))} onChange={v => set('unit', v)} disabled={!options} />
+          <Text style={[opsStyles.muted, styles.tight]}>{whole ? t('pricing.countedInWhole', { unit: form.unit || t('pricing.unitsLower') }) : t('pricing.decimalsAllowedEG15', { unit: form.unit })}</Text>
           {form.slabs.map((s, i) => (
             <View key={s.key} style={styles.slab}>
               <View style={opsStyles.rowBetween}>
@@ -329,35 +331,35 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
                   <View style={styles.slabNum}>
                     <Text style={styles.slabNumText}>{i + 1}</Text>
                   </View>
-                  <Text style={styles.label}>{`SLAB ${i + 1}`}</Text>
+                  <Text style={styles.label}>{t('pricing.slabI2', { i: i + 1 })}</Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Remove slab ${i + 1}`}
+                  accessibilityLabel={t('pricing.removeSlabI', { i: i + 1 })}
                   disabled={form.slabs.length === 1}
                   onPress={() => set('slabs', form.slabs.filter(r => r.key !== s.key))}
                   hitSlop={6}
                 >
-                  <Text style={[opsStyles.smallBtnText, form.slabs.length === 1 ? opsStyles.muted : opsStyles.danger]}>Remove</Text>
+                  <Text style={[opsStyles.smallBtnText, form.slabs.length === 1 ? opsStyles.muted : opsStyles.danger]}>{t('common.remove')}</Text>
                 </Pressable>
               </View>
-              <Text style={styles.sub}>{`Quantity (${form.unit || 'units'})`}</Text>
+              <Text style={styles.sub}>{t('pricing.quantityInUnit', { unit: form.unit || t('pricing.unitsLower') })}</Text>
               <View style={styles.row}>
                 <View style={styles.flex}>
-                  <Input value={s.min} onChangeText={v => updateSlab(s.key, { min: v.replace(/[^\d.]/g, '') })} placeholder="From" keyboardType={whole ? 'number-pad' : 'decimal-pad'} accessibilityLabel={`Slab ${i + 1} minimum`} />
+                  <Input value={s.min} onChangeText={v => updateSlab(s.key, { min: v.replace(/[^\d.]/g, '') })} placeholder={t('common.from')} keyboardType={whole ? 'number-pad' : 'decimal-pad'} accessibilityLabel={t('pricing.slabIMinimum', { i: i + 1 })} />
                 </View>
-                <Text style={opsStyles.muted}>to</Text>
+                <Text style={opsStyles.muted}>{t('common.to2')}</Text>
                 <View style={styles.flex}>
                   <Input
                     value={s.max}
                     onChangeText={v => updateSlab(s.key, { max: v.replace(/[^\d.]/g, '') })}
-                    placeholder={i === form.slabs.length - 1 ? 'No limit' : 'Required'}
+                    placeholder={i === form.slabs.length - 1 ? t('common.noLimit') : t('common.required')}
                     keyboardType={whole ? 'number-pad' : 'decimal-pad'}
-                    accessibilityLabel={`Slab ${i + 1} maximum`}
+                    accessibilityLabel={t('pricing.slabIMaximum', { i: i + 1 })}
                   />
                 </View>
               </View>
-              <Text style={styles.sub}>Discount</Text>
+              <Text style={styles.sub}>{t('common.discount')}</Text>
               <View style={styles.row}>
                 <View style={styles.toggle}>
                   {(
@@ -370,7 +372,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
                       key={value}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: s.type === value }}
-                      accessibilityLabel={`Slab ${i + 1} ${value === 'PERCENTAGE' ? 'percentage' : 'flat amount'}`}
+                      accessibilityLabel={t(value === 'PERCENTAGE' ? 'pricing.slabPercentage' : 'pricing.slabFlatAmount', { number: i + 1 })}
                       onPress={() => updateSlab(s.key, { type: value })}
                       style={[styles.toggleBtn, s.type === value && styles.toggleOn]}
                     >
@@ -384,15 +386,15 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
                     onChangeText={v => updateSlab(s.key, { value: v.replace(/[^\d.]/g, '') })}
                     placeholder={s.type === 'PERCENTAGE' ? 'e.g. 5' : 'e.g. 20'}
                     keyboardType="decimal-pad"
-                    accessibilityLabel={`Slab ${i + 1} value`}
+                    accessibilityLabel={t('pricing.slabIValue', { i: i + 1 })}
                   />
                 </View>
               </View>
               {s.type === 'FLAT' ? (
                 <Choices
                   options={[
-                    { value: 'PER_UNIT', label: `Per ${form.unit || 'unit'}` },
-                    { value: 'PER_ORDER', label: 'Per order' },
+                    { value: 'PER_UNIT', label: t('pricing.perUnit', { unit: form.unit || t('pricing.unitLower') }) },
+                    { value: 'PER_ORDER', label: t('pricing.perOrder') },
                   ]}
                   value={s.method}
                   onChange={v => updateSlab(s.key, { method: v as SlabRow['method'] })}
@@ -402,7 +404,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
           ))}
           <Pressable accessibilityRole="button" disabled={form.slabs.length >= MAX_SLABS} onPress={() => set('slabs', addSlab(form.slabs, whole))} style={styles.addSlab}>
             <PlusIcon size={15} color={colors.textSecondary} />
-            <Text style={styles.addSlabText}>Add slab</Text>
+            <Text style={styles.addSlabText}>{t('pricing.addSlab')}</Text>
           </Pressable>
         </SectionCard>
 
@@ -413,35 +415,35 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
               <PercentIcon size={15} color={colors.white} />
             </View>
             <View style={styles.flex}>
-              <Text style={opsStyles.title}>Customers will see</Text>
-              <Text style={opsStyles.meta}>{product?.name ?? 'Choose a product'}</Text>
+              <Text style={opsStyles.title}>{t('pricing.customersWillSee')}</Text>
+              <Text style={opsStyles.meta}>{product?.name ?? t('pricing.chooseAProduct')}</Text>
             </View>
           </View>
           {preview.length ? (
             preview.map((p, i) => (
               <View key={p.key} style={styles.previewRow}>
                 <View style={styles.flex}>
-                  <Text style={styles.buy}>BUY</Text>
+                  <Text style={styles.buy}>{t('pricing.buy')}</Text>
                   <Text style={opsStyles.title}>{p.range}</Text>
                 </View>
                 <Text style={[styles.off, i === preview.length - 1 && styles.offTop]}>{p.discount}</Text>
               </View>
             ))
           ) : (
-            <Text style={[opsStyles.muted, styles.center]}>Fill in a slab to see how it reads.</Text>
+            <Text style={[opsStyles.muted, styles.center]}>{t('pricing.fillInASlabToSee')}</Text>
           )}
           <Text style={opsStyles.meta}>
-            {`${form.targetType === 'SIMPLE_PRODUCT' || form.aggregationMode === 'PER_VARIANT' ? "Each variant's own quantity decides its slab." : "The covered variants' quantities are added up; the slab they reach applies to each of them."} A flat amount per order is shared across the lines it covers. A line never gets more off than it costs.`}
+            {`${form.targetType === 'SIMPLE_PRODUCT' || form.aggregationMode === 'PER_VARIANT' ? t('pricing.eachVariantOwnQuantity') : t('pricing.coveredVariantsAddedUp')} ${t('pricing.flatAmountSharedHint')}`}
           </Text>
         </View>
 
         <View style={styles.coupons}>
           <View style={styles.flex}>
-            <Text style={opsStyles.title}>Allow coupons on these items</Text>
-            <Text style={opsStyles.meta}>Off: a coupon applies only to the rest of the order once this discount is given.</Text>
+            <Text style={opsStyles.title}>{t('pricing.allowCouponsOnTheseItems')}</Text>
+            <Text style={opsStyles.meta}>{t('pricing.offACouponAppliesOnlyTo')}</Text>
           </View>
           <Switch
-            accessibilityLabel="Allow coupons on these items"
+            accessibilityLabel={t('pricing.allowCouponsOnTheseItems')}
             value={form.stackWithCoupons}
             onValueChange={v => set('stackWithCoupons', v)}
             trackColor={{ true: colors.secondary, false: colors.border }}
@@ -450,7 +452,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
         </View>
 
         {detail?.audit.length ? (
-          <SectionCard icon={ClockIcon} title="History">
+          <SectionCard icon={ClockIcon} title={t('common.history')}>
             {detail.audit.map((a, i) => (
               <View key={a.id} style={styles.event}>
                 <View style={[styles.dot, i === 0 && styles.dotOn]} />
@@ -461,7 +463,7 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
                 </View>
               </View>
             ))}
-            <Text style={opsStyles.muted}>Orders already placed keep the discount they got.</Text>
+            <Text style={opsStyles.muted}>{t('pricing.ordersAlreadyPlacedKeepTheDiscount')}</Text>
           </SectionCard>
         ) : null}
 
@@ -476,14 +478,14 @@ export function QuantitySlabFormScreen({ navigation, route }: ScreenProps<'Quant
       {/* Always in reach: what's being saved, Cancel and Save. */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
         <Text style={styles.footerSummary} numberOfLines={1}>
-          {preview.length ? `${preview.length} slab${preview.length === 1 ? '' : 's'} · ${form.status === 'ACTIVE' ? 'active' : 'inactive'} · ${storeName}` : 'Add at least one slab'}
+          {preview.length ? [t('pricing.slabCount', { count: preview.length }), form.status === 'ACTIVE' ? t('pricing.activeLower') : t('pricing.inactiveLower'), storeName].join(' · ') : t('pricing.addAtLeastOneSlab')}
         </Text>
         <View style={styles.footerRow}>
           <Pressable accessibilityRole="button" onPress={navigation.goBack} disabled={saving} style={styles.cancel}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
           <View style={styles.flex}>
-            <Button title={id ? 'Save Changes' : 'Create Scheme'} loading={saving} disabled={!options} onPress={submit} />
+            <Button title={id ? t('common.saveChanges') : t('pricing.createScheme')} loading={saving} disabled={!options} onPress={submit} />
           </View>
         </View>
       </View>
@@ -514,6 +516,7 @@ function ChoiceCard({ active, disabled, title, hint, onPress }: { active: boolea
 
 /** A product search for the seller's products (create only). */
 function ProductPickerSheet({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (p: SchemeProduct) => void }) {
+  const { t } = useTranslation();
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<SchemeProduct[]>([]);
   const [loading, setLoading] = useState(false);
@@ -536,18 +539,18 @@ function ProductPickerSheet({ visible, onClose, onPick }: { visible: boolean; on
   }, [term, visible]);
 
   return (
-    <Sheet visible={visible} title="Choose a product" onClose={onClose}>
-      <SearchBar value={term} onChange={setTerm} placeholder="Search by product name, SKU or barcode…" />
+    <Sheet visible={visible} title={t('pricing.chooseAProduct')} onClose={onClose}>
+      <SearchBar value={term} onChange={setTerm} placeholder={t('pricing.searchByProductNameSkuOr')} />
       {loading && !results.length ? <ActivityIndicator color={colors.secondary} style={styles.spinner} /> : null}
-      {!loading && !results.length ? <Text style={[opsStyles.muted, styles.center]}>No products found</Text> : null}
+      {!loading && !results.length ? <Text style={[opsStyles.muted, styles.center]}>{t('common.noProductsFound')}</Text> : null}
       {results.map(p => (
-        <Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Pick ${p.name}`} onPress={() => onPick(p)} style={styles.result}>
+        <Pressable key={p.id} accessibilityRole="button" accessibilityLabel={t('pricing.pickName', { name: p.name })} onPress={() => onPick(p)} style={styles.result}>
           <BoxIcon size={18} color={colors.textMuted} />
           <View style={styles.flex}>
             <Text style={opsStyles.title} numberOfLines={1}>
               {p.name}
             </Text>
-            <Text style={opsStyles.muted}>{p.skuCount > 1 ? `${p.skuCount} variants` : `Single SKU · ${p.sku ?? ''}`}</Text>
+            <Text style={opsStyles.muted}>{p.skuCount > 1 ? t('pricing.skucountVariants', { skuCount: p.skuCount }) : t('pricing.singleSkuSku', { sku: p.sku ?? '' })}</Text>
           </View>
         </Pressable>
       ))}
@@ -557,6 +560,7 @@ function ProductPickerSheet({ visible, onClose, onPick }: { visible: boolean; on
 
 /** The product's SKUs, to tick some for a Specific Variants scheme. */
 function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selected: string[]; onChange: (ids: string[]) => void }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'' | 'active' | 'inactive' | 'selected'>('');
   const picked = new Set(selected);
@@ -570,13 +574,13 @@ function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selecte
   const toggle = (id: string) => onChange(picked.has(id) ? selected.filter(x => x !== id) : [...selected, id]);
   return (
     <View style={styles.variants}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Search variants or SKU…" />
+      <SearchBar value={search} onChange={setSearch} placeholder={t('pricing.searchVariantsOrSku')} />
       <FilterChips
         options={[
-          { value: '', label: 'All variants' },
-          { value: 'selected', label: 'Selected' },
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
+          { value: '', label: t('pricing.allVariants') },
+          { value: 'selected', label: t('common.selected') },
+          { value: 'active', label: t('common.active') },
+          { value: 'inactive', label: t('common.inactive') },
         ]}
         value={filter}
         onChange={v => setFilter(v as typeof filter)}
@@ -584,13 +588,13 @@ function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selecte
       <View style={opsStyles.rowBetween}>
         <View style={opsStyles.row}>
           <Pressable accessibilityRole="button" onPress={() => onChange([...new Set([...selected, ...listed.filter(s => !s.deleted).map(s => s.id)])])}>
-            <Text style={styles.link}>Select all listed</Text>
+            <Text style={styles.link}>{t('pricing.selectAllListed')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => onChange(selected.filter(id => !listed.some(s => s.id === id)))}>
-            <Text style={styles.linkMuted}>Clear listed</Text>
+            <Text style={styles.linkMuted}>{t('pricing.clearListed')}</Text>
           </Pressable>
         </View>
-        <Text style={opsStyles.meta}>{`${selected.length} of ${skus.filter(s => !s.deleted).length} selected`}</Text>
+        <Text style={opsStyles.meta}>{t('pricing.selectedcountOfCountcountSelected', { selectedCount: selected.length, countCount: skus.filter(s => !s.deleted).length })}</Text>
       </View>
       {listed.length ? (
         listed.map(s => {
@@ -600,7 +604,7 @@ function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selecte
               key={s.id}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on, disabled: s.deleted && !on }}
-              accessibilityLabel={`Select ${s.label}`}
+              accessibilityLabel={t('pricing.selectLabel', { label: s.label })}
               disabled={s.deleted && !on}
               onPress={() => toggle(s.id)}
               style={[styles.sku, on && styles.skuOn]}
@@ -614,7 +618,7 @@ function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selecte
                   {[s.sku, ...Object.entries(s.attributes).map(([k, v]) => `${k}: ${v}`)].join(' · ')}
                 </Text>
                 <Text style={[styles.skuStatus, s.deleted ? opsStyles.danger : s.active ? opsStyles.success : styles.amber]}>
-                  {s.deleted ? 'Deleted' : s.active ? 'Active' : 'Inactive — no discount until active'}
+                  {s.deleted ? t('common.deleted') : s.active ? t('common.active') : t('pricing.inactiveNoDiscountUntilActive')}
                 </Text>
               </View>
               <Text style={opsStyles.amount}>{`₹${s.price.toLocaleString('en-IN')}`}</Text>
@@ -622,7 +626,7 @@ function VariantPanel({ skus, selected, onChange }: { skus: SchemeSku[]; selecte
           );
         })
       ) : (
-        <Text style={[opsStyles.muted, styles.center]}>No variants match</Text>
+        <Text style={[opsStyles.muted, styles.center]}>{t('pricing.noVariantsMatch')}</Text>
       )}
     </View>
   );

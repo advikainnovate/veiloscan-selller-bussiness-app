@@ -1,8 +1,10 @@
 // Store Operations helpers, as on the Seller Panel (store-operations/ops-ui.tsx
 // and expenses/expense-ui.tsx): date ranges, labels and the expense rules.
 import type { BadgeTone } from '../components/ui/Badge';
+import { monthShort } from './date';
 import type { AttachmentKind, ExpenseStatus, PaymentMode, RecurringFrequency, ReturnStatus } from '../services/expenses-service';
 import { formatReportDay, shortRupees } from './sales-report';
+import i18n from '../i18n';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -20,13 +22,12 @@ export const money = (n: number | null | undefined) => shortRupees(n);
 export const count = (n: number | null | undefined) => (n == null ? '—' : n.toLocaleString('en-IN'));
 export const day = (value: string | null | undefined) => (value ? formatReportDay(String(value).slice(0, 10)) : '—');
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** 02 Nov, 3:05 PM */
 export function dateTime(value: string | null | undefined) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
-  return `${pad(d.getDate())} ${MONTHS[d.getMonth()]}, ${time(value)}`;
+  return `${pad(d.getDate())} ${monthShort(d.getMonth())}, ${time(value)}`;
 }
 /** 3:05 PM */
 export function time(value: string) {
@@ -46,12 +47,12 @@ export function rangePresets(today: string): OpsRange[] {
   const [y, m, d] = today.split('-').map(Number);
   const weekday = new Date(y, m - 1, d).getDay(); // 0 = Sunday
   return [
-    { key: 'today', label: 'Today', from: today, to: today },
-    { key: 'yesterday', label: 'Yesterday', from: shiftDay(today, -1), to: shiftDay(today, -1) },
-    { key: 'week', label: 'This Week', from: shiftDay(today, -((weekday + 6) % 7)), to: today },
-    { key: 'month', label: 'This Month', from: toDay(new Date(y, m - 1, 1)), to: today },
-    { key: 'last-month', label: 'Last Month', from: toDay(new Date(y, m - 2, 1)), to: toDay(new Date(y, m - 1, 0)) },
-    { key: '3m', label: 'Last 3 Months', from: toDay(new Date(y, m - 3, 1)), to: today },
+    { key: 'today', label: i18n.t('common.today'), from: today, to: today },
+    { key: 'yesterday', label: i18n.t('common.yesterday'), from: shiftDay(today, -1), to: shiftDay(today, -1) },
+    { key: 'week', label: i18n.t('operations.thisWeek'), from: shiftDay(today, -((weekday + 6) % 7)), to: today },
+    { key: 'month', label: i18n.t('common.thisMonth'), from: toDay(new Date(y, m - 1, 1)), to: today },
+    { key: 'last-month', label: i18n.t('common.lastMonth'), from: toDay(new Date(y, m - 2, 1)), to: toDay(new Date(y, m - 1, 0)) },
+    { key: '3m', label: i18n.t('operations.last3Months'), from: toDay(new Date(y, m - 3, 1)), to: today },
   ];
 }
 
@@ -62,55 +63,55 @@ export function rangeLabel(range: { from: string; to: string }) {
 }
 
 export const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
-  { value: 'CASH', label: 'Cash' },
+  { value: 'CASH', get label() { return i18n.t('common.cash'); } },
   { value: 'UPI', label: 'UPI' },
-  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-  { value: 'CARD', label: 'Card' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'BANK_TRANSFER', get label() { return i18n.t('common.bankTransfer'); } },
+  { value: 'CARD', get label() { return i18n.t('common.card'); } },
+  { value: 'OTHER', get label() { return i18n.t('common.other'); } },
 ];
 export const paymentModeLabel = (v: string) => PAYMENT_MODES.find(m => m.value === v)?.label ?? v;
 
 export const EXPENSE_STATUS: Record<ExpenseStatus, { label: string; tone: BadgeTone }> = {
-  PAID: { label: 'Paid', tone: 'green' },
-  UNPAID: { label: 'Unpaid', tone: 'amber' },
-  PARTIALLY_PAID: { label: 'Partially paid', tone: 'blue' },
-  OVERDUE: { label: 'Overdue', tone: 'red' },
-  PARTIALLY_RETURNED: { label: 'Partially returned', tone: 'violet' },
-  RETURNED: { label: 'Returned', tone: 'slate' },
-  CANCELLED: { label: 'Cancelled', tone: 'slate' },
+  PAID: { get label() { return i18n.t('common.paid'); }, tone: 'green' },
+  UNPAID: { get label() { return i18n.t('operations.unpaid'); }, tone: 'amber' },
+  PARTIALLY_PAID: { get label() { return i18n.t('operations.partiallyPaid'); }, tone: 'blue' },
+  OVERDUE: { get label() { return i18n.t('common.overdue'); }, tone: 'red' },
+  PARTIALLY_RETURNED: { get label() { return i18n.t('operations.partiallyReturned'); }, tone: 'violet' },
+  RETURNED: { get label() { return i18n.t('operations.returned'); }, tone: 'slate' },
+  CANCELLED: { get label() { return i18n.t('common.cancelled'); }, tone: 'slate' },
 };
 export const expenseStatus = (s: string) => EXPENSE_STATUS[s as ExpenseStatus] ?? { label: s, tone: 'slate' as BadgeTone };
 
 export const RETURN_STATUS: Record<ReturnStatus, { label: string; tone: BadgeTone }> = {
-  APPROVED: { label: 'Approved', tone: 'green' },
-  PENDING: { label: 'Awaiting supplier', tone: 'amber' },
-  CANCELLED: { label: 'Cancelled', tone: 'slate' },
+  APPROVED: { get label() { return i18n.t('common.approved'); }, tone: 'green' },
+  PENDING: { get label() { return i18n.t('operations.awaitingSupplier'); }, tone: 'amber' },
+  CANCELLED: { get label() { return i18n.t('common.cancelled'); }, tone: 'slate' },
 };
 
 export const FREQUENCY_LABEL: Record<RecurringFrequency, string> = {
-  WEEKLY: 'Every week',
-  MONTHLY: 'Every month',
-  QUARTERLY: 'Every 3 months',
-  YEARLY: 'Every year',
+  get WEEKLY() { return i18n.t('operations.everyWeek'); },
+  get MONTHLY() { return i18n.t('operations.everyMonth'); },
+  get QUARTERLY() { return i18n.t('operations.every3Months'); },
+  get YEARLY() { return i18n.t('operations.everyYear'); },
 };
 
 export const CREDIT_TERMS = [7, 15, 30, 45, 60];
 export const GST_RATES = ['0', '5', '12', '18', '28'];
 
 export const ATTACHMENT_KIND_LABEL: Record<AttachmentKind, string> = {
-  BILL: 'Bill',
-  INVOICE: 'Invoice',
-  RECEIPT: 'Receipt',
-  CREDIT_NOTE: 'Credit note',
-  OTHER: 'Other',
+  get BILL() { return i18n.t('common.bill'); },
+  get INVOICE() { return i18n.t('operations.invoice'); },
+  get RECEIPT() { return i18n.t('common.receipt'); },
+  get CREDIT_NOTE() { return i18n.t('operations.creditNote'); },
+  get OTHER() { return i18n.t('common.other'); },
 };
 
 /** "Due in 3 days · 05 Nov" / "Due today" / "5 days overdue". */
 export function dueText(dueInDays: number | null, dueDate: string | null): string | null {
   if (dueInDays === null || !dueDate) return null;
-  if (dueInDays < 0) return `${-dueInDays} day${dueInDays === -1 ? '' : 's'} overdue`;
-  if (dueInDays === 0) return 'Due today';
-  return `Due in ${dueInDays} day${dueInDays === 1 ? '' : 's'} · ${day(dueDate)}`;
+  if (dueInDays < 0) return i18n.t('common.daysOverdue', { count: -dueInDays });
+  if (dueInDays === 0) return i18n.t('common.dueToday');
+  return `${i18n.t('common.dueInDays', { count: dueInDays })} · ${day(dueDate)}`;
 }
 
 /** Rupees typed into a field, rounded to the paisa (NaN when empty). */
@@ -173,19 +174,19 @@ export function expenseProblem(
   editing: { settled: number } | null,
   formatMoney: (n: number) => string,
 ): string | null {
-  if (!form.categoryId) return 'Pick a category';
-  if (!form.expenseDate) return 'Pick the expense date';
-  if (!(toAmount(form.baseAmount) > 0)) return 'Enter the base amount';
-  if (totals.discount > totals.base) return "The discount can't be more than the base amount";
-  if (!(totals.amount > 0)) return 'The final amount must be above ₹0';
+  if (!form.categoryId) return i18n.t('common.pickACategory');
+  if (!form.expenseDate) return i18n.t('operations.pickTheExpenseDate');
+  if (!(toAmount(form.baseAmount) > 0)) return i18n.t('operations.enterTheBaseAmount');
+  if (totals.discount > totals.base) return i18n.t('operations.theDiscountCanTBeMore');
+  if (!(totals.amount > 0)) return i18n.t('operations.theFinalAmountMustBeAbove');
   if (editing && totals.amount < editing.settled) {
-    return `Payments and returns already come to ${formatMoney(editing.settled)}; the amount can't be lower`;
+    return i18n.t('operations.paymentsAndReturnsAlreadyComeTo', { settled: formatMoney(editing.settled) });
   }
   if (form.isCredit) {
-    if (form.newSupplier && !form.supplierName.trim()) return "Enter the supplier's name";
-    if (form.newSupplier && form.supplierGst && !GSTIN.test(form.supplierGst.trim().toUpperCase())) return 'The GST number has 15 letters and digits';
-    if (form.dueDate && form.dueDate < (form.creditDate || form.expenseDate)) return "The due date can't be before the credit date";
-    if (!editing && totals.paid >= totals.amount && totals.amount > 0) return 'That pays the whole amount — record it as Paid instead';
+    if (form.newSupplier && !form.supplierName.trim()) return i18n.t('common.enterTheSuppliersName');
+    if (form.newSupplier && form.supplierGst && !GSTIN.test(form.supplierGst.trim().toUpperCase())) return i18n.t('common.theGstNumberHas15Letters');
+    if (form.dueDate && form.dueDate < (form.creditDate || form.expenseDate)) return i18n.t('operations.theDueDateCanTBe');
+    if (!editing && totals.paid >= totals.amount && totals.amount > 0) return i18n.t('operations.thatPaysTheWholeAmountRecord');
   }
   return null;
 }

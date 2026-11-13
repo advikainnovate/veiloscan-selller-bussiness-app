@@ -59,16 +59,18 @@ import {
   type IconProps,
 } from '../../components/icons';
 import type { ScreenProps, StoreSettingsTab } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const TABS: { key: StoreSettingsTab; label: string; icon: ComponentType<IconProps> }[] = [
-  { key: 'overview', label: 'Overview', icon: FileTextIcon },
-  { key: 'setup', label: 'Store Setup', icon: StoreIcon },
-  { key: 'operations', label: 'Operational Settings', icon: SettingsIcon },
-  { key: 'gst', label: 'GST & Documents', icon: FileTextIcon },
-  { key: 'categories', label: 'Categories', icon: FolderIcon },
-  { key: 'qr-tag', label: 'QR Store Tag', icon: QrCodeIcon },
-  { key: 'info', label: 'Additional Info', icon: SettingsIcon },
-  { key: 'activity', label: 'Activity Log', icon: RefreshIcon },
+  { key: 'overview', get label() { return i18n.t('common.overview'); }, icon: FileTextIcon },
+  { key: 'setup', get label() { return i18n.t('store.storeSetup'); }, icon: StoreIcon },
+  { key: 'operations', get label() { return i18n.t('store.operationalSettings'); }, icon: SettingsIcon },
+  { key: 'gst', get label() { return i18n.t('store.gstAndDocuments'); }, icon: FileTextIcon },
+  { key: 'categories', get label() { return i18n.t('common.categories'); }, icon: FolderIcon },
+  { key: 'qr-tag', get label() { return i18n.t('store.qrStoreTag'); }, icon: QrCodeIcon },
+  { key: 'info', get label() { return i18n.t('store.additionalInfo'); }, icon: SettingsIcon },
+  { key: 'activity', get label() { return i18n.t('store.activityLog'); }, icon: RefreshIcon },
 ];
 
 // The editable tabs: without stores:edit they show the saved values instead.
@@ -91,6 +93,7 @@ const at = (v: unknown) => (v ? dateTime(String(v)) : '—');
  * stores:delete to close.
  */
 export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSettings'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { current, refresh } = useStore();
   const toast = useToast();
@@ -110,12 +113,12 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
 
   const { data: store, error, loading, reload } = useFetch(() => (canView && storeId ? storeManageService.get(storeId) : Promise.resolve(null)), [canView, storeId]);
 
-  const header = <AppHeader title="Store Settings" subtitle={store?.name ?? current?.name} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
+  const header = <AppHeader title={tr('common.storeSettings')} subtitle={store?.name ?? current?.name} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
   if (!canView) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Store Settings" icon={StoreIcon} allowed={false} />
+        <ComingSoon label={tr('common.storeSettings')} icon={StoreIcon} allowed={false} />
       </View>
     );
   }
@@ -123,10 +126,10 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
     return (
       <View style={opsStyles.screen}>
         {header}
-        <EmptyState icon={StoreIcon} title="No store yet" text="Set up your store to start selling." />
+        <EmptyState icon={StoreIcon} title={tr('common.noStoreYet')} text={tr('store.setUpYourStoreToStart')} />
         {hasPermission('stores:create') ? (
           <Pressable accessibilityRole="button" onPress={() => navigation.navigate('CreateStore')} style={[opsStyles.primaryBtn, styles.centerBtn]}>
-            <Text style={opsStyles.primaryBtnText}>Set up store</Text>
+            <Text style={opsStyles.primaryBtnText}>{tr('common.setUpStore')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -144,7 +147,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Store not found'} onRetry={reload} />
+        <ErrorState message={error || tr('store.storeNotFound')} onRetry={reload} />
       </View>
     );
   }
@@ -157,7 +160,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
 
   async function changeStatus(status: string, message: string, confirmText?: string) {
     setActionsOpen(false);
-    if (confirmText && !(await confirmAction(confirmText, undefined, 'Confirm'))) return;
+    if (confirmText && !(await confirmAction(confirmText, undefined, tr('store.confirm')))) return;
     try {
       await storeManageService.update(storeId, { status });
       toast(message);
@@ -169,10 +172,10 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
 
   async function closeStore() {
     setActionsOpen(false);
-    if (!(await confirmAction(`Close "${store!.name}"?`, 'It will be removed from the store list.', 'Close Store', true))) return;
+    if (!(await confirmAction(tr('store.closeName', { name: store!.name }), tr('store.itWillBeRemovedFromThe'), tr('store.closeStore'), true))) return;
     try {
       await storeManageService.remove(storeId);
-      toast('Store closed');
+      toast(tr('store.storeClosed'));
       await refresh();
       if (navigation.canGoBack()) navigation.goBack();
     } catch (err) {
@@ -183,7 +186,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
   const isApproved = store.approvalStatus === 'APPROVED';
   const actions = [
     {
-      label: 'Continue Onboarding',
+      label: tr('store.continueOnboarding'),
       icon: EditIcon,
       hidden: !canEdit || store.onboardingStatus === 'COMPLETED',
       onPress: () => {
@@ -192,19 +195,19 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
       },
     },
     {
-      label: 'Activate Store',
+      label: tr('store.activateStore'),
       icon: CheckCircleIcon,
       // A suspended store is only reactivated by the platform.
       hidden: !canEdit || !isApproved || store.status === 'ACTIVE' || store.status === 'SUSPENDED',
-      onPress: () => changeStatus('ACTIVE', 'Store activated'),
+      onPress: () => changeStatus('ACTIVE', tr('store.storeActivated')),
     },
     {
-      label: 'Mark Inactive',
+      label: tr('store.markInactive'),
       icon: ClockIcon,
       hidden: !canEdit || store.status !== 'ACTIVE',
-      onPress: () => changeStatus('INACTIVE', 'Store marked inactive', 'Mark this store inactive? It will stop taking orders.'),
+      onPress: () => changeStatus('INACTIVE', tr('store.storeMarkedInactive'), tr('store.markThisStoreInactiveItWill')),
     },
-    { label: 'Close Store', icon: BanIcon, danger: true, hidden: !canDelete, onPress: closeStore },
+    { label: tr('store.closeStore'), icon: BanIcon, danger: true, hidden: !canDelete, onPress: closeStore },
   ].filter(a => !a.hidden);
 
   const pickTab = (t: StoreSettingsTab) => {
@@ -233,7 +236,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
         {!canEdit && EDIT_TABS.includes(shownTab) ? (
           <View style={styles.notice}>
             <AlertCircleIcon size={16} color={colors.warningDark} />
-            <Text style={styles.noticeText}>Your role can view this store but not change it.</Text>
+            <Text style={styles.noticeText}>{tr('store.yourRoleCanViewThisStore')}</Text>
           </View>
         ) : null}
 
@@ -267,18 +270,18 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
           )
         ) : null}
         {shownTab === 'categories' ? (
-          <SectionCard icon={FolderIcon} title="Store Categories" subtitle="Map the catalog categories this store sells in.">
+          <SectionCard icon={FolderIcon} title={tr('store.storeCategories')} subtitle={tr('store.mapTheCatalogCategoriesThisStore')}>
             <StoreCategoriesPanel key={storeId} storeId={storeId} storeName={store.name} />
           </SectionCard>
         ) : null}
         {shownTab === 'qr-tag' ? (
-          <SectionCard icon={QrCodeIcon} title="QR Store Tag" subtitle="A printable 4 × 6 in tag for your counter">
+          <SectionCard icon={QrCodeIcon} title={tr('store.qrStoreTag')} subtitle={tr('store.aPrintable46InTag')}>
             <StoreQrTagPanel storeId={storeId} storeName={store.name} storeStatus={store.status} canEdit={canEdit} />
           </SectionCard>
         ) : null}
         {shownTab === 'info' ? <AdditionalInfo store={store} onContinue={canEdit ? () => navigation.navigate('CreateStore', { storeId }) : undefined} /> : null}
         {shownTab === 'activity' ? (
-          <SectionCard icon={RefreshIcon} title="Approval History">
+          <SectionCard icon={RefreshIcon} title={tr('store.approvalHistory')}>
             <ApprovalHistory storeId={storeId} />
           </SectionCard>
         ) : null}
@@ -293,7 +296,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
           changed();
         }}
       />
-      <Sheet visible={actionsOpen} title="More Actions" onClose={() => setActionsOpen(false)}>
+      <Sheet visible={actionsOpen} title={tr('store.moreActions')} onClose={() => setActionsOpen(false)}>
         {actions.map(a => {
           const Icon = a.icon;
           return (
@@ -311,6 +314,7 @@ export function StoreSettingsScreen({ navigation, route }: ScreenProps<'StoreSet
 // ── Header ───────────────────────────────────────────────────────────────
 
 function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store: StoreRecord; canEdit: boolean; hasActions: boolean; onEdit: () => void; onActions: () => void }) {
+  const { t } = useTranslation();
   const status = DISPLAY_STATUS[displayStatus(store)];
   const logoUrl = (store.branding?.logo as Rec | undefined)?.url as string | undefined;
   const shopUrl = storeShopUrl(SHOP_URL, store.code, store.slug);
@@ -341,26 +345,26 @@ function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store:
         <View style={styles.wrapRow}>
           <Pressable accessibilityRole="link" disabled={!live} onPress={() => Linking.openURL(shopUrl)} style={styles.flex}>
             <Text style={live ? styles.link : opsStyles.muted} numberOfLines={1}>
-              {live ? shopUrl : 'Shop link works once the store is active'}
+              {live ? shopUrl : t('store.shopLinkWorksOnceTheStore')}
             </Text>
           </Pressable>
           {live ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Share shop link" onPress={() => Share.share({ message: `${store.name} — ${shopUrl}` })} style={opsStyles.smallBtn}>
-              <Text style={opsStyles.smallBtnText}>Share</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('store.shareShopLink')} onPress={() => Share.share({ message: `${store.name} — ${shopUrl}` })} style={opsStyles.smallBtn}>
+              <Text style={opsStyles.smallBtnText}>{t('common.share')}</Text>
             </Pressable>
           ) : null}
         </View>
         {canEdit || hasActions ? (
           <View style={styles.wrapRow}>
             {canEdit ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Edit store" onPress={onEdit} style={[opsStyles.smallBtn, styles.grow]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('store.editStore')} onPress={onEdit} style={[opsStyles.smallBtn, styles.grow]}>
                 <EditIcon size={15} color={colors.secondary} />
-                <Text style={[opsStyles.smallBtnText, styles.accent]}>Edit</Text>
+                <Text style={[opsStyles.smallBtnText, styles.accent]}>{t('common.edit')}</Text>
               </Pressable>
             ) : null}
             {hasActions ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="More Actions" onPress={onActions} style={[opsStyles.smallBtn, styles.grow]}>
-                <Text style={opsStyles.smallBtnText}>More Actions</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('store.moreActions')} onPress={onActions} style={[opsStyles.smallBtn, styles.grow]}>
+                <Text style={opsStyles.smallBtnText}>{t('store.moreActions')}</Text>
                 <ChevronDownIcon size={15} color={colors.text} />
               </Pressable>
             ) : null}
@@ -370,19 +374,19 @@ function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store:
 
       <View style={styles.strip}>
         <View style={styles.stripCell}>
-          <Text style={styles.stripLabel}>Submitted On</Text>
+          <Text style={styles.stripLabel}>{t('store.submittedOn')}</Text>
           <View style={styles.stripValue}>
             <CalendarIcon size={13} color={colors.textMuted} />
-            <Text style={styles.stripText}>{store.submittedAt ? dateTime(store.submittedAt) : 'Not submitted'}</Text>
+            <Text style={styles.stripText}>{store.submittedAt ? dateTime(store.submittedAt) : t('store.notSubmitted')}</Text>
           </View>
         </View>
         <View style={[styles.stripCell, styles.stripMid]}>
-          <Text style={styles.stripLabel}>Current Status</Text>
+          <Text style={styles.stripLabel}>{t('store.currentStatus')}</Text>
           <Badge label={status.label} tone={status.tone} />
           <Text style={styles.stripHint}>{status.hint}</Text>
         </View>
         <View style={styles.stripCell}>
-          <Text style={styles.stripLabel}>Last Updated</Text>
+          <Text style={styles.stripLabel}>{t('store.lastUpdated')}</Text>
           <View style={styles.stripValue}>
             <ClockIcon size={13} color={colors.textMuted} />
             <Text style={styles.stripText}>{dateTime(store.updatedAt)}</Text>
@@ -394,7 +398,7 @@ function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store:
         <View style={styles.rejected}>
           <AlertCircleIcon size={18} color={colors.error} />
           <View style={styles.flex}>
-            <Text style={styles.rejectedTitle}>Changes requested — update the store and resubmit from Continue Onboarding</Text>
+            <Text style={styles.rejectedTitle}>{t('store.changesRequestedUpdateTheStoreAnd')}</Text>
             <Text style={styles.rejectedText}>{store.rejectionReason}</Text>
           </View>
         </View>
@@ -408,9 +412,10 @@ function StoreHeader({ store, canEdit, hasActions, onEdit, onActions }: { store:
 type OverviewCard = 'business' | 'images' | 'owner' | 'contact' | 'hours' | 'settings' | 'gst' | 'documents';
 
 function EditLink({ onPress }: { onPress?: () => void }) {
+  const { t } = useTranslation();
   if (!onPress) return null;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Edit" hitSlop={6} onPress={onPress} style={styles.editLink}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('common.edit')} hitSlop={6} onPress={onPress} style={styles.editLink}>
       <EditIcon size={15} color={colors.secondary} />
     </Pressable>
   );
@@ -429,6 +434,7 @@ function Overview({
   onEditBusiness?: () => void;
   only?: OverviewCard[];
 }) {
+  const { t: tr } = useTranslation();
   const settings = store.settings ?? null;
   const config = store.config ?? null;
   const tax = store.taxDetails ?? null;
@@ -443,26 +449,26 @@ function Overview({
 
   const cards: Record<OverviewCard, ReactNode> = {
     business: (
-      <SectionCard icon={StoreIcon} title="Business Details" action={<EditLink onPress={canEdit ? onEditBusiness : undefined} />}>
-        <Detail label="Store Name" value={store.name} />
-        <Detail label="Business Type" value={labelFor(BUSINESS_TYPES, store.businessType)} />
-        <Detail label="Business Category" value={store.businessCategory} />
-        <Detail label="Description" value={plainText(store.description)} />
-        <Detail label="Timezone" value={labelFor(TIMEZONES, store.timezone)} />
-        <Detail label="Currency" value={labelFor(CURRENCIES, store.currency)} />
+      <SectionCard icon={StoreIcon} title={tr('store.businessDetails')} action={<EditLink onPress={canEdit ? onEditBusiness : undefined} />}>
+        <Detail label={tr('store.storeName')} value={store.name} />
+        <Detail label={tr('store.businessType')} value={labelFor(BUSINESS_TYPES, store.businessType)} />
+        <Detail label={tr('store.businessCategory')} value={store.businessCategory} />
+        <Detail label={tr('common.description')} value={plainText(store.description)} />
+        <Detail label={tr('common.timezone')} value={labelFor(TIMEZONES, store.timezone)} />
+        <Detail label={tr('store.currency')} value={labelFor(CURRENCIES, store.currency)} />
       </SectionCard>
     ),
     images: (
-      <SectionCard icon={ImageIcon} title="Store Images" action={<EditLink onPress={edit('setup')} />}>
+      <SectionCard icon={ImageIcon} title={tr('store.storeImages')} action={<EditLink onPress={edit('setup')} />}>
         <View style={styles.images}>
           {[
-            { label: 'Store Logo', url: logoUrl, style: styles.logoImage },
-            { label: 'Store Banner', url: bannerUrl, style: styles.bannerImage },
+            { label: tr('store.storeLogo'), url: logoUrl, style: styles.logoImage },
+            { label: tr('store.storeBanner'), url: bannerUrl, style: styles.bannerImage },
           ].map(img => (
             <View key={img.label} style={styles.imageCol}>
               <Text style={opsStyles.meta}>{img.label}</Text>
               <Pressable disabled={!img.url} onPress={() => img.url && Linking.openURL(img.url)} style={[styles.imageBox, img.style]}>
-                {img.url ? <Image source={{ uri: img.url }} style={styles.fill} resizeMode="cover" /> : <Text style={opsStyles.muted}>Not uploaded</Text>}
+                {img.url ? <Image source={{ uri: img.url }} style={styles.fill} resizeMode="cover" /> : <Text style={opsStyles.muted}>{tr('common.notUploaded')}</Text>}
               </Pressable>
             </View>
           ))}
@@ -470,22 +476,22 @@ function Overview({
       </SectionCard>
     ),
     owner: (
-      <SectionCard icon={UserIcon} title="Owner Details">
-        <Detail label="Owner Name" value={[owner.firstName, owner.lastName].filter(Boolean).join(' ')} />
-        <Detail label="Email" value={owner.email as string} />
-        <Detail label="Phone" value={[owner.countryCode, owner.phoneNumber].filter(Boolean).join(' ')} />
-        <Detail label="Alternate Phone" value={settings?.alternatePhone as string} />
-        <Detail label="Address" value={address.join('\n')} />
+      <SectionCard icon={UserIcon} title={tr('store.ownerDetails')}>
+        <Detail label={tr('store.ownerName')} value={[owner.firstName, owner.lastName].filter(Boolean).join(' ')} />
+        <Detail label={tr('common.email')} value={owner.email as string} />
+        <Detail label={tr('common.phone')} value={[owner.countryCode, owner.phoneNumber].filter(Boolean).join(' ')} />
+        <Detail label={tr('store.alternatePhone')} value={settings?.alternatePhone as string} />
+        <Detail label={tr('common.address')} value={address.join('\n')} />
       </SectionCard>
     ),
     contact: (
-      <SectionCard icon={PhoneIcon} title="Contact Information" action={<EditLink onPress={edit('setup')} />}>
+      <SectionCard icon={PhoneIcon} title={tr('store.contactInformation')} action={<EditLink onPress={edit('setup')} />}>
         {settings ? (
           <>
-            <Detail label="Store Email" value={settings.email as string} />
-            <Detail label="Store Phone" value={settings.phone as string} />
+            <Detail label={tr('store.storeEmail')} value={settings.email as string} />
+            <Detail label={tr('store.storePhone')} value={settings.phone as string} />
             <Detail
-              label="Website"
+              label={tr('common.website')}
               value={
                 settings.website ? (
                   <Pressable accessibilityRole="link" onPress={() => Linking.openURL(String(settings.website))}>
@@ -505,64 +511,64 @@ function Overview({
               </View>
               {settings.latitude && settings.longitude ? (
                 <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`https://www.google.com/maps?q=${String(settings.latitude)},${String(settings.longitude)}`)}>
-                  <Text style={styles.link}>Map</Text>
+                  <Text style={styles.link}>{tr('store.map')}</Text>
                 </Pressable>
               ) : null}
             </View>
           </>
         ) : (
-          <Text style={opsStyles.muted}>Contact and address have not been added yet.</Text>
+          <Text style={opsStyles.muted}>{tr('store.contactAndAddressHaveNotBeen')}</Text>
         )}
       </SectionCard>
     ),
     hours: (
-      <SectionCard icon={ClockIcon} title="Operating Hours" action={<EditLink onPress={edit('setup')} />}>
+      <SectionCard icon={ClockIcon} title={tr('store.operatingHours')} action={<EditLink onPress={edit('setup')} />}>
         {hours.length ? (
           WEEK_DAYS.map(day => {
             const row = hours.find(h => h.dayOfWeek === day.value);
             return (
               <View key={day.value} style={opsStyles.rowBetween}>
                 <Text style={opsStyles.meta}>{day.label}</Text>
-                <Text style={row?.isOpen ? opsStyles.title : opsStyles.muted}>{row?.isOpen ? `${clock(row.openTime)} - ${clock(row.closeTime)}` : 'Closed'}</Text>
+                <Text style={row?.isOpen ? opsStyles.title : opsStyles.muted}>{row?.isOpen ? `${clock(row.openTime)} - ${clock(row.closeTime)}` : tr('common.closed')}</Text>
               </View>
             );
           })
         ) : (
-          <Text style={opsStyles.muted}>Not set</Text>
+          <Text style={opsStyles.muted}>{tr('store.notSet')}</Text>
         )}
       </SectionCard>
     ),
     settings: (
-      <SectionCard icon={SettingsIcon} title="Additional Settings" action={<EditLink onPress={edit('operations')} />}>
+      <SectionCard icon={SettingsIcon} title={tr('store.additionalSettings')} action={<EditLink onPress={edit('operations')} />}>
         {[
-          { label: 'Accept Orders', on: config?.acceptOrders !== false },
-          { label: 'Online Payment', on: config?.onlinePaymentEnabled !== false },
-          { label: 'Guest Checkout', on: config?.guestCheckoutEnabled !== false },
-          { label: 'Customer Credit', on: !!config?.allowCustomerCredit },
+          { label: tr('store.acceptOrders2'), on: config?.acceptOrders !== false },
+          { label: tr('store.onlinePayment'), on: config?.onlinePaymentEnabled !== false },
+          { label: tr('store.guestCheckout2'), on: config?.guestCheckoutEnabled !== false },
+          { label: tr('common.customerCredit'), on: !!config?.allowCustomerCredit },
         ].map(item => (
           <View key={item.label} style={opsStyles.rowBetween}>
             <View style={opsStyles.row}>
               <CheckCircleIcon size={18} color={item.on ? colors.success : colors.border} />
               <Text style={opsStyles.title}>{item.label}</Text>
             </View>
-            <Text style={item.on ? opsStyles.success : opsStyles.muted}>{item.on ? 'Enabled' : 'Disabled'}</Text>
+            <Text style={item.on ? opsStyles.success : opsStyles.muted}>{item.on ? tr('store.enabled') : tr('store.disabled')}</Text>
           </View>
         ))}
       </SectionCard>
     ),
     gst: (
-      <SectionCard icon={FileTextIcon} title="GST Details" action={<EditLink onPress={edit('gst')} />}>
-        <Detail label="GST Registration" value={<Badge label={tax?.gstRegistered ? 'Yes' : 'No'} tone={tax?.gstRegistered ? 'green' : 'slate'} style={styles.selfStart} />} />
+      <SectionCard icon={FileTextIcon} title={tr('store.gstDetails')} action={<EditLink onPress={edit('gst')} />}>
+        <Detail label={tr('store.gstRegistration')} value={<Badge label={tax?.gstRegistered ? tr('common.yes') : tr('common.no')} tone={tax?.gstRegistered ? 'green' : 'slate'} style={styles.selfStart} />} />
         {tax?.gstRegistered ? (
           <>
             <Detail label="GSTIN" value={tax.gstin as string} />
-            <Detail label="Legal Business Name" value={tax.legalBusinessName as string} />
-            <Detail label="Trade Name" value={tax.tradeName as string} />
-            <Detail label="Business Constitution" value={tax.businessConstitution ? labelFor(BUSINESS_CONSTITUTIONS, tax.businessConstitution) : ''} />
-            <Detail label="GST Registration Date" value={tax.gstRegistrationDate ? formatDay(tax.gstRegistrationDate) : ''} />
-            <Detail label="GST Status" value={tax.gstStatus ? labelFor(GST_STATUSES, tax.gstStatus) : ''} />
+            <Detail label={tr('store.legalBusinessName')} value={tax.legalBusinessName as string} />
+            <Detail label={tr('store.tradeName')} value={tax.tradeName as string} />
+            <Detail label={tr('store.businessConstitution')} value={tax.businessConstitution ? labelFor(BUSINESS_CONSTITUTIONS, tax.businessConstitution) : ''} />
+            <Detail label={tr('store.gstRegistrationDate')} value={tax.gstRegistrationDate ? formatDay(tax.gstRegistrationDate) : ''} />
+            <Detail label={tr('store.gstStatus')} value={tax.gstStatus ? labelFor(GST_STATUSES, tax.gstStatus) : ''} />
             {tax.verificationStatus ? (
-              <Detail label="Verification" value={<Badge {...(VERIFICATION[String(tax.verificationStatus)] ?? VERIFICATION.PENDING)} style={styles.selfStart} />} />
+              <Detail label={tr('store.verification')} value={<Badge {...(VERIFICATION[String(tax.verificationStatus)] ?? VERIFICATION.PENDING)} style={styles.selfStart} />} />
             ) : null}
           </>
         ) : null}
@@ -571,8 +577,8 @@ function Overview({
     documents: (
       <SectionCard
         icon={FileTextIcon}
-        title="Documents"
-        subtitle={`${documents.filter(d => d.verificationStatus === 'VERIFIED').length} of ${documents.length} verified`}
+        title={tr('common.documents')}
+        subtitle={tr('store.verifiedOfTotal', { verified: documents.filter(d => d.verificationStatus === 'VERIFIED').length, total: documents.length })}
         action={<EditLink onPress={edit('gst')} />}
       >
         {documents.length ? (
@@ -591,7 +597,7 @@ function Overview({
             );
           })
         ) : (
-          <Text style={opsStyles.muted}>No documents uploaded</Text>
+          <Text style={opsStyles.muted}>{tr('store.noDocumentsUploaded')}</Text>
         )}
       </SectionCard>
     ),
@@ -603,6 +609,7 @@ function Overview({
 // ── Additional info ──────────────────────────────────────────────────────
 
 function AdditionalInfo({ store, onContinue }: { store: StoreRecord; onContinue?: () => void }) {
+  const { t } = useTranslation();
   const config = store.config ?? null;
   const tax = store.taxDetails ?? null;
   const reqs = useFetch(() => storeManageService.documentRequirements().catch(() => DEFAULT_DOCUMENT_REQUIREMENTS), []);
@@ -617,33 +624,33 @@ function AdditionalInfo({ store, onContinue }: { store: StoreRecord; onContinue?
           : key === 'REVIEW'
             ? onboardingDone
             : true;
-  const yes = (v: boolean) => (config ? (v ? 'Yes' : 'No') : '');
+  const yes = (v: boolean) => (config ? (v ? t('common.yes') : t('common.no')) : '');
   return (
     <>
-      <SectionCard icon={StoreIcon} title="Store Record">
-        <Detail label="Store Code" value={store.code} />
-        <Detail label="Store Slug" value={store.slug} />
-        <Detail label="Shop Link" value={storeShopUrl(SHOP_URL, store.code, store.slug)} />
-        <Detail label="Store Status" value={store.status} />
-        <Detail label="Created On" value={at(store.createdAt)} />
-        <Detail label="Last Reviewed" value={store.reviewedAt ? at(store.reviewedAt) : ''} />
-        <Detail label="Tagline" value={store.branding?.tagline as string} />
+      <SectionCard icon={StoreIcon} title={t('store.storeRecord')}>
+        <Detail label={t('store.storeCode')} value={store.code} />
+        <Detail label={t('store.storeSlug')} value={store.slug} />
+        <Detail label={t('store.shopLink')} value={storeShopUrl(SHOP_URL, store.code, store.slug)} />
+        <Detail label={t('store.storeStatus')} value={store.status} />
+        <Detail label={t('store.createdOn')} value={at(store.createdAt)} />
+        <Detail label={t('store.lastReviewed')} value={store.reviewedAt ? at(store.reviewedAt) : ''} />
+        <Detail label={t('store.tagline')} value={store.branding?.tagline as string} />
       </SectionCard>
-      <SectionCard icon={SettingsIcon} title="Orders & Payments">
-        <Detail label="Currency Symbol" value={config?.currencySymbol as string} />
-        <Detail label="Order Prefix" value={config?.orderPrefix as string} />
-        <Detail label="Minimum Order" value={config?.minOrderAmount as string} />
-        <Detail label="Cash on Delivery" value={config ? (config.codEnabled !== false ? 'Enabled' : 'Disabled') : ''} />
-        <Detail label="Tax-inclusive Pricing" value={yes(config?.taxInclusivePricing !== false)} />
-        <Detail label="Auto-accept Orders" value={yes(!!config?.autoAcceptOrders)} />
+      <SectionCard icon={SettingsIcon} title={t('store.ordersAndPayments')}>
+        <Detail label={t('store.currencySymbol')} value={config?.currencySymbol as string} />
+        <Detail label={t('store.orderPrefix')} value={config?.orderPrefix as string} />
+        <Detail label={t('store.minimumOrder')} value={config?.minOrderAmount as string} />
+        <Detail label={t('common.cashOnDelivery')} value={config ? (config.codEnabled !== false ? 'Enabled' : 'Disabled') : ''} />
+        <Detail label={t('store.taxInclusivePricing2')} value={yes(config?.taxInclusivePricing !== false)} />
+        <Detail label={t('store.autoAcceptOrders')} value={yes(!!config?.autoAcceptOrders)} />
       </SectionCard>
       <SectionCard
         icon={CheckCircleIcon}
-        title="Onboarding"
+        title={t('store.onboarding')}
         action={
           !onboardingDone && onContinue ? (
             <Pressable accessibilityRole="button" onPress={onContinue}>
-              <Text style={styles.link}>Continue</Text>
+              <Text style={styles.link}>{t('common.continue')}</Text>
             </Pressable>
           ) : null
         }
@@ -654,11 +661,11 @@ function AdditionalInfo({ store, onContinue }: { store: StoreRecord; onContinue?
             <View key={s.key} style={opsStyles.row}>
               <CheckCircleIcon size={17} color={done ? colors.success : colors.border} />
               <Text style={done ? opsStyles.title : opsStyles.muted}>{s.label}</Text>
-              {s.optional ? <Text style={styles.optional}>OPTIONAL</Text> : null}
+              {s.optional ? <Text style={styles.optional}>{t('store.optional')}</Text> : null}
             </View>
           );
         })}
-        {store.onboardingCompletedAt ? <Text style={opsStyles.meta}>{`Completed ${formatDay(store.onboardingCompletedAt)}`}</Text> : null}
+        {store.onboardingCompletedAt ? <Text style={opsStyles.meta}>{t('store.completedOnboardingcompletedat', { onboardingCompletedAt: formatDay(store.onboardingCompletedAt) })}</Text> : null}
       </SectionCard>
     </>
   );

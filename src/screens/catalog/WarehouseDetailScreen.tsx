@@ -21,9 +21,11 @@ import { confirmAction, opsStyles, ReasonSheet } from '../../components/operatio
 import { SectionCard } from '../../components/store/StoreSections';
 import { BoxIcon, ClockIcon, EditIcon, MapPinIcon, RefreshIcon, SettingsIcon, TruckIcon, WarehouseIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One warehouse: approval state, its stock, recent movements, location, operations and approval history. */
 export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'WarehouseDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -47,12 +49,12 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
     [rows],
   );
 
-  const header = <AppHeader title={String(w.data?.facilityTitle ?? 'Warehouse')} subtitle="Warehouses" onBack={navigation.goBack} />;
+  const header = <AppHeader title={String(w.data?.facilityTitle ?? t('common.warehouse'))} subtitle={t('catalog.warehouses')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Warehouses" icon={WarehouseIcon} allowed={false} />
+        <ComingSoon label={t('catalog.warehouses')} icon={WarehouseIcon} allowed={false} />
       </View>
     );
   }
@@ -68,7 +70,7 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={w.error || "This warehouse couldn't be loaded. It may have been deleted."} onRetry={w.reload} />
+        <ErrorState message={w.error || t('catalog.thisWarehouseCouldnTBeLoaded')} onRetry={w.reload} />
       </View>
     );
   }
@@ -79,9 +81,9 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
   const address = warehouseAddress(r);
   const mapUrl = r.latitude && r.longitude ? `https://www.google.com/maps?q=${String(r.latitude)},${String(r.longitude)}` : address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null;
   const operations = [
-    { label: 'Receives stock', detail: 'Purchase receipts and transfers in', on: Boolean(r.inboundEnabled) },
-    { label: 'Dispatches orders', detail: 'Stock is used to fulfil orders', on: Boolean(r.outboundEnabled) },
-    { label: 'Accepts returns', detail: 'Customer returns come back here', on: Boolean(r.returnEnabled) },
+    { label: t('catalog.receivesStock'), detail: t('catalog.purchaseReceiptsAndTransfersIn'), on: Boolean(r.inboundEnabled) },
+    { label: t('catalog.dispatchesOrders'), detail: t('catalog.stockIsUsedToFulfilOrders'), on: Boolean(r.outboundEnabled) },
+    { label: t('catalog.acceptsReturns'), detail: t('catalog.customerReturnsComeBackHere'), on: Boolean(r.returnEnabled) },
   ];
   const steps = [...(history.data ?? [])].reverse();
   const refresh = () => {
@@ -92,18 +94,18 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
   async function toggle() {
     const off = lifecycle === 'ACTIVE';
     const ok = await confirmAction(
-      off ? 'Switch this warehouse off?' : 'Switch this warehouse back on?',
+      off ? t('catalog.switchThisWarehouseOff') : t('catalog.switchThisWarehouseBackOn'),
       off
-        ? "It stops receiving and dispatching stock. You can't switch it off while stock in it is reserved for orders or a stock order is open."
-        : "It goes back into use straight away if it's still approved, otherwise it's sent to VeiloScan for approval.",
-      off ? 'Switch off' : 'Switch on',
+        ? t('catalog.itStopsReceivingAndDispatchingStock')
+        : t('catalog.itGoesBackIntoUseStraight'),
+      off ? t('catalog.switchOff') : t('catalog.switchOn'),
       off,
     );
     if (!ok) return;
     setBusy(true);
     try {
       const saved = await warehouseMasterService.update(id, { status: off ? 0 : 1 });
-      toast(off ? 'Warehouse switched off' : warehouseLifecycle(saved) === 'ACTIVE' ? 'Warehouse is active again' : 'Sent to VeiloScan for approval');
+      toast(off ? t('catalog.warehouseSwitchedOff') : warehouseLifecycle(saved) === 'ACTIVE' ? t('catalog.warehouseIsActiveAgain') : t('catalog.sentToVeiloscanForApproval'));
       refresh();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -123,7 +125,7 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
           <View style={styles.flex}>
             <View style={styles.wrap}>
               <Badge label={status.label} tone={status.tone} />
-              {r.isDefault ? <Badge label="Default" tone="amber" /> : null}
+              {r.isDefault ? <Badge label={t('common.default')} tone="amber" /> : null}
             </View>
             <Text style={opsStyles.meta}>{[r.facilityCode, warehouseTypeLabel(r.facilityType), r.city].filter(Boolean).join(' · ')}</Text>
           </View>
@@ -133,46 +135,46 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
           {canResubmit(lifecycle) ? (
             <Pressable accessibilityRole="button" disabled={busy} onPress={() => setResubmitting(true)} style={[opsStyles.primaryBtn, styles.grow]}>
               <RefreshIcon size={14} color={colors.white} />
-              <Text style={opsStyles.primaryBtnText}>Resubmit for review</Text>
+              <Text style={opsStyles.primaryBtnText}>{t('catalog.resubmitForReview')}</Text>
             </Pressable>
           ) : null}
           {lifecycle === 'ACTIVE' ? (
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('Inventory', { tab: 'stock' })} style={[opsStyles.smallBtn, styles.grow]}>
               <BoxIcon size={14} color={colors.text} />
-              <Text style={opsStyles.smallBtnText}>Manage stock</Text>
+              <Text style={opsStyles.smallBtnText}>{t('catalog.manageStock')}</Text>
             </Pressable>
           ) : null}
           {canToggle(lifecycle) ? (
             <Pressable accessibilityRole="button" disabled={busy} onPress={toggle} style={[opsStyles.smallBtn, styles.grow]}>
-              <Text style={opsStyles.smallBtnText}>{lifecycle === 'ACTIVE' ? 'Switch off' : 'Switch on'}</Text>
+              <Text style={opsStyles.smallBtnText}>{lifecycle === 'ACTIVE' ? t('catalog.switchOff') : t('catalog.switchOn')}</Text>
             </Pressable>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={() => navigation.navigate('WarehouseForm', { id })} style={[opsStyles.smallBtn, styles.grow]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.edit')} onPress={() => navigation.navigate('WarehouseForm', { id })} style={[opsStyles.smallBtn, styles.grow]}>
             <EditIcon size={14} color={colors.text} />
-            <Text style={opsStyles.smallBtnText}>Edit</Text>
+            <Text style={opsStyles.smallBtnText}>{t('common.edit')}</Text>
           </Pressable>
         </View>
 
         {lifecycle !== 'ACTIVE' ? (
           <View style={[styles.notice, status.tone === 'red' ? styles.noticeRed : status.tone === 'slate' ? styles.noticeSlate : null]}>
             <Text style={styles.noticeTitle}>{status.hint}</Text>
-            {r.reviewNote ? <Text style={styles.noticeText}>{`VeiloScan: “${String(r.reviewNote)}”`}</Text> : null}
-            {r.submittedAt && (lifecycle === 'PENDING_APPROVAL' || lifecycle === 'UNDER_REVIEW') ? <Text style={styles.noticeText}>{`Submitted ${dateTime(String(r.submittedAt))}`}</Text> : null}
+            {r.reviewNote ? <Text style={styles.noticeText}>{t('catalog.veiloscanReviewnote', { reviewNote: String(r.reviewNote) })}</Text> : null}
+            {r.submittedAt && (lifecycle === 'PENDING_APPROVAL' || lifecycle === 'UNDER_REVIEW') ? <Text style={styles.noticeText}>{t('catalog.submittedDatetime', { dateTime: dateTime(String(r.submittedAt)) })}</Text> : null}
           </View>
         ) : null}
 
         <CountTiles
           tiles={[
             { key: 'skus', label: 'SKUs', count: totals.skus, ...TILE_COLORS.violet },
-            { key: 'units', label: 'Units', count: Math.round(totals.units).toLocaleString('en-IN'), ...TILE_COLORS.orange },
-            { key: 'low', label: 'Low / out', count: totals.low, ...TILE_COLORS.amber },
-            { key: 'value', label: 'Value (cost)', count: shortRupees(totals.value), ...TILE_COLORS.green },
+            { key: 'units', label: t('common.units'), count: Math.round(totals.units).toLocaleString('en-IN'), ...TILE_COLORS.orange },
+            { key: 'low', label: t('catalog.lowOut'), count: totals.low, ...TILE_COLORS.amber },
+            { key: 'value', label: t('catalog.valueCost'), count: shortRupees(totals.value), ...TILE_COLORS.green },
           ]}
           loading={stock.loading && !stock.data}
         />
-        {totals.reserved ? <Text style={opsStyles.muted}>{`${totals.reserved} SKU${totals.reserved === 1 ? ' has' : 's have'} stock reserved for orders.`}</Text> : null}
+        {totals.reserved ? <Text style={opsStyles.muted}>{t('catalog.skusHaveStockReserved', { count: totals.reserved })}</Text> : null}
 
-        <SectionCard icon={BoxIcon} title="Stock in this warehouse" subtitle={rows.length ? `${rows.length} SKU${rows.length === 1 ? '' : 's'}` : undefined}>
+        <SectionCard icon={BoxIcon} title={t('catalog.stockInThisWarehouse')} subtitle={rows.length ? t('common.skuCount', { count: rows.length }) : undefined}>
           {rows.length ? (
             <>
               {rows.slice(0, 10).map(s => {
@@ -184,7 +186,7 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
                         {s.productName}
                       </Text>
                       <Text style={opsStyles.muted} numberOfLines={1}>
-                        {`${s.sku}${s.variantLabel ? ` · ${s.variantLabel}` : ''} · on hand ${formatQty(s.onHand, s)}${s.reserved ? ` · reserved ${formatQty(s.reserved, s)}` : ''}`}
+                        {[s.sku, s.variantLabel, t('common.onHandQuantity', { quantity: formatQty(s.onHand, s) }), s.reserved ? t('common.reservedQuantity', { quantity: formatQty(s.reserved, s) }) : null].filter(Boolean).join(' · ')}
                       </Text>
                     </View>
                     <View style={styles.right}>
@@ -194,19 +196,19 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
                   </Pressable>
                 );
               })}
-              {rows.length > 10 ? <Text style={opsStyles.muted}>{`Showing 10 of ${rows.length}. See all in Inventory.`}</Text> : null}
+              {rows.length > 10 ? <Text style={opsStyles.muted}>{t('catalog.showing10OfRowscountSeeAll', { rowsCount: rows.length })}</Text> : null}
             </>
           ) : (
-            <Text style={[opsStyles.muted, styles.center]}>{stock.loading ? 'Loading…' : lifecycle === 'ACTIVE' ? 'No stock here yet.' : 'Stock can be added once the warehouse is approved.'}</Text>
+            <Text style={[opsStyles.muted, styles.center]}>{stock.loading ? t('common.loading') : lifecycle === 'ACTIVE' ? t('catalog.noStockHereYet') : t('catalog.stockCanBeAddedOnceThe')}</Text>
           )}
         </SectionCard>
 
         <SectionCard
           icon={TruckIcon}
-          title="Recent stock movements"
+          title={t('catalog.recentStockMovements')}
           action={
             <Pressable accessibilityRole="link" onPress={() => navigation.navigate('Inventory', { tab: 'ledger' })}>
-              <Text style={styles.link}>Full ledger</Text>
+              <Text style={styles.link}>{t('catalog.fullLedger')}</Text>
             </Pressable>
           }
         >
@@ -226,22 +228,22 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
               );
             })
           ) : (
-            <Text style={[opsStyles.muted, styles.center]}>{ledger.loading ? 'Loading…' : 'No stock movements yet.'}</Text>
+            <Text style={[opsStyles.muted, styles.center]}>{ledger.loading ? t('common.loading') : t('catalog.noStockMovementsYet')}</Text>
           )}
         </SectionCard>
 
         <SectionCard
           icon={MapPinIcon}
-          title="Location & contact"
+          title={t('catalog.locationAndContact')}
           action={
             mapUrl ? (
               <Pressable accessibilityRole="link" onPress={() => Linking.openURL(mapUrl)}>
-                <Text style={styles.link}>Open map</Text>
+                <Text style={styles.link}>{t('catalog.openMap')}</Text>
               </Pressable>
             ) : null
           }
         >
-          <Text style={opsStyles.title}>{address || 'No address'}</Text>
+          <Text style={opsStyles.title}>{address || t('catalog.noAddress')}</Text>
           {r.contactPerson ? <Text style={opsStyles.meta}>{String(r.contactPerson)}</Text> : null}
           {r.phone ? (
             <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`tel:${String(r.phone)}`)}>
@@ -253,22 +255,22 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
               <Text style={styles.link}>{String(r.email)}</Text>
             </Pressable>
           ) : null}
-          <Text style={opsStyles.muted}>{`${String(r.timezone ?? 'Asia/Kolkata')}${r.region ? ` · ${String(r.region)} region` : ''}`}</Text>
+          <Text style={opsStyles.muted}>{`${String(r.timezone ?? 'Asia/Kolkata')}${r.region ? ` · ${t('catalog.regionNamed', { region: String(r.region) })}` : ''}`}</Text>
         </SectionCard>
 
-        <SectionCard icon={SettingsIcon} title="Operations" subtitle={lifecycle === 'ACTIVE' ? 'What this warehouse is used for' : 'These start once the warehouse is approved'}>
+        <SectionCard icon={SettingsIcon} title={t('common.operations')} subtitle={lifecycle === 'ACTIVE' ? t('catalog.whatThisWarehouseIsUsedFor') : t('catalog.theseStartOnceTheWarehouseIs')}>
           {operations.map(o => (
             <View key={o.label} style={opsStyles.rowBetween}>
               <View style={styles.flex}>
                 <Text style={opsStyles.title}>{o.label}</Text>
                 <Text style={opsStyles.muted}>{o.detail}</Text>
               </View>
-              <Badge label={o.on ? (lifecycle === 'ACTIVE' ? 'On' : 'On when approved') : 'Off'} tone={o.on && lifecycle === 'ACTIVE' ? 'green' : 'slate'} />
+              <Badge label={o.on ? (lifecycle === 'ACTIVE' ? t('common.on') : t('catalog.onWhenApproved')) : t('common.off')} tone={o.on && lifecycle === 'ACTIVE' ? 'green' : 'slate'} />
             </View>
           ))}
         </SectionCard>
 
-        <SectionCard icon={ClockIcon} title="Approval history" subtitle="Every step of VeiloScan's review">
+        <SectionCard icon={ClockIcon} title={t('catalog.approvalHistory')} subtitle={t('catalog.everyStepOfVeiloscansReview')}>
           {steps.length ? (
             steps.map(h => {
               const to = WAREHOUSE_STATUS[h.toStatus as keyof typeof WAREHOUSE_STATUS];
@@ -287,25 +289,25 @@ export function WarehouseDetailScreen({ navigation, route }: ScreenProps<'Wareho
               );
             })
           ) : (
-            <Text style={opsStyles.muted}>{history.loading ? 'Loading…' : 'No approval history — this warehouse was set up before approvals began.'}</Text>
+            <Text style={opsStyles.muted}>{history.loading ? t('common.loading') : t('catalog.noApprovalHistoryThisWarehouseWas')}</Text>
           )}
-          <Text style={opsStyles.muted}>{`Added ${formatDay(r.createdAt)}${r.approvedAt ? ` · approved ${formatDay(r.approvedAt)}` : ''}`}</Text>
+          <Text style={opsStyles.muted}>{[t('common.addedOn', { date: formatDay(r.createdAt) }), r.approvedAt ? t('catalog.approvedOn', { date: formatDay(r.approvedAt) }) : null].filter(Boolean).join(' · ')}</Text>
         </SectionCard>
       </ScrollView>
 
       <ReasonSheet
         visible={resubmitting}
-        title="Resubmit for review?"
-        message="Make sure you've updated the warehouse with what VeiloScan asked for."
-        label="Note for the reviewer (optional)"
-        confirmLabel="Resubmit"
+        title={t('catalog.resubmitForReview2')}
+        message={t('catalog.makeSureYouVeUpdatedThe')}
+        label={t('catalog.noteForTheReviewerOptional')}
+        confirmLabel={t('catalog.resubmit')}
         required={false}
         maxLength={1000}
         onClose={() => setResubmitting(false)}
         onConfirm={async note => {
           try {
             await warehouseMasterService.resubmit(id, note);
-            toast('Warehouse resubmitted for review');
+            toast(t('catalog.warehouseResubmittedForReview'));
             setResubmitting(false);
             refresh();
           } catch (err) {

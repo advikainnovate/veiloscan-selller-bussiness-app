@@ -18,6 +18,7 @@ import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { opsStyles, PhotoAttachments, type PendingFile } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { Trans, useTranslation } from 'react-i18next';
 
 interface FormState {
   expenseDate: string;
@@ -115,6 +116,7 @@ function fromExpense(e: ExpenseDetail, asCopy: boolean, today: string): FormStat
 
 /** Record or edit an expense: PAID shows the payment, CREDIT the supplier and terms. */
 export function ExpenseFormScreen({ navigation, route }: ScreenProps<'ExpenseForm'>) {
+  const { t } = useTranslation();
   const expenseId = route.params?.id;
   const sourceId = expenseId ?? route.params?.copyOf ?? null;
   const { hasPermission } = useAuth();
@@ -122,13 +124,13 @@ export function ExpenseFormScreen({ navigation, route }: ScreenProps<'ExpenseFor
   const { current: store } = useStore();
   const storeId = allowed ? store?.id ?? '' : '';
   const source = useFetch(() => (storeId && sourceId ? expensesService.get(storeId, sourceId) : Promise.resolve(null)), [storeId, sourceId]);
-  const title = expenseId ? 'Edit Expense' : 'Add Expense';
+  const title = expenseId ? t('expenses.editExpense') : t('expenses.addExpense');
 
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Expenses" icon={WalletIcon} allowed={false} />
+        <ComingSoon label={t('common.expenses')} icon={WalletIcon} allowed={false} />
       </View>
     );
   }
@@ -139,7 +141,7 @@ export function ExpenseFormScreen({ navigation, route }: ScreenProps<'ExpenseFor
         {source.error ? (
           <ErrorState message={source.error} onRetry={() => source.reload()} />
         ) : expenseId && source.data?.status === 'CANCELLED' ? (
-          <ErrorState message="A cancelled expense can't be edited." onRetry={navigation.goBack} />
+          <ErrorState message={t('expenses.aCancelledExpenseCanTBe')} onRetry={navigation.goBack} />
         ) : (
           <View style={opsStyles.content}>
             <ListSkeleton rows={4} height={140} />
@@ -164,6 +166,7 @@ function ExpenseFormBody({
   supplierId?: string;
   navigation: ScreenProps<'ExpenseForm'>['navigation'];
 }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const today = todayDay();
@@ -274,7 +277,7 @@ function ExpenseFormBody({
           attachments: files.map(f => ({ fileId: f.fileId, kind: f.kind })),
         });
       }
-      toast(editing ? 'Expense updated' : 'Expense recorded');
+      toast(editing ? tr('expenses.expenseUpdated') : tr('expenses.expenseRecorded'));
       navigation.replace('ExpenseDetail', { id: saved.id });
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -287,8 +290,8 @@ function ExpenseFormBody({
   return (
     <View style={opsStyles.screen}>
       <AppHeader
-        title={editing ? `Edit ${source?.idd ?? 'expense'}` : 'Add Expense'}
-        subtitle={editing ? 'Payments and returns are recorded on the expense, not here.' : 'The expense number is given when you save.'}
+        title={editing ? tr('expenses.editNamed', { name: source?.idd ?? tr('expenses.expenseLower') }) : tr('expenses.addExpense')}
+        subtitle={editing ? tr('expenses.paymentsAndReturnsAreRecordedOn') : tr('expenses.theExpenseNumberIsGivenWhen')}
         onBack={navigation.goBack}
       />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -300,70 +303,70 @@ function ExpenseFormBody({
             </View>
           ) : null}
 
-          <Section title="Expense">
-            <DateField label="Expense Date" required value={form.expenseDate} onChange={v => set('expenseDate', v)} maximumDate={new Date()} />
+          <Section title={tr('common.expense')}>
+            <DateField label={tr('expenses.expenseDate')} required value={form.expenseDate} onChange={v => set('expenseDate', v)} maximumDate={new Date()} />
             {purchase ? (
-              <Field label="Category">
+              <Field label={tr('common.category')}>
                 <Input value="Stock Purchases" editable={false} />
               </Field>
             ) : (
               <SelectField
-                label="Category"
+                label={tr('common.category')}
                 required
                 value={form.categoryId}
                 options={(categories.data ?? []).map(c => ({ value: c.id, label: c.name }))}
                 onChange={v => set('categoryId', v)}
               />
             )}
-            <Field label="Expense Title">
+            <Field label={tr('expenses.expenseTitle')}>
               <Input value={form.title} onChangeText={v => set('title', v)} placeholder="e.g. November shop rent" maxLength={150} />
             </Field>
-            <Field label="Description">
+            <Field label={tr('common.description')}>
               <Input value={form.description} onChangeText={v => set('description', v)} maxLength={500} multiline />
             </Field>
-            <Field label="Invoice / Bill Number">
+            <Field label={tr('expenses.invoiceBillNumber')}>
               <Input value={form.referenceNumber} onChangeText={v => set('referenceNumber', v)} maxLength={100} />
             </Field>
-            <DateField label="Invoice Date" value={form.invoiceDate} onChange={v => set('invoiceDate', v)} maximumDate={new Date()} />
+            <DateField label={tr('expenses.invoiceDate')} value={form.invoiceDate} onChange={v => set('invoiceDate', v)} maximumDate={new Date()} />
             {!editing && !purchase ? (
-              <Text style={styles.tip}>Buying stock to resell? Record it in Pending Stock and add its bill there, so it isn't counted twice.</Text>
+              <Text style={styles.tip}>{tr('expenses.buyingStockToResellRecordIt')}</Text>
             ) : null}
           </Section>
 
-          <Section title="Amount" subtitle="Final amount = base − discount + GST">
-            <Field label="Base Amount (₹)" required>
-              <Input value={form.baseAmount} onChangeText={v => set('baseAmount', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel="Base amount" />
+          <Section title={tr('common.amount')} subtitle={tr('expenses.finalAmountBaseDiscountGst')}>
+            <Field label={tr('expenses.baseAmountRs')} required>
+              <Input value={form.baseAmount} onChangeText={v => set('baseAmount', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('expenses.baseAmount2')} />
             </Field>
-            <Field label="Discount (₹)">
-              <Input value={form.discountAmount} onChangeText={v => set('discountAmount', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel="Discount" />
+            <Field label={tr('expenses.discountRs')}>
+              <Input value={form.discountAmount} onChangeText={v => set('discountAmount', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('common.discount')} />
             </Field>
             <Field label="GST">
               <Choices
-                options={[{ value: '', label: 'No GST' }, ...GST_RATES.map(r => ({ value: r, label: `${r}%` })), { value: 'custom', label: 'Enter tax amount' }]}
+                options={[{ value: '', label: tr('expenses.noGst') }, ...GST_RATES.map(r => ({ value: r, label: `${r}%` })), { value: 'custom', label: tr('expenses.enterTaxAmount') }]}
                 value={form.gst}
                 onChange={v => set('gst', v)}
               />
             </Field>
             {form.gst === 'custom' ? (
-              <Field label="Tax Amount (₹)">
-                <Input value={form.taxAmount} onChangeText={v => set('taxAmount', amountInput(v))} keyboardType="decimal-pad" accessibilityLabel="Tax amount" />
+              <Field label={tr('expenses.taxAmountRs')}>
+                <Input value={form.taxAmount} onChangeText={v => set('taxAmount', amountInput(v))} keyboardType="decimal-pad" accessibilityLabel={tr('expenses.taxAmount')} />
               </Field>
             ) : null}
             <View style={styles.totals}>
-              <Total label="Base" value={money(totals.base)} />
-              <Total label="Discount" value={`− ${money(totals.discount)}`} />
+              <Total label={tr('expenses.base')} value={money(totals.base)} />
+              <Total label={tr('common.discount')} value={`− ${money(totals.discount)}`} />
               <Total label="GST" value={`+ ${money(totals.tax)}`} />
-              <Total label="Final Amount" value={formatRupees(totals.amount)} strong />
+              <Total label={tr('expenses.finalAmount')} value={formatRupees(totals.amount)} strong />
             </View>
           </Section>
 
           {!editing ? (
-            <Section title="Payment">
+            <Section title={tr('common.payment')}>
               <View style={styles.typeRow}>
                 {(
                   [
-                    { value: 'PAID', label: 'Paid', hint: 'Paid in full now' },
-                    { value: 'CREDIT', label: 'Credit', hint: 'Pay the supplier later' },
+                    { value: 'PAID', label: tr('common.paid'), hint: tr('expenses.paidInFullNow') },
+                    { value: 'CREDIT', label: tr('common.credit'), hint: tr('expenses.payTheSupplierLater') },
                   ] as const
                 ).map(o => {
                   const on = form.paymentType === o.value;
@@ -377,36 +380,36 @@ function ExpenseFormBody({
               </View>
               {isCredit ? (
                 <>
-                  <Field label="Initial Paid Amount (₹)" hint="Leave empty if nothing is paid yet">
-                    <Input value={form.initialPaid} onChangeText={v => set('initialPaid', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel="Initial paid amount" />
+                  <Field label={tr('expenses.initialPaidAmountRs')} hint={tr('expenses.leaveEmptyIfNothingIsPaid')}>
+                    <Input value={form.initialPaid} onChangeText={v => set('initialPaid', amountInput(v))} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('expenses.initialPaidAmount')} />
                   </Field>
                   <View style={styles.outstanding}>
-                    <Text style={styles.outstandingLabel}>Outstanding (worked out)</Text>
+                    <Text style={styles.outstandingLabel}>{tr('expenses.outstandingWorkedOut')}</Text>
                     <Text style={styles.outstandingValue}>{formatRupees(totals.outstanding)}</Text>
                   </View>
                 </>
               ) : null}
               {!isCredit || totals.paid > 0 ? (
                 <>
-                  <DateField label="Payment Date" value={form.paymentDate} onChange={v => set('paymentDate', v)} minimumDate={fromISO(form.expenseDate)} maximumDate={new Date()} />
-                  <Field label="Payment Method">
+                  <DateField label={tr('common.paymentDate')} value={form.paymentDate} onChange={v => set('paymentDate', v)} minimumDate={fromISO(form.expenseDate)} maximumDate={new Date()} />
+                  <Field label={tr('common.paymentMethod')}>
                     <Choices options={PAYMENT_MODES} value={form.method} onChange={v => set('method', v as PaymentMode)} />
                   </Field>
-                  <Field label="Payment Account">
+                  <Field label={tr('expenses.paymentAccount')}>
                     <Input value={form.accountLabel} onChangeText={v => set('accountLabel', v)} placeholder="e.g. Cash drawer, HDFC current" maxLength={100} />
                   </Field>
-                  <Field label="Transaction Reference">
-                    <Input value={form.transactionReference} onChangeText={v => set('transactionReference', v)} placeholder="UTR / UPI / cheque no." maxLength={100} />
+                  <Field label={tr('common.transactionReference')}>
+                    <Input value={form.transactionReference} onChangeText={v => set('transactionReference', v)} placeholder={tr('expenses.utrUpiChequeNo')} maxLength={100} />
                   </Field>
                   {!isCredit ? (
-                    <Field label="Paid To">
-                      <Input value={form.paidTo} onChangeText={v => set('paidTo', v)} placeholder="Landlord, staff, shop… (optional)" maxLength={150} />
+                    <Field label={tr('expenses.paidTo')}>
+                      <Input value={form.paidTo} onChangeText={v => set('paidTo', v)} placeholder={tr('expenses.landlordStaffShopOptional')} maxLength={150} />
                     </Field>
                   ) : null}
-                  <Field label="Payment Remarks">
+                  <Field label={tr('expenses.paymentRemarks')}>
                     <Input value={form.paymentNotes} onChangeText={v => set('paymentNotes', v)} maxLength={1000} />
                   </Field>
-                  <PhotoAttachments label="Payment Receipt" value={receipts} onChange={setReceipts} dirName="store-expenses" defaultKind="RECEIPT" max={5} kinds={false} />
+                  <PhotoAttachments label={tr('expenses.paymentReceipt')} value={receipts} onChange={setReceipts} dirName="store-expenses" defaultKind="RECEIPT" max={5} kinds={false} />
                 </>
               ) : null}
             </Section>
@@ -414,37 +417,37 @@ function ExpenseFormBody({
 
           {isCredit || form.supplierId || !editing ? (
             <Section
-              title={isCredit ? 'Supplier & Credit' : 'Supplier (optional)'}
-              subtitle={isCredit ? "Who this is owed to and when it's due. A supplier is optional — link one to track it in their ledger." : 'Link a supplier to see it in their ledger'}
+              title={isCredit ? tr('expenses.supplierAndCredit') : tr('expenses.supplierOptional')}
+              subtitle={isCredit ? tr('expenses.whoThisIsOwedToAnd') : tr('expenses.linkASupplierToSeeIt')}
             >
               <SelectField
-                label="Supplier (optional)"
+                label={tr('expenses.supplierOptional')}
                 value={form.supplierId}
                 options={[
-                  ...(suppliers.data?.items ?? []).map(s => ({ value: s.id, label: s.name, hint: s.outstanding ? `owed ${money(s.outstanding)}` : undefined })),
-                  { value: 'new', label: '+ Add a new supplier' },
+                  ...(suppliers.data?.items ?? []).map(s => ({ value: s.id, label: s.name, hint: s.outstanding ? tr('expenses.owedAmount', { amount: money(s.outstanding) }) : undefined })),
+                  { value: 'new', label: tr('expenses.addANewSupplier') },
                 ]}
                 onChange={v => set('supplierId', v)}
-                placeholder="No supplier"
-                allowClear="No supplier"
+                placeholder={tr('expenses.noSupplier')}
+                allowClear={tr('expenses.noSupplier')}
               />
               {isCredit && !form.supplierId ? (
-                <Field label="Owed To">
-                  <Input value={form.paidTo} onChangeText={v => set('paidTo', v)} placeholder="Shop or person you'll pay (optional)" maxLength={150} />
+                <Field label={tr('expenses.owedTo')}>
+                  <Input value={form.paidTo} onChangeText={v => set('paidTo', v)} placeholder={tr('expenses.shopOrPersonYouLlPay')} maxLength={150} />
                 </Field>
               ) : null}
               {newSupplier ? (
                 <>
-                  <Field label="Supplier Name" required>
-                    <Input value={form.supplierName} onChangeText={v => set('supplierName', v)} maxLength={150} accessibilityLabel="Supplier name" />
+                  <Field label={tr('expenses.supplierName')} required>
+                    <Input value={form.supplierName} onChangeText={v => set('supplierName', v)} maxLength={150} accessibilityLabel={tr('expenses.supplierName2')} />
                   </Field>
-                  <Field label="Mobile Number">
+                  <Field label={tr('expenses.mobileNumber')}>
                     <Input value={form.supplierPhone} onChangeText={v => set('supplierPhone', v)} maxLength={20} keyboardType="phone-pad" />
                   </Field>
-                  <Field label="GST Number" hint="15 characters">
-                    <Input value={form.supplierGst} onChangeText={v => set('supplierGst', v.toUpperCase())} maxLength={15} autoCapitalize="characters" accessibilityLabel="GST number" />
+                  <Field label={tr('expenses.gstNumber')} hint={tr('expenses.n15Characters')}>
+                    <Input value={form.supplierGst} onChangeText={v => set('supplierGst', v.toUpperCase())} maxLength={15} autoCapitalize="characters" accessibilityLabel={tr('expenses.gstNumber2')} />
                   </Field>
-                  <Field label="Address">
+                  <Field label={tr('common.address')}>
                     <Input value={form.supplierAddress} onChangeText={v => set('supplierAddress', v)} maxLength={500} />
                   </Field>
                 </>
@@ -452,50 +455,49 @@ function ExpenseFormBody({
               {isCredit ? (
                 <>
                   <DateField
-                    label="Credit Date"
+                    label={tr('expenses.creditDate')}
                     value={form.creditDate}
                     maximumDate={new Date()}
                     onChange={creditDate => setForm(f => ({ ...f, creditDate, dueDate: f.terms === 'custom' || !creditDate ? f.dueDate : shiftDay(creditDate, Number(f.terms)) }))}
                   />
-                  <Field label="Credit Terms">
-                    <Choices options={[...CREDIT_TERMS.map(t => ({ value: String(t), label: `${t} days` })), { value: 'custom', label: 'Custom' }]} value={form.terms} onChange={setTerms} />
+                  <Field label={tr('expenses.creditTerms')}>
+                    <Choices options={[...CREDIT_TERMS.map(t => ({ value: String(t), label: tr('expenses.tDays', { t }) })), { value: 'custom', label: tr('common.custom') }]} value={form.terms} onChange={setTerms} />
                   </Field>
                   <DateField
-                    label="Payment Due Date"
-                    hint="Reminders go out 3 days before, on the day and when overdue"
+                    label={tr('expenses.paymentDueDate')}
+                    hint={tr('expenses.remindersGoOut3DaysBefore')}
                     value={form.dueDate}
                     minimumDate={fromISO(form.creditDate || form.expenseDate)}
                     onChange={dueDate => setForm(f => ({ ...f, dueDate, terms: 'custom' }))}
                   />
-                  <DateField label="Reminder Date" hint="An extra reminder (optional)" value={form.reminderDate} onChange={v => set('reminderDate', v)} />
+                  <DateField label={tr('expenses.reminderDate')} hint={tr('expenses.anExtraReminderOptional')} value={form.reminderDate} onChange={v => set('reminderDate', v)} />
                 </>
               ) : null}
             </Section>
           ) : null}
 
-          <Section title="Attachments" subtitle="Bill, invoice or receipt photos">
+          <Section title={tr('common.attachments')} subtitle={tr('expenses.billInvoiceOrReceiptPhotos')}>
             <PhotoAttachments value={files} onChange={setFiles} dirName="store-expenses" />
-            {editing && source?.attachmentCount ? <Text style={opsStyles.muted}>Files already attached stay; new ones are added.</Text> : null}
+            {editing && source?.attachmentCount ? <Text style={opsStyles.muted}>{tr('expenses.filesAlreadyAttachedStayNewOnes')}</Text> : null}
           </Section>
-          <Section title="Notes">
-            <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={2000} multiline placeholder="Anything to remember about this expense" />
+          <Section title={tr('common.notes')}>
+            <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={2000} multiline placeholder={tr('expenses.anythingToRememberAboutThisExpense')} />
           </Section>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Text style={styles.footerText} numberOfLines={1}>
-            {'Final '}
-            <Text style={styles.footerStrong}>{formatRupees(totals.amount)}</Text>
+            <Trans i18nKey="expenses.finalAmount" values={{ amount: formatRupees(totals.amount) }} components={{ b: <Text style={styles.footerStrong} /> }} />
             {isCredit && !editing ? (
               <>
-                {' · outstanding '}
-                <Text style={styles.footerOwed}>{formatRupees(totals.outstanding)}</Text>
+                {' · '}
+                <Trans i18nKey="expenses.outstandingAmount" values={{ amount: formatRupees(totals.outstanding) }} components={{ owed: <Text style={styles.footerOwed} /> }} />
               </>
             ) : null}
           </Text>
           <View style={opsStyles.row}>
-            <Button title="Cancel" variant="ghost" onPress={navigation.goBack} style={styles.flex} />
-            <Button title={editing ? 'Save Changes' : 'Save Expense'} onPress={save} loading={saving} style={styles.flex2} />
+            <Button title={tr('common.cancel')} variant="ghost" onPress={navigation.goBack} style={styles.flex} />
+            <Button title={editing ? tr('common.saveChanges') : tr('expenses.saveExpense')} onPress={save} loading={saving} style={styles.flex2} />
           </View>
         </View>
       </KeyboardAvoidingView>

@@ -17,6 +17,7 @@ import { colors, fonts, radius } from '../../theme';
 import { Gradient } from '../ui/Gradient';
 import { marketingBannerService, type MarketingBanner } from '../../services/marketing-banner-service';
 import { ChartArt, DeliveryArt, StorefrontArt } from './Illustrations';
+import { useTranslation } from 'react-i18next';
 
 const AUTO_ADVANCE_MS = 5000;
 const SIDE_PADDING = 16;
@@ -28,6 +29,7 @@ const TONE_COLORS: Record<string, readonly string[]> = {
 
 /** Admin managed Home banners that advance on their own, with page dots. */
 export function HeroCarousel() {
+  const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
   const slideWidth = screenWidth - SIDE_PADDING * 2;
   const scrollRef = useRef<ScrollViewInstance>(null);
@@ -82,7 +84,7 @@ export function HeroCarousel() {
         onScrollBeginDrag={() => setPaused(true)}
         onMomentumScrollEnd={onScrollEnd}
         accessibilityRole="adjustable"
-        accessibilityLabel={`Banner ${index + 1} of ${slides.length}`}
+        accessibilityLabel={t('home.bannerIndexOfSlidescount', { index: index + 1, slidesCount: slides.length })}
       >
         {slides.map(slide => {
           const gradient = TONE_COLORS[slide.tone ?? 'gold'] ?? TONE_COLORS.gold;

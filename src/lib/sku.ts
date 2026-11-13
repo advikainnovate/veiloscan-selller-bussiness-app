@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // Ported from the Seller Panel's src/lib/sku.ts — keep the two in step.
 /** Product SKUs: 8–16 characters of letters, numbers, "-" and "_". */
 export const SKU_MIN = 8;
@@ -17,9 +18,9 @@ export function skuError(value: string): string {
   const sku = value.trim();
   if (!sku) return '';
   if (sku.length < SKU_MIN || sku.length > SKU_MAX)
-    return `SKU must be ${SKU_MIN}–${SKU_MAX} characters (now ${sku.length}).`;
+    return i18n.t('products.skuMustBeSkuMinSku', { SKU_MIN, SKU_MAX, skuCount: sku.length });
   if (!/^[A-Z0-9][A-Z0-9_-]*$/i.test(sku))
-    return 'Use letters, numbers, hyphens and underscores only.';
+    return i18n.t('products.useLettersNumbersHyphensAndUnderscores');
   return '';
 }
 

@@ -137,7 +137,8 @@ test('a quick sale: items, no customer, paid now', async () => {
     payments: [{ method: 'CASH' }],
   });
   expect(textOf(tree)).toContain('Order placed');
-  expect(textOf(tree)).toContain('"ORD-2001"," ","· Quick Sale"," at ","Sah Traders"," ·"," ","completed and invoiced"');
+  // One sentence (so other languages can order it their own way), same words as before.
+  expect(textOf(tree)).toContain('"#ORD-2001 · Quick Sale at Sah Traders · completed and invoiced"');
 
   await act(async () => tree.unmount());
 });

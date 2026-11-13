@@ -9,11 +9,16 @@ import { fileService, productMeasuresService, productSeoService, productTagServi
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
 import { CloseIcon, PlusIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 // ── Tags ──
 
 /** The product's tags: add several at once ("one, two") or remove one. */
+// Length / Width / Height are also the field-name suffixes, so they stay English in code.
+const DIM_LABEL_KEYS = { Length: 'products.length', Width: 'products.width', Height: 'products.height' } as const;
+
 export function TagEditor({ productId, tags, onChange }: { productId: string; tags: Row[]; onChange: () => void }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const [adding, setAdding] = useState(false);
   const [text, setText] = useState('');
@@ -30,7 +35,7 @@ export function TagEditor({ productId, tags, onChange }: { productId: string; ta
     setBusy(true);
     try {
       for (const title of titles) await productTagService.create({ productId, tagTitle: title, tagSlug: slugify(title) });
-      toast(titles.length === 1 ? 'Tag added' : `${titles.length} tags added`);
+      toast(titles.length === 1 ? tr('products.tagAdded') : tr('products.titlescountTagsAdded', { titlesCount: titles.length }));
       setText('');
       setAdding(false);
       onChange();
@@ -55,7 +60,7 @@ export function TagEditor({ productId, tags, onChange }: { productId: string; ta
       {tags.map(tag => (
         <View key={tag.id} style={styles.tag}>
           <Text style={styles.tagText}>{String(tag.tagTitle)}</Text>
-          <Pressable accessibilityLabel={`Remove tag ${tag.tagTitle}`} hitSlop={8} onPress={() => remove(tag)}>
+          <Pressable accessibilityLabel={tr('products.removeTagTagtitle', { tagTitle: tag.tagTitle })} hitSlop={8} onPress={() => remove(tag)}>
             <CloseIcon size={12} color="#4f46e5" />
           </Pressable>
         </View>
@@ -66,7 +71,7 @@ export function TagEditor({ productId, tags, onChange }: { productId: string; ta
             value={text}
             onChangeText={setText}
             autoFocus
-            placeholder="Tag, or one, two…"
+            placeholder={tr('products.tagOrOneTwo')}
             placeholderTextColor={colors.textMuted}
             onSubmitEditing={add}
             returnKeyType="done"
@@ -77,7 +82,7 @@ export function TagEditor({ productId, tags, onChange }: { productId: string; ta
       ) : (
         <Pressable accessibilityRole="button" onPress={() => setAdding(true)} style={styles.addTag}>
           <PlusIcon size={12} color={colors.secondary} strokeWidth={2.4} />
-          <Text style={styles.addTagText}>Add tag</Text>
+          <Text style={styles.addTagText}>{tr('products.addTag')}</Text>
         </Pressable>
       )}
     </View>
@@ -133,6 +138,7 @@ export function MeasuresSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState<MeasuresForm>(measuresForm(measures));
   const [saving, setSaving] = useState(false);
@@ -151,7 +157,7 @@ export function MeasuresSheet({
       };
       if (measures) await productMeasuresService.update(measures.id, payload);
       else await productMeasuresService.create(payload);
-      toast('Measurements saved');
+      toast(t('products.measurementsSaved'));
       onSaved();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -165,32 +171,32 @@ export function MeasuresSheet({
       <View style={styles.row3}>
         {(['Length', 'Width', 'Height'] as const).map(d => {
           const key = `${prefix}${d}` as keyof MeasuresForm;
-          return <NumberField key={key} label={d} value={form[key]} onChange={v => set({ [key]: v })} />;
+          return <NumberField key={key} label={t(DIM_LABEL_KEYS[d])} value={form[key]} onChange={v => set({ [key]: v })} />;
         })}
       </View>
       <Units options={LENGTH_UNIT_OPTIONS} value={form[`${prefix}LengthMeasuringUnit`]} onChange={v => set({ [`${prefix}LengthMeasuringUnit`]: v })} />
       <View style={styles.row3}>
-        <NumberField label="Weight" value={form[`${prefix}Weight`]} onChange={v => set({ [`${prefix}Weight`]: v })} />
+        <NumberField label={t('products.weight')} value={form[`${prefix}Weight`]} onChange={v => set({ [`${prefix}Weight`]: v })} />
       </View>
       <Units options={WEIGHT_UNIT_OPTIONS} value={form[`${prefix}WeightMeasuringUnit`]} onChange={v => set({ [`${prefix}WeightMeasuringUnit`]: v })} />
     </>
   );
 
   return (
-    <Sheet visible={visible} title="Measurements" onClose={onClose} footer={<Button title="Save measurements" loading={saving} onPress={save} />}>
-      <Text style={styles.section}>Product</Text>
+    <Sheet visible={visible} title={t('products.measurements')} onClose={onClose} footer={<Button title={t('products.saveMeasurements')} loading={saving} onPress={save} />}>
+      <Text style={styles.section}>{t('common.product')}</Text>
       {dims('product')}
-      <Text style={styles.section}>Package</Text>
+      <Text style={styles.section}>{t('products.package')}</Text>
       {dims('package')}
       <View style={styles.row3}>
-        <NumberField label="Items in a package" value={form.packageQuantity} onChange={v => set({ packageQuantity: v.replace(/\D/g, '') })} />
+        <NumberField label={t('products.itemsInAPackage')} value={form.packageQuantity} onChange={v => set({ packageQuantity: v.replace(/\D/g, '') })} />
       </View>
-      <Text style={styles.section}>Condition</Text>
+      <Text style={styles.section}>{t('common.condition')}</Text>
       <Units options={ITEM_CONDITION_OPTIONS.map(o => o.value)} labels={ITEM_CONDITION_OPTIONS.map(o => o.label)} value={form.itemCondition} onChange={v => set({ itemCondition: v })} />
       <TextInput
         value={form.itemConditionNote}
         onChangeText={v => set({ itemConditionNote: v })}
-        placeholder="Condition note (optional)"
+        placeholder={t('products.conditionNoteOptional')}
         placeholderTextColor={colors.textMuted}
         style={styles.input}
       />
@@ -239,6 +245,7 @@ export function SeoSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState<SeoForm>(seoForm(seo));
   const [saving, setSaving] = useState(false);
@@ -276,7 +283,7 @@ export function SeoSheet({
       };
       if (seo) await productSeoService.update(seo.id, payload);
       else await productSeoService.create({ productId, ...payload });
-      toast('SEO details saved');
+      toast(t('products.seoDetailsSaved'));
       onSaved();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -286,27 +293,27 @@ export function SeoSheet({
   }
 
   return (
-    <Sheet visible={visible} title="SEO" subtitle="How the product appears in search results and when its link is shared." onClose={onClose} footer={<Button title="Save SEO" loading={saving} onPress={save} />}>
-      <LabeledInput label="Share title" value={form.ogTitle} onChange={v => set({ ogTitle: v })} />
-      <LabeledInput label="Share description" value={form.ogDescription} onChange={v => set({ ogDescription: v })} multiline />
+    <Sheet visible={visible} title="SEO" subtitle={t('products.howTheProductAppearsInSearch')} onClose={onClose} footer={<Button title={t('products.saveSeo')} loading={saving} onPress={save} />}>
+      <LabeledInput label={t('products.shareTitle')} value={form.ogTitle} onChange={v => set({ ogTitle: v })} />
+      <LabeledInput label={t('products.shareDescription')} value={form.ogDescription} onChange={v => set({ ogDescription: v })} multiline />
       <View>
-        <Text style={styles.label}>Share image</Text>
+        <Text style={styles.label}>{t('products.shareImage')}</Text>
         <View style={styles.ogRow}>
           {form.ogImageUrl ? <Image source={{ uri: form.ogImageUrl }} style={styles.ogImage} /> : <View style={[styles.ogImage, styles.ogEmpty]} />}
           <Pressable onPress={pickImage} disabled={uploading} style={styles.ogBtn}>
-            <Text style={styles.ogBtnText}>{uploading ? 'Uploading…' : form.ogImageUrl ? 'Change' : 'Upload'}</Text>
+            <Text style={styles.ogBtnText}>{uploading ? t('common.uploading') : form.ogImageUrl ? t('common.change') : t('common.upload')}</Text>
           </Pressable>
           {form.ogImageUrl ? (
             <Pressable onPress={() => set({ ogImageFileId: '', ogImageUrl: '' })} style={styles.ogBtn}>
-              <Text style={[styles.ogBtnText, styles.danger]}>Remove</Text>
+              <Text style={[styles.ogBtnText, styles.danger]}>{t('common.remove')}</Text>
             </Pressable>
           ) : null}
         </View>
       </View>
-      <LabeledInput label="Canonical URL" value={form.canonicalUrl} onChange={v => set({ canonicalUrl: v })} keyboardType="url" />
-      <SwitchRow label="Let search engines index it" value={form.robotsIndex} onChange={v => set({ robotsIndex: v })} />
-      <SwitchRow label="Let search engines follow its links" value={form.robotsFollow} onChange={v => set({ robotsFollow: v })} />
-      <LabeledInput label="Structured data (JSON-LD)" value={form.structuredData} onChange={v => set({ structuredData: v })} multiline />
+      <LabeledInput label={t('products.canonicalUrl')} value={form.canonicalUrl} onChange={v => set({ canonicalUrl: v })} keyboardType="url" />
+      <SwitchRow label={t('products.letSearchEnginesIndexIt')} value={form.robotsIndex} onChange={v => set({ robotsIndex: v })} />
+      <SwitchRow label={t('products.letSearchEnginesFollowItsLinks')} value={form.robotsFollow} onChange={v => set({ robotsFollow: v })} />
+      <LabeledInput label={t('products.structuredDataJsonLd')} value={form.structuredData} onChange={v => set({ structuredData: v })} multiline />
     </Sheet>
   );
 }

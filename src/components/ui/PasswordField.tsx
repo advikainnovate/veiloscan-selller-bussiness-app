@@ -3,9 +3,11 @@ import { Pressable } from 'react-native';
 import { colors } from '../../theme';
 import { EyeIcon, EyeOffIcon, LockIcon } from '../icons';
 import { TextField, type TextFieldProps } from './TextField';
+import { useTranslation } from 'react-i18next';
 
 /** A password input with a lock icon and a show / hide toggle. */
 export function PasswordField({ icon, ...props }: Omit<TextFieldProps, 'trailing'>) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   return (
     <TextField
@@ -18,7 +20,7 @@ export function PasswordField({ icon, ...props }: Omit<TextFieldProps, 'trailing
       trailing={
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          accessibilityLabel={visible ? t('common.hidePassword') : t('common.showPassword')}
           hitSlop={10}
           onPress={() => setVisible(v => !v)}
         >

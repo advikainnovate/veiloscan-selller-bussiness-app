@@ -16,12 +16,14 @@ import { compactStyles, CountTiles, Fab, ListTop, RowCard, Separator, TILE_COLOR
 import { opsStyles } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 
 /** Inventory › Pending Stock: stock ordered from suppliers that hasn't fully arrived, as the panel's tab. */
 export function PendingStockScreen({ navigation, route }: ScreenProps<'PendingStock'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { current } = useStore();
   const listPadding = useListPadding();
@@ -59,23 +61,23 @@ export function PendingStockScreen({ navigation, route }: ScreenProps<'PendingSt
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Pending Stock" onBack={navigation.goBack} />
-        <ComingSoon label="Pending Stock" icon={TruckIcon} allowed={false} />
+        <AppHeader title={tr('common.pendingStock')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.pendingStock')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Pending Stock" subtitle={current?.name ?? 'Inventory'} onBack={navigation.goBack} />
+      <AppHeader title={tr('common.pendingStock')} subtitle={current?.name ?? tr('common.inventory')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Order ID, supplier, reference…" />
+        <SearchBar value={searchInput} onChange={setSearchInput} placeholder={tr('inventory.orderIdSupplierReference')} />
         <CountTiles
           tiles={[
-            { key: 'open', label: 'Open', count: c?.open ?? '–', ...TILE_COLORS.blue },
-            { key: 'delayed', label: 'Delayed', count: c?.delayed ?? '–', ...TILE_COLORS.red },
-            { key: 'value', label: 'Open value', count: c ? money(c.openAmount) : '–', info: true, ...TILE_COLORS.amber },
-            { key: 'RECEIVED', label: 'Received', count: c?.received ?? '–', ...TILE_COLORS.green },
+            { key: 'open', label: tr('common.open'), count: c?.open ?? '–', ...TILE_COLORS.blue },
+            { key: 'delayed', label: tr('inventory.delayed'), count: c?.delayed ?? '–', ...TILE_COLORS.red },
+            { key: 'value', label: tr('inventory.openValue'), count: c ? money(c.openAmount) : '–', info: true, ...TILE_COLORS.amber },
+            { key: 'RECEIVED', label: tr('inventory.received'), count: c?.received ?? '–', ...TILE_COLORS.green },
           ]}
           value={filter}
           onSelect={key => setFilter(key || 'open')}
@@ -89,7 +91,7 @@ export function PendingStockScreen({ navigation, route }: ScreenProps<'PendingSt
       </ListTop>
 
       {!storeId ? (
-        <EmptyState icon={TruckIcon} title="No store yet" text="Stock orders show once you have a store." />
+        <EmptyState icon={TruckIcon} title={tr('common.noStoreYet')} text={tr('inventory.stockOrdersShowOnceYouHave')} />
       ) : list.error && !list.items.length ? (
         <ErrorState message={list.error} onRetry={list.retry} />
       ) : (
@@ -108,8 +110,8 @@ export function PendingStockScreen({ navigation, route }: ScreenProps<'PendingSt
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={TruckIcon}
-                  title={search ? 'No stock orders match' : filter === 'delayed' ? 'Nothing is delayed' : 'No stock orders here'}
-                  text={!search && filter === 'open' ? "Record stock you've ordered from suppliers. Receive it here when it arrives and it's added to inventory." : undefined}
+                  title={search ? tr('inventory.noStockOrdersMatch') : filter === 'delayed' ? tr('inventory.nothingIsDelayed') : tr('inventory.noStockOrdersHere')}
+                  text={!search && filter === 'open' ? tr('inventory.recordStockYouVeOrderedFrom') : undefined}
                 />
               </View>
             )
@@ -119,16 +121,17 @@ export function PendingStockScreen({ navigation, route }: ScreenProps<'PendingSt
         />
       )}
 
-      <Fab label="New Stock Order" onPress={() => navigation.navigate('StockOrderForm')} />
+      <Fab label={tr('inventory.newStockOrder')} onPress={() => navigation.navigate('StockOrderForm')} />
     </View>
   );
 }
 
 function OrderCard({ order: o, onOpen }: { order: StockOrderRow; onOpen: () => void }) {
+  const { t } = useTranslation();
   const st = STOCK_ORDER_STATUS[o.status];
   const pct = o.totalUnits > 0 ? Math.min(1, o.receivedUnits / o.totalUnits) : 0;
   return (
-    <RowCard label={`Open ${o.idd}, ${o.supplierName}`} onPress={onOpen}>
+    <RowCard label={t('inventory.openIddSuppliername', { idd: o.idd, supplierName: o.supplierName })} onPress={onOpen}>
       <View style={compactStyles.head}>
         <Text style={compactStyles.name} numberOfLines={1}>
           {o.supplierName}
@@ -136,24 +139,24 @@ function OrderCard({ order: o, onOpen }: { order: StockOrderRow; onOpen: () => v
         <Badge label={st.label} tone={st.tone} />
       </View>
       <Text style={compactStyles.meta} numberOfLines={1}>
-        {[o.idd, day(o.orderDate), o.referenceNumber ? `Ref ${o.referenceNumber}` : o.warehouseTitle].filter(Boolean).join(' · ')}
+        {[o.idd, day(o.orderDate), o.referenceNumber ? t('common.refReferencenumber', { referenceNumber: o.referenceNumber }) : o.warehouseTitle].filter(Boolean).join(' · ')}
       </Text>
       <View style={styles.units}>
-        <Text style={styles.unitsText}>{`${qty(o.receivedUnits)} / ${qty(o.totalUnits)} units received`}</Text>
+        <Text style={styles.unitsText}>{t('inventory.receivedunitsTotalunitsUnitsReceived', { receivedUnits: qty(o.receivedUnits), totalUnits: qty(o.totalUnits) })}</Text>
         <Text style={styles.amount}>{money(o.orderAmount)}</Text>
       </View>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${pct * 100}%` }]} />
       </View>
       <View style={styles.foot}>
-        <Text style={compactStyles.meta}>{`${o.products} product${o.products === 1 ? '' : 's'}${o.status === 'CANCELLED' ? '' : ` · ${qty(o.pendingUnits)} pending`}`}</Text>
+        <Text style={compactStyles.meta}>{[t('common.productCount', { count: o.products }), o.status === 'CANCELLED' ? null : t('inventory.quantityPending', { quantity: qty(o.pendingUnits) })].filter(Boolean).join(' · ')}</Text>
         {o.delayed ? (
           <View style={styles.delayed}>
             <AlertCircleIcon size={12} color={colors.error} />
-            <Text style={styles.delayedText}>{`Delayed · expected ${day(o.expectedDate)}`}</Text>
+            <Text style={styles.delayedText}>{t('inventory.delayedExpectedExpecteddate', { expectedDate: day(o.expectedDate) })}</Text>
           </View>
         ) : o.expectedDate ? (
-          <Text style={compactStyles.meta}>{`Expected ${day(o.expectedDate)}`}</Text>
+          <Text style={compactStyles.meta}>{t('inventory.expectedExpecteddate', { expectedDate: day(o.expectedDate) })}</Text>
         ) : null}
       </View>
     </RowCard>

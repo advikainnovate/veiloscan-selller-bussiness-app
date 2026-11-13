@@ -34,6 +34,8 @@ import { opsStyles, Pager, StatCard, StatGrid } from '../../components/operation
 import { StockOperationSheet } from '../../components/inventory/StockOperationSheet';
 import { AlertCircleIcon, BoxIcon, CartIcon, CheckCircleIcon, ClipboardListIcon, ClockIcon, FileTextIcon, LayersIcon, LockIcon, PlusIcon, RefreshIcon, WalletIcon, WarehouseIcon, type IconProps } from '../../components/icons';
 import type { InventoryTab, RootStackParamList, ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PAGE_SIZE = 10;
 const SEARCH_DELAY_MS = 300;
@@ -41,23 +43,24 @@ const SEARCH_DELAY_MS = 300;
 const TABS: { key: InventoryTab; label: string; icon: ComponentType<IconProps>; title: string; description: string }[] = [
   {
     key: 'stock',
-    label: 'Stock',
+    get label() { return i18n.t('common.stock'); },
     icon: BoxIcon,
-    title: 'Stock',
-    description: 'Stock per SKU and warehouse. Available = on hand − reserved for orders − blocked. Every change is kept in the ledger.',
+    get title() { return i18n.t('common.stock'); },
+    get description() { return i18n.t('inventory.stockPerSkuAndWarehouseAvailable'); },
   },
-  { key: 'ledger', label: 'Ledger', icon: ClipboardListIcon, title: 'Stock Ledger', description: 'Every stock movement — receipts, sales, counts, damage, transfers and returns — in order.' },
-  { key: 'reservations', label: 'Reservations', icon: LockIcon, title: 'Reservations', description: 'Stock held for open orders, not yet shipped or handed over.' },
-  { key: 'low', label: 'Low Stock', icon: AlertCircleIcon, title: 'Low Stock', description: 'Products that have reached or fallen below their minimum stock level, with how much to reorder.' },
+  { key: 'ledger', get label() { return i18n.t('common.ledger'); }, icon: ClipboardListIcon, get title() { return i18n.t('inventory.stockLedger'); }, get description() { return i18n.t('inventory.everyStockMovementReceiptsSalesCounts'); } },
+  { key: 'reservations', get label() { return i18n.t('common.reservations'); }, icon: LockIcon, get title() { return i18n.t('common.reservations'); }, get description() { return i18n.t('inventory.stockHeldForOpenOrdersNot'); } },
+  { key: 'low', get label() { return i18n.t('common.lowStock'); }, icon: AlertCircleIcon, get title() { return i18n.t('common.lowStock'); }, get description() { return i18n.t('inventory.productsThatHaveReachedOrFallen'); } },
 ];
 
-const NOTE = 'Orders reserve stock when placed and take it off on hand when delivered; cancelling releases it and returns bring it back.';
+const note = () => i18n.t('inventory.reservationsNote');
 
 type Op = { op: StockOperation; row: StockBalance | null } | null;
 const useStackNav = () => useNavigation<NavigationProp<RootStackParamList>>();
 
 /** Inventory › Stock / Ledger / Reservations / Low Stock (the panel's four pages). */
 export function InventoryScreen({ navigation, route }: ScreenProps<'Inventory'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('product-inventory:manage');
   const [tab, setTab] = useState<InventoryTab>(route.params?.tab ?? 'stock');
@@ -71,19 +74,19 @@ export function InventoryScreen({ navigation, route }: ScreenProps<'Inventory'>)
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Inventory" onBack={navigation.goBack} />
-        <ComingSoon label="Inventory" icon={WarehouseIcon} allowed={false} />
+        <AppHeader title={tr('common.inventory')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.inventory')} icon={WarehouseIcon} allowed={false} />
       </View>
     );
   }
 
   const meta = TABS.find(t => t.key === tab)!;
-  const warehouseOptions = (warehouses.data ?? []).map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? 'Warehouse') }));
+  const warehouseOptions = (warehouses.data ?? []).map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? tr('common.warehouse')) }));
   const onOperation = (op: StockOperation, row: StockBalance | null) => setOperation({ op, row });
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title={meta.title} subtitle="Inventory" onBack={navigation.goBack} />
+      <AppHeader title={meta.title} subtitle={tr('common.inventory')} onBack={navigation.goBack} />
       <View style={styles.tabsWrap}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
           {TABS.map(t => {
@@ -128,12 +131,13 @@ export function InventoryScreen({ navigation, route }: ScreenProps<'Inventory'>)
 
 /** Title, description and Receive Stock, above each tab's content. */
 function Intro({ description, onReceive }: { description: string; onReceive: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.intro}>
       <Text style={opsStyles.meta}>{description}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="Receive Stock" onPress={onReceive} style={[opsStyles.primaryBtn, styles.selfStart]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.receiveStock2')} onPress={onReceive} style={[opsStyles.primaryBtn, styles.selfStart]}>
         <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-        <Text style={opsStyles.primaryBtnText}>Receive Stock</Text>
+        <Text style={opsStyles.primaryBtnText}>{t('inventory.receiveStock2')}</Text>
       </Pressable>
     </View>
   );
@@ -153,10 +157,11 @@ function Thumb({ src }: { src: string | null | undefined }) {
 }
 
 function ResetLink({ shown, onPress }: { shown: boolean; onPress: () => void }) {
+  const { t } = useTranslation();
   if (!shown) return null;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={6} style={styles.selfStart}>
-      <Text style={styles.reset}>Reset filters</Text>
+      <Text style={styles.reset}>{t('common.resetFilters')}</Text>
     </Pressable>
   );
 }
@@ -246,7 +251,7 @@ function Info() {
       <View style={styles.infoDot}>
         <Text style={styles.infoDotText}>i</Text>
       </View>
-      <Text style={styles.infoText}>{NOTE}</Text>
+      <Text style={styles.infoText}>{note()}</Text>
     </View>
   );
 }
@@ -258,11 +263,11 @@ function AllClear({ title, text }: { title: string; text: string }) {
 // ─── Stock ────────────────────────────────────────────────────────────────
 
 const ACTIONS: { op: StockOperation; label: string }[] = [
-  { op: 'adjust', label: 'Count / Adjust' },
-  { op: 'transfer', label: 'Transfer' },
-  { op: 'block', label: 'Damage / Block' },
-  { op: 'return', label: 'Return' },
-  { op: 'levels', label: 'Set Stock Levels' },
+  { op: 'adjust', get label() { return i18n.t('inventory.countAdjust'); } },
+  { op: 'transfer', get label() { return i18n.t('inventory.transfer'); } },
+  { op: 'block', get label() { return i18n.t('inventory.damageBlock'); } },
+  { op: 'return', get label() { return i18n.t('common.return'); } },
+  { op: 'levels', get label() { return i18n.t('inventory.setStockLevels'); } },
 ];
 
 function StockTab({
@@ -274,6 +279,7 @@ function StockTab({
   description: string;
   onOperation: (op: StockOperation, row: StockBalance | null) => void;
 }) {
+  const { t } = useTranslation();
   const navigation = useStackNav();
   const [warehouseId, setWarehouseId] = useState('');
   const [status, setStatus] = useState('');
@@ -323,20 +329,20 @@ function StockTab({
           <>
             <Intro description={description} onReceive={() => onOperation('receive', null)} />
             <StatGrid>
-              <StatCard icon={BoxIcon} tone="blue" label="Total Stock Records" value={String(counts.total)} sub="Products across warehouses" loading={loading} />
-              <StatCard icon={AlertCircleIcon} tone="amber" label="Low Stock" value={String(counts.low)} sub="Products below minimum" loading={loading} />
-              <StatCard icon={BoxIcon} tone="red" label="Out of Stock" value={String(counts.out)} sub="Products with zero stock" loading={loading} />
-              <StatCard icon={LockIcon} tone="violet" label="With Blocked Stock" value={String(counts.blocked)} sub="Products with blocked quantity" loading={loading} />
+              <StatCard icon={BoxIcon} tone="blue" label={t('inventory.totalStockRecords')} value={String(counts.total)} sub={t('inventory.productsAcrossWarehouses')} loading={loading} />
+              <StatCard icon={AlertCircleIcon} tone="amber" label={t('common.lowStock')} value={String(counts.low)} sub={t('inventory.productsBelowMinimum')} loading={loading} />
+              <StatCard icon={BoxIcon} tone="red" label={t('common.outOfStock')} value={String(counts.out)} sub={t('inventory.productsWithZeroStock')} loading={loading} />
+              <StatCard icon={LockIcon} tone="violet" label={t('inventory.withBlockedStock')} value={String(counts.blocked)} sub={t('inventory.productsWithBlockedQuantity')} loading={loading} />
             </StatGrid>
-            <SearchBar value={search} onChange={setSearch} placeholder="Search product or SKU…" />
-            <SelectField label="Warehouse" value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder="All warehouses" allowClear="All warehouses" />
+            <SearchBar value={search} onChange={setSearch} placeholder={t('inventory.searchProductOrSku')} />
+            <SelectField label={t('common.warehouse')} value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder={t('inventory.allWarehouses')} allowClear={t('inventory.allWarehouses')} />
             <FilterChips
-              options={[{ value: '', label: 'All statuses' }, ...(Object.keys(STOCK_STATUS) as StockStatus[]).map(s => ({ value: s, label: STOCK_STATUS[s].label }))]}
+              options={[{ value: '', label: t('common.allStatuses') }, ...(Object.keys(STOCK_STATUS) as StockStatus[]).map(s => ({ value: s, label: STOCK_STATUS[s].label }))]}
               value={status}
               onChange={setStatus}
             />
-            <ToggleRow label="Only with reserved stock" value={onlyReserved} onChange={setOnlyReserved} />
-            <ToggleRow label="Only with blocked stock" value={onlyBlocked} onChange={setOnlyBlocked} />
+            <ToggleRow label={t('inventory.onlyWithReservedStock')} value={onlyReserved} onChange={setOnlyReserved} />
+            <ToggleRow label={t('inventory.onlyWithBlockedStock')} value={onlyBlocked} onChange={setOnlyBlocked} />
             <ResetLink
               shown={filtered}
               onPress={() => {
@@ -352,8 +358,8 @@ function StockTab({
         empty={
           <EmptyState
             icon={BoxIcon}
-            title={filtered ? 'No stock matches your filters' : 'No stock records yet'}
-            text={filtered ? 'Try another search or reset the filters.' : 'Use “Receive Stock” to add stock for a SKU.'}
+            title={filtered ? t('inventory.noStockMatchesYourFilters') : t('inventory.noStockRecordsYet')}
+            text={filtered ? t('inventory.tryAnotherSearchOrResetThe') : t('inventory.useReceiveStockToAddStock')}
           />
         }
         render={r => (
@@ -365,7 +371,7 @@ function StockTab({
           />
         )}
       />
-      <Sheet visible={!!more} title={more?.productName ?? 'Stock'} subtitle={more ? `${more.sku} · ${more.warehouseTitle}` : undefined} onClose={() => setMore(null)}>
+      <Sheet visible={!!more} title={more?.productName ?? t('common.stock')} subtitle={more ? `${more.sku} · ${more.warehouseTitle}` : undefined} onClose={() => setMore(null)}>
         <View style={styles.menu}>
           {ACTIONS.map(a => (
             <Pressable
@@ -388,6 +394,7 @@ function StockTab({
 }
 
 function StockCard({ row: r, onOpen, onReceive, onMore }: { row: StockBalance; onOpen: () => void; onReceive: () => void; onMore: () => void }) {
+  const { t } = useTranslation();
   const s = stockStatus(r.stockStatus);
   const availableTone = r.available <= 0 ? colors.error : r.stockStatus === 'LOW_STOCK' ? colors.warningDark : colors.successDark;
   return (
@@ -398,7 +405,7 @@ function StockCard({ row: r, onOpen, onReceive, onMore }: { row: StockBalance; o
           <Text style={opsStyles.title} numberOfLines={1}>
             {r.productName}
           </Text>
-          <Text style={opsStyles.meta} numberOfLines={1}>{`SKU: ${r.sku}`}</Text>
+          <Text style={opsStyles.meta} numberOfLines={1}>{t('inventory.skuSku', { sku: r.sku })}</Text>
           {r.variantLabel ? (
             <Text style={opsStyles.muted} numberOfLines={1}>
               {r.variantLabel}
@@ -414,17 +421,17 @@ function StockCard({ row: r, onOpen, onReceive, onMore }: { row: StockBalance; o
         <Badge label={s.label} tone={s.tone} />
       </Pressable>
       <View style={styles.qtys}>
-        <Qty label="On hand" base={r.onHand} row={r} />
-        <Qty label="Reserved" base={r.reserved} row={r} color={colors.textSecondary} />
-        <Qty label="Blocked" base={r.blocked} row={r} color={r.blocked > 0 ? '#7c3aed' : colors.textSecondary} />
-        <Qty label="Available" base={r.available} row={r} color={availableTone} />
+        <Qty label={t('inventory.onHand')} base={r.onHand} row={r} />
+        <Qty label={t('common.reserved')} base={r.reserved} row={r} color={colors.textSecondary} />
+        <Qty label={t('common.blocked')} base={r.blocked} row={r} color={r.blocked > 0 ? '#7c3aed' : colors.textSecondary} />
+        <Qty label={t('common.available')} base={r.available} row={r} color={availableTone} />
       </View>
       <View style={opsStyles.row}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Receive ${r.productName}`} onPress={onReceive} style={[styles.action, styles.actionPrimary]}>
-          <Text style={[styles.actionText, styles.actionTextPrimary]}>Receive</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.receiveProductname', { productName: r.productName })} onPress={onReceive} style={[styles.action, styles.actionPrimary]}>
+          <Text style={[styles.actionText, styles.actionTextPrimary]}>{t('inventory.receive')}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={`More for ${r.productName}`} onPress={onMore} style={styles.action}>
-          <Text style={styles.actionText}>More</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.moreForProductname', { productName: r.productName })} onPress={onMore} style={styles.action}>
+          <Text style={styles.actionText}>{t('common.more')}</Text>
         </Pressable>
       </View>
     </View>
@@ -449,7 +456,7 @@ function Qty({ label, base, row, color = colors.text }: { label: string; base: n
 // ─── Ledger ───────────────────────────────────────────────────────────────
 
 function trend(value: number, previous: number, label: string, invert = false) {
-  if (previous === 0) return value === 0 ? `No change ${label}` : `New ${label}`;
+  if (previous === 0) return value === 0 ? i18n.t('inventory.noChangeLabel', { label }) : i18n.t('inventory.newLabel', { label });
   const pct = ((value - previous) / Math.abs(previous)) * 100;
   const good = invert ? pct <= 0 : pct >= 0;
   return { text: `${pct >= 0 ? '↑' : '↓'} ${Math.abs(pct).toFixed(0)}% ${label}`, good };
@@ -457,6 +464,7 @@ function trend(value: number, previous: number, label: string, invert = false) {
 const trendSub = (t: ReturnType<typeof trend>) => (typeof t === 'string' ? t : t.text);
 
 function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value: string; label: string }[]; description: string; onReceive: () => void }) {
+  const { t: tr } = useTranslation();
   const navigation = useStackNav();
   const { hasPermission } = useAuth();
   const [preset, setPreset] = useState<RangePreset>(DEFAULT_PRESET);
@@ -488,7 +496,7 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
   );
   useReloadOnFocus(reload);
   const s = data?.summary;
-  const compare = preset.key === 'this-month' ? 'this month' : preset.compareLabel;
+  const compare = preset.key === 'this-month' ? tr('inventory.thisMonth2') : preset.compareLabel;
   const filtered = !!(warehouseId || group || search) || preset.key !== DEFAULT_PRESET.key;
   const units = (v: number | undefined) => (v === undefined ? '—' : formatQuantity(v));
   const stat = (k: 'movements' | 'received' | 'sold' | 'adjusted', invert = false) => (s ? trendSub(trend(s[k].value, s[k].previous, compare, invert)) : undefined);
@@ -502,15 +510,15 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
         <View style={styles.header}>
           <Intro description={description} onReceive={onReceive} />
           <StatGrid>
-            <StatCard icon={BoxIcon} tone="orange" label="Total Movements" value={units(s?.movements.value)} sub={stat('movements')} loading={loading} />
-            <StatCard icon={LayersIcon} tone="emerald" label="Stock Received" value={`${units(s?.received.value)} units`} sub={stat('received')} loading={loading} />
-            <StatCard icon={CartIcon} tone="red" label="Stock Sold" value={`${units(s?.sold.value)} units`} sub={stat('sold')} loading={loading} />
-            <StatCard icon={RefreshIcon} tone="violet" label="Adjustments" value={`${units(s?.adjusted.value)} units`} sub={stat('adjusted', true)} loading={loading} />
+            <StatCard icon={BoxIcon} tone="orange" label={tr('inventory.totalMovements')} value={units(s?.movements.value)} sub={stat('movements')} loading={loading} />
+            <StatCard icon={LayersIcon} tone="emerald" label={tr('common.stockReceived')} value={tr('common.unitsValue', { units: units(s?.received.value) })} sub={stat('received')} loading={loading} />
+            <StatCard icon={CartIcon} tone="red" label={tr('inventory.stockSold')} value={tr('common.unitsValue', { units: units(s?.sold.value) })} sub={stat('sold')} loading={loading} />
+            <StatCard icon={RefreshIcon} tone="violet" label={tr('inventory.adjustments')} value={tr('common.unitsValue', { units: units(s?.adjusted.value) })} sub={stat('adjusted', true)} loading={loading} />
           </StatGrid>
           <FilterChips options={RANGE_PRESETS.map(p => ({ value: p.key, label: p.label }))} value={preset.key} onChange={k => setPreset(RANGE_PRESETS.find(p => p.key === k) ?? DEFAULT_PRESET)} />
-          <SelectField label="Warehouse" value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder="All warehouses" allowClear="All warehouses" />
+          <SelectField label={tr('common.warehouse')} value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder={tr('inventory.allWarehouses')} allowClear={tr('inventory.allWarehouses')} />
           <FilterChips options={LEDGER_GROUPS} value={group} onChange={setGroup} />
-          <SearchBar value={query} onChange={setQuery} placeholder="Search product name, SKU or reference…" />
+          <SearchBar value={query} onChange={setQuery} placeholder={tr('inventory.searchProductNameSkuOrReference')} />
           <ResetLink
             shown={filtered}
             onPress={() => {
@@ -553,12 +561,12 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
                 <Text style={[styles.moveText, { color: fg }]}>{movementLabel(e.type)}</Text>
               </View>
               <Text style={opsStyles.meta} numberOfLines={1}>
-                {`${dateTime(e.createdAt)}${e.onHandAfter === null ? '' : ` · on hand ${formatQuantity(e.onHandAfter)}`}`}
+                {`${dateTime(e.createdAt)}${e.onHandAfter === null ? '' : ` · ${tr('common.onHandQuantity', { quantity: formatQuantity(e.onHandAfter) })}`}`}
               </Text>
             </View>
             {reference || e.notes || e.reason || e.performedBy ? (
               <Text style={opsStyles.muted} numberOfLines={2}>
-                {[reference, e.notes ?? e.reason, e.performedBy ? `by ${e.performedBy}` : null].filter(Boolean).join(' · ')}
+                {[reference, e.notes ?? e.reason, e.performedBy ? tr('inventory.byPerformedby', { performedBy: e.performedBy }) : null].filter(Boolean).join(' · ')}
               </Text>
             ) : null}
           </Pressable>
@@ -573,8 +581,8 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
         ) : (
           <EmptyState
             icon={ClipboardListIcon}
-            title="No stock movements"
-            text={filtered ? 'Nothing matches these filters — try another date range or reset.' : 'Receipts, sales, counts and transfers appear here as they happen.'}
+            title={tr('inventory.noStockMovements')}
+            text={filtered ? tr('inventory.nothingMatchesTheseFiltersTryAnother') : tr('inventory.receiptsSalesCountsAndTransfersAppear')}
           />
         )
       }
@@ -592,7 +600,7 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
               }}
             />
           ) : null}
-          <Text style={opsStyles.muted}>Quantities are in each SKU's base unit. Open a stock record from Stock for one SKU's full history.</Text>
+          <Text style={opsStyles.muted}>{tr('inventory.quantitiesAreInEachSkusBase')}</Text>
         </View>
       }
       contentContainerStyle={opsStyles.content}
@@ -605,14 +613,15 @@ function LedgerTab({ warehouses, description, onReceive }: { warehouses: { value
 // ─── Reservations ─────────────────────────────────────────────────────────
 
 const DATE_RANGES = [
-  { value: '', label: 'Any date' },
-  { value: '1', label: 'Today' },
-  { value: '7', label: 'Last 7 days' },
-  { value: '30', label: 'Last 30 days' },
-  { value: 'older', label: 'Older than 7 days' },
+  { value: '', get label() { return i18n.t('inventory.anyDate'); } },
+  { value: '1', get label() { return i18n.t('common.today'); } },
+  { value: '7', get label() { return i18n.t('common.last7Days'); } },
+  { value: '30', get label() { return i18n.t('common.last30Days'); } },
+  { value: 'older', get label() { return i18n.t('inventory.olderThan7Days'); } },
 ];
 
 function ReservationsTab({ warehouses, description, onReceive }: { warehouses: { value: string; label: string }[]; description: string; onReceive: () => void }) {
+  const { t } = useTranslation();
   const navigation = useStackNav();
   const { hasPermission } = useAuth();
   const { data, error, loading, refreshing, reload } = useFetch(() => stockService.reservations({ status: 'RESERVED' }), []);
@@ -669,18 +678,18 @@ function ReservationsTab({ warehouses, description, onReceive }: { warehouses: {
         <>
           <Intro description={description} onReceive={onReceive} />
           <StatGrid>
-            <StatCard icon={FileTextIcon} tone="blue" label="Total Reserved Items" value={String(kpis.items)} sub="Items in open orders" loading={loading} />
-            <StatCard icon={CartIcon} tone="orange" label="Reserved Quantity" value={`${formatQuantity(kpis.units)} ${kpis.unit.length === 1 ? kpis.unit[0] : 'units'}`} sub="Total units reserved" loading={loading} />
-            <StatCard icon={BoxIcon} tone="violet" label="Orders on Hold" value={String(kpis.orders)} sub="Pending shipment / delivery" loading={loading} />
-            <StatCard icon={WalletIcon} tone="emerald" label="Estimated Value" value={shortRupees(kpis.value)} sub="Value of reserved stock" loading={loading} />
+            <StatCard icon={FileTextIcon} tone="blue" label={t('inventory.totalReservedItems')} value={String(kpis.items)} sub={t('inventory.itemsInOpenOrders')} loading={loading} />
+            <StatCard icon={CartIcon} tone="orange" label={t('inventory.reservedQuantity')} value={`${formatQuantity(kpis.units)} ${kpis.unit.length === 1 ? kpis.unit[0] : 'units'}`} sub={t('inventory.totalUnitsReserved')} loading={loading} />
+            <StatCard icon={BoxIcon} tone="violet" label={t('inventory.ordersOnHold')} value={String(kpis.orders)} sub={t('inventory.pendingShipmentDelivery')} loading={loading} />
+            <StatCard icon={WalletIcon} tone="emerald" label={t('inventory.estimatedValue')} value={shortRupees(kpis.value)} sub={t('inventory.valueOfReservedStock')} loading={loading} />
           </StatGrid>
-          <SearchBar value={search} onChange={setSearch} placeholder="Search product, SKU, or order no…" />
-          <SelectField label="Warehouse" value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder="All warehouses" allowClear="All warehouses" />
+          <SearchBar value={search} onChange={setSearch} placeholder={t('inventory.searchProductSkuOrOrderNo')} />
+          <SelectField label={t('common.warehouse')} value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder={t('inventory.allWarehouses')} allowClear={t('inventory.allWarehouses')} />
           {statuses.length ? (
-            <FilterChips options={[{ value: '', label: 'All statuses' }, ...statuses.map(s => ({ value: s, label: reservationOrderStatus(s).label }))]} value={status} onChange={setStatus} />
+            <FilterChips options={[{ value: '', label: t('common.allStatuses') }, ...statuses.map(s => ({ value: s, label: reservationOrderStatus(s).label }))]} value={status} onChange={setStatus} />
           ) : null}
           <FilterChips options={DATE_RANGES} value={range} onChange={setRange} />
-          <ToggleRow label="Only held for more than 3 days" value={oldOnly} onChange={setOldOnly} />
+          <ToggleRow label={t('inventory.onlyHeldForMoreThan3')} value={oldOnly} onChange={setOldOnly} />
           <ResetLink
             shown={filtered}
             onPress={() => {
@@ -695,9 +704,9 @@ function ReservationsTab({ warehouses, description, onReceive }: { warehouses: {
       }
       empty={
         all.length === 0 ? (
-          <AllClear title="No stock is reserved for open orders." text="All your products are currently available for shipment." />
+          <AllClear title={t('inventory.noStockIsReservedForOpen')} text={t('inventory.allYourProductsAreCurrentlyAvailable')} />
         ) : (
-          <AllClear title="Nothing matches these filters." text="Try another search or reset the filters." />
+          <AllClear title={t('inventory.nothingMatchesTheseFilters')} text={t('inventory.tryAnotherSearchOrResetThe')} />
         )
       }
       render={r => {
@@ -736,17 +745,17 @@ function ReservationsTab({ warehouses, description, onReceive }: { warehouses: {
             <View style={opsStyles.rowBetween}>
               <View style={styles.held}>
                 <ClockIcon size={13} color={long ? colors.warningDark : colors.textMuted} />
-                <Text style={[opsStyles.meta, long && styles.heldLong]}>{`Held for ${heldFor(r.reservedAt, now)}`}</Text>
+                <Text style={[opsStyles.meta, long && styles.heldLong]}>{t('inventory.heldForHeldfor', { heldFor: heldFor(r.reservedAt, now) })}</Text>
               </View>
               <View style={opsStyles.row}>
                 {r.inventoryId ? (
                   <Pressable accessibilityRole="button" onPress={() => navigation.navigate('StockDetail', { id: r.inventoryId! })} style={styles.action}>
-                    <Text style={styles.actionText}>View Stock</Text>
+                    <Text style={styles.actionText}>{t('inventory.viewStock')}</Text>
                   </Pressable>
                 ) : null}
                 {r.orderId && hasPermission('orders:manage') ? (
                   <Pressable accessibilityRole="button" onPress={() => navigation.navigate('OrderDetail', { id: r.orderId! })} style={[styles.action, styles.actionPrimary]}>
-                    <Text style={[styles.actionText, styles.actionTextPrimary]}>View Order</Text>
+                    <Text style={[styles.actionText, styles.actionTextPrimary]}>{t('inventory.viewOrder')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -769,6 +778,7 @@ function LowStockTab({
   description: string;
   onOperation: (op: StockOperation, row: StockBalance | null) => void;
 }) {
+  const { t } = useTranslation();
   const navigation = useStackNav();
   const { data, error, loading, refreshing, reload } = useFetch(() => stockService.lowStock(), []);
   useReloadOnFocus(reload);
@@ -825,31 +835,31 @@ function LowStockTab({
         <>
           <Intro description={description} onReceive={() => onOperation('receive', null)} />
           <StatGrid>
-            <StatCard icon={BoxIcon} tone="red" label="Out of Stock" value={String(kpis.out)} sub="Products with zero stock" loading={loading} />
-            <StatCard icon={AlertCircleIcon} tone="amber" label="Low Stock" value={String(kpis.low)} sub="Products below minimum" loading={loading} />
-            <StatCard icon={LayersIcon} tone="blue" label="Total Units Required" value={formatQuantity(kpis.required)} sub="Units to reach minimum" loading={loading} />
+            <StatCard icon={BoxIcon} tone="red" label={t('common.outOfStock')} value={String(kpis.out)} sub={t('inventory.productsWithZeroStock')} loading={loading} />
+            <StatCard icon={AlertCircleIcon} tone="amber" label={t('common.lowStock')} value={String(kpis.low)} sub={t('inventory.productsBelowMinimum')} loading={loading} />
+            <StatCard icon={LayersIcon} tone="blue" label={t('inventory.totalUnitsRequired')} value={formatQuantity(kpis.required)} sub={t('inventory.unitsToReachMinimum')} loading={loading} />
             <StatCard
               icon={WalletIcon}
               tone="emerald"
-              label="Estimated Reorder Value"
+              label={t('inventory.estimatedReorderValue')}
               value={shortRupees(kpis.value)}
-              sub={kpis.unpriced ? `${kpis.unpriced} SKU${kpis.unpriced === 1 ? '' : 's'} without cost price` : 'Based on product cost price'}
+              sub={kpis.unpriced ? t('inventory.skusWithoutCostPrice', { count: kpis.unpriced }) : t('inventory.basedOnProductCostPrice')}
               loading={loading}
             />
           </StatGrid>
-          <SearchBar value={search} onChange={setSearch} placeholder="Search product name or SKU…" />
-          <SelectField label="Warehouse" value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder="All warehouses" allowClear="All warehouses" />
+          <SearchBar value={search} onChange={setSearch} placeholder={t('inventory.searchProductNameOrSku')} />
+          <SelectField label={t('common.warehouse')} value={warehouseId} options={warehouses} onChange={setWarehouseId} placeholder={t('inventory.allWarehouses')} allowClear={t('inventory.allWarehouses')} />
           <FilterChips
             options={[
-              { value: '', label: 'All statuses' },
-              { value: 'LOW_STOCK', label: 'Low Stock' },
-              { value: 'OUT_OF_STOCK', label: 'Out of Stock' },
+              { value: '', label: t('common.allStatuses') },
+              { value: 'LOW_STOCK', label: t('common.lowStock') },
+              { value: 'OUT_OF_STOCK', label: t('common.outOfStock') },
             ]}
             value={status}
             onChange={setStatus}
           />
-          {categories.length ? <SelectField label="Category" value={categoryId} options={categories} onChange={setCategoryId} placeholder="All categories" allowClear="All categories" /> : null}
-          <ToggleRow label="Only SKUs with a minimum level set" value={withLevels} onChange={setWithLevels} />
+          {categories.length ? <SelectField label={t('common.category')} value={categoryId} options={categories} onChange={setCategoryId} placeholder={t('common.allCategories')} allowClear={t('common.allCategories')} /> : null}
+          <ToggleRow label={t('inventory.onlySkusWithAMinimumLevel')} value={withLevels} onChange={setWithLevels} />
           <ResetLink
             shown={filtered}
             onPress={() => {
@@ -864,9 +874,9 @@ function LowStockTab({
       }
       empty={
         all.length === 0 ? (
-          <AllClear title="Nothing is low or out of stock." text="All your products are currently above their minimum stock level." />
+          <AllClear title={t('inventory.nothingIsLowOrOutOf')} text={t('inventory.allYourProductsAreCurrentlyAbove')} />
         ) : (
-          <AllClear title="Nothing matches these filters." text="Try another search or reset the filters." />
+          <AllClear title={t('inventory.nothingMatchesTheseFilters')} text={t('inventory.tryAnotherSearchOrResetThe')} />
         )
       }
       render={r => {
@@ -889,20 +899,20 @@ function LowStockTab({
                   </Text>
                 </View>
               </View>
-              <Badge label={out ? 'Out of Stock' : 'Low Stock'} tone={out ? 'red' : 'amber'} />
+              <Badge label={out ? t('common.outOfStock') : t('common.lowStock')} tone={out ? 'red' : 'amber'} />
             </Pressable>
             <View style={styles.qtys}>
-              <Figure label="Current" value={formatQty(r.available, r)} color={colors.error} />
-              <Figure label="Minimum" value={formatQty(r.minimum, r)} />
-              <Figure label="Reorder" value={need > 0 ? formatQty(need, r) : 'Set levels'} muted={need <= 0} />
-              <Figure label="Est. value" value={v !== null ? shortRupees(v) : 'No cost'} muted={v === null} />
+              <Figure label={t('common.current')} value={formatQty(r.available, r)} color={colors.error} />
+              <Figure label={t('inventory.minimum')} value={formatQty(r.minimum, r)} />
+              <Figure label={t('inventory.reorder')} value={need > 0 ? formatQty(need, r) : 'Set levels'} muted={need <= 0} />
+              <Figure label={t('inventory.estValue')} value={v !== null ? shortRupees(v) : 'No cost'} muted={v === null} />
             </View>
             <View style={opsStyles.row}>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Receive ${r.productName}`} onPress={() => onOperation('receive', r)} style={[styles.action, styles.actionPrimary]}>
-                <Text style={[styles.actionText, styles.actionTextPrimary]}>Receive</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.receiveProductname', { productName: r.productName })} onPress={() => onOperation('receive', r)} style={[styles.action, styles.actionPrimary]}>
+                <Text style={[styles.actionText, styles.actionTextPrimary]}>{t('inventory.receive')}</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Set stock levels for ${r.productName}`} onPress={() => onOperation('levels', r)} style={styles.action}>
-                <Text style={styles.actionText}>Set Stock Levels</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.setStockLevelsForProductname', { productName: r.productName })} onPress={() => onOperation('levels', r)} style={styles.action}>
+                <Text style={styles.actionText}>{t('inventory.setStockLevels')}</Text>
               </Pressable>
             </View>
           </View>

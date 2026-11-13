@@ -33,12 +33,13 @@ import {
   useKeyboardHeight,
 } from '../components/layout/KeyboardScroll';
 import type { ScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type Mode = 'password' | 'otp';
 
 const MODES: [Mode, string, ComponentType<IconProps>][] = [
-  ['otp', 'Mobile OTP', MobileIcon],
-  ['password', 'Email & Password', MailIcon],
+  ['otp', 'auth.mobileOtp', MobileIcon],
+  ['password', 'auth.emailAndPassword', MailIcon],
 ];
 
 /**
@@ -46,6 +47,7 @@ const MODES: [Mode, string, ComponentType<IconProps>][] = [
  * clear on both short screens and when the keyboard is open.
  */
 export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const typing = useKeyboardHeight() > 0;
   const [mode, setMode] = useState<Mode>('otp');
@@ -86,8 +88,8 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
     if (isLoading) return;
     const trimmed = email.trim();
     if (!EMAIL_PATTERN.test(trimmed))
-      return showError(new Error('Enter a valid email address.'));
-    if (!password) return showError(new Error('Enter your password.'));
+      return showError(new Error(t('common.enterAValidEmailAddress2')));
+    if (!password) return showError(new Error(t('auth.enterYourPassword')));
 
     clearError();
     setIsLoading(true);
@@ -122,7 +124,7 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
               <View
                 style={styles.brand}
                 accessible
-                accessibilityLabel="VeiloScan Business"
+                accessibilityLabel={t('common.veiloscanBusiness')}
               >
                 <Logo variant="white" size={32} tagline={null} />
               </View>
@@ -131,12 +133,12 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
               <View
                 style={styles.brand}
                 accessible
-                accessibilityLabel="VeiloScan Business"
+                accessibilityLabel={t('common.veiloscanBusiness')}
               >
                 <Logo variant="white" layout="stacked" size={82} tagline={null} />
                 <View style={styles.sellerTitleRow}>
                   {/* <View style={styles.sellerTitleRule} /> */}
-                  <Text style={styles.sellerTitle}>Bussiness</Text>
+                  <Text style={styles.sellerTitle}>{t('auth.bussiness')}</Text>
                   {/* <View style={styles.sellerTitleRule} /> */}
                 </View>
               </View>
@@ -146,7 +148,8 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
           <View style={[styles.card, typing && styles.cardTyping]}>
             <View style={styles.cardAccent} />
             <View accessibilityRole="tablist" style={styles.tabs}>
-              {MODES.map(([key, label, Icon]) => {
+              {MODES.map(([key, labelKey, Icon]) => {
+                const label = t(labelKey);
                 const selected = mode === key;
                 return (
                   <Pressable
@@ -207,9 +210,9 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
             ) : (
               <View style={styles.form}>
                 <TextField
-                  label="Email address"
+                  label={t('auth.emailAddress')}
                   hideLabel
-                  placeholder="Email address"
+                  placeholder={t('auth.emailAddress')}
                   icon={<MailIcon size={20} color={colors.primary} />}
                   fieldStyle={styles.field}
                   style={styles.input}
@@ -227,9 +230,9 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
                 />
                 <PasswordField
                   ref={passwordRef}
-                  label="Password"
+                  label={t('common.password')}
                   hideLabel
-                  placeholder="Password"
+                  placeholder={t('common.password')}
                   icon={<LockIcon size={20} color={colors.primary} />}
                   fieldStyle={styles.field}
                   style={styles.input}
@@ -241,7 +244,7 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
                 />
                 <View style={styles.row}>
                     <Checkbox
-                    label="Remember me"
+                    label={t('auth.rememberMe')}
                     checked={remember}
                     onChange={setRemember}
                       labelColor="#d3dced"
@@ -251,12 +254,12 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
                     hitSlop={10}
                     onPress={handleForgotPassword}
                   >
-                    <Text style={styles.link}>Forgot password?</Text>
+                    <Text style={styles.link}>{t('auth.forgotPassword2')}</Text>
                   </Pressable>
                 </View>
                 <Button
-                  title="Log In"
-                  loadingTitle="Logging in..."
+                  title={t('auth.logIn')}
+                  loadingTitle={t('auth.loggingIn')}
                   loading={isLoading}
                   onPress={handleSubmit}
                   icon={<ArrowRightIcon size={20} color={colors.white} />}

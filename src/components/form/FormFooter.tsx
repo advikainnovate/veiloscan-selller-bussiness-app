@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { Button } from '../ui/Button';
+import { useTranslation } from 'react-i18next';
 
 /** A form's sticky save bar: an optional summary line, Cancel and the save button. */
 export function FormFooter({
@@ -20,6 +21,7 @@ export function FormFooter({
   loading?: boolean;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
@@ -30,7 +32,7 @@ export function FormFooter({
       ) : null}
       <View style={styles.row}>
         <Pressable accessibilityRole="button" onPress={onCancel} disabled={loading} style={styles.cancel}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={styles.cancelText}>{t('common.cancel')}</Text>
         </Pressable>
         <View style={styles.flex}>
           <Button title={title} loading={loading} disabled={disabled} onPress={onSave} />

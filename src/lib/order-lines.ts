@@ -17,6 +17,7 @@ import {
   startQuantity,
   type Selling,
 } from './selling';
+import i18n from '../i18n';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -44,7 +45,7 @@ export function startOf(item: CatalogItem): { quantity: number; uom: string } {
 export function quantityIssue(item: CatalogItem, quantity: number, uom: string): string | null {
   const selling = sellingOf(item);
   if (selling.method === 'FIXED' && quantity < fixedMinimum(item, selling)) {
-    return `The minimum is ${amountLabel(selling, fixedMinimum(item, selling), selling.sellingUom).replace('× ', '')}`;
+    return i18n.t('orders.theMinimumIsReplace', { replace: amountLabel(selling, fixedMinimum(item, selling), selling.sellingUom).replace('× ', '') });
   }
   return quantityProblem(selling, quantity, uom, null);
 }
@@ -61,9 +62,9 @@ export function rulesHint(item: CatalogItem): string | null {
   const unit = selling.sellingUom;
   return [
     selling.priceLabel,
-    selling.minimum !== null ? `Min ${quantityLabel(selling.minimum, unit)}` : null,
-    selling.maximum !== null ? `Max ${quantityLabel(selling.maximum, unit)}` : null,
-    selling.step ? `Steps of ${quantityLabel(selling.step, unit)}` : null,
+    selling.minimum !== null ? i18n.t('orders.minQuantitylabel', { quantityLabel: quantityLabel(selling.minimum, unit) }) : null,
+    selling.maximum !== null ? i18n.t('orders.maxQuantitylabel', { quantityLabel: quantityLabel(selling.maximum, unit) }) : null,
+    selling.step ? i18n.t('orders.stepsOfQuantitylabel', { quantityLabel: quantityLabel(selling.step, unit) }) : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -95,8 +96,8 @@ export function lineProblem(line: OrderLine, quantityOff = 0) {
   const issue = quantityIssue(line.item, line.quantity, line.uom);
   if (issue) return issue;
   const base = round2(lineBase(line) - quantityOff);
-  if (Number(line.discount) > base) return `More than the line total (${formatRupees(base)})`;
-  if (Number(line.discount) < 0) return "A discount can't be negative";
+  if (Number(line.discount) > base) return i18n.t('orders.moreThanTheLineTotalBase', { base: formatRupees(base) });
+  if (Number(line.discount) < 0) return i18n.t('orders.aDiscountCanTBeNegative');
   return null;
 }
 
@@ -107,7 +108,7 @@ export function stockShortfall(line: OrderLine): string | null {
   const wanted = sellingAmount(line.item, line.quantity, line.uom);
   if (stock === null || wanted <= stock) return null;
   const unit = selling.sellingUom === 'PCS' ? '' : ` ${selling.sellingUom}`;
-  return `${stock <= 0 ? 'Out of stock' : `Only ${round2(stock)}${unit} in stock`} — stock would go to ${round2(stock - wanted)}${unit}`;
+  return i18n.t(stock <= 0 ? 'orders.outOfStockWouldGoTo' : 'orders.onlyInStockWouldGoTo', { stock: `${round2(stock)}${unit}`, after: `${round2(stock - wanted)}${unit}` });
 }
 
 /** The price as the item is sold: "₹5 / 50 GM" for an amount, "₹499" a unit otherwise. */
@@ -120,13 +121,13 @@ export function priceText(item: CatalogItem) {
 export function quantityNotes(quantity: LineQuantityDiscount | null): { earned: string | null; next: string | null } {
   if (!quantity) return { earned: null, next: null };
   const { scheme, discount, slab, qualifying, next } = quantity;
-  const combined = scheme.aggregation === 'COMBINED_PRODUCT' ? ' (all variants together)' : '';
+  const combined = scheme.aggregation === 'COMBINED_PRODUCT' ? i18n.t('orders.allVariantsTogether') : '';
   const more = next ? round4(next.minQuantity - qualifying) : 0;
   return {
     earned:
       discount > 0 && slab
-        ? `${scheme.schemeName} · ${slabDiscountLabel(slab, scheme.unit)} at ${slabRangeLabel(slab, scheme.unit)}${combined}: −${formatRupees(discount)}`
+        ? i18n.t('orders.schemenameSlabdiscountlabelAtSlabrangelabelCombinedDiscount', { schemeName: scheme.schemeName, slabDiscountLabel: slabDiscountLabel(slab, scheme.unit), slabRangeLabel: slabRangeLabel(slab, scheme.unit), combined, discount: formatRupees(discount) })
         : null,
-    next: next ? `Add ${more} ${scheme.unit} more${combined} for ${slabDiscountLabel(next, scheme.unit)}` : null,
+    next: next ? i18n.t('orders.addMoreForDiscount', { more, unit: scheme.unit, combined, discount: slabDiscountLabel(next, scheme.unit) }) : null,
   };
 }

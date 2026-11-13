@@ -21,9 +21,11 @@ import { confirmAction, Detail, opsStyles } from '../../components/operations/Op
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, BanIcon, CheckCircleIcon, ClockIcon, EditIcon, PlusIcon, TrashIcon, TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One shipping zone: its details and its shipping methods, added and edited here. */
 export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZone'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -33,12 +35,12 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
   const methods = useMemo(() => (all.data ?? []).filter(m => m.zoneId === id), [all.data, id]);
   const [editing, setEditing] = useState<Row | 'new' | null>(null);
 
-  const header = <AppHeader title={String(zone.data?.zoneTitle ?? 'Shipping Zone')} subtitle="Shipping" onBack={navigation.goBack} />;
+  const header = <AppHeader title={String(zone.data?.zoneTitle ?? t('shipping.shippingZone'))} subtitle={t('shipping.shipping')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Shipping" icon={TruckIcon} allowed={false} />
+        <ComingSoon label={t('shipping.shipping')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
@@ -54,7 +56,7 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={zone.error || 'Not found.'} onRetry={zone.reload} />
+        <ErrorState message={zone.error || t('common.notFound')} onRetry={zone.reload} />
       </View>
     );
   }
@@ -63,10 +65,10 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
   const on = isActiveRow(z);
 
   async function toggleZone() {
-    if (!(await confirmAction(`${on ? 'Deactivate' : 'Activate'} this shipping zone?`, undefined, on ? 'Deactivate' : 'Activate', on))) return;
+    if (!(await confirmAction(on ? t('shipping.deactivateThisZone') : t('shipping.activateThisZone'), undefined, on ? t('common.deactivate') : t('common.activate'), on))) return;
     try {
       await shippingZoneService.update(id, { status: on ? 0 : 1 });
-      toast(on ? 'Zone deactivated' : 'Zone activated');
+      toast(on ? t('shipping.zoneDeactivated') : t('shipping.zoneActivated'));
       zone.reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -77,7 +79,7 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
     const mOn = isActiveRow(m);
     try {
       await shippingMethodService.update(m.id, { status: mOn ? 0 : 1 });
-      toast(`Method ${mOn ? 'deactivated' : 'activated'}`);
+      toast(mOn ? t('shipping.methodDeactivated') : t('shipping.methodActivated'));
       all.reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -85,10 +87,10 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
   }
 
   async function removeMethod(m: Row) {
-    if (!(await confirmAction('Delete shipping method?', `"${String(m.methodTitle)}" will be removed from this zone.`, 'Delete', true))) return;
+    if (!(await confirmAction(t('shipping.deleteShippingMethod'), t('shipping.methodtitleWillBeRemovedFromThis', { methodTitle: String(m.methodTitle) }), t('common.delete'), true))) return;
     try {
       await shippingMethodService.remove(m.id);
-      toast('Shipping method deleted');
+      toast(t('shipping.shippingMethodDeleted'));
       all.reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -112,35 +114,35 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
       >
         <View style={styles.head}>
           <View style={styles.flex}>
-            <Badge label={on ? 'Active' : 'Inactive'} tone={on ? 'green' : 'slate'} />
-            <Text style={[opsStyles.meta, styles.count]}>{`${methods.length} shipping method${methods.length === 1 ? '' : 's'}`}</Text>
+            <Badge label={on ? t('common.active') : t('common.inactive')} tone={on ? 'green' : 'slate'} />
+            <Text style={[opsStyles.meta, styles.count]}>{t('shipping.shippingMethodCount', { count: methods.length })}</Text>
           </View>
           <Pressable accessibilityRole="button" onPress={toggleZone} style={opsStyles.smallBtn}>
             {on ? <BanIcon size={14} color={colors.text} /> : <CheckCircleIcon size={14} color={colors.text} />}
-            <Text style={opsStyles.smallBtnText}>{on ? 'Deactivate' : 'Activate'}</Text>
+            <Text style={opsStyles.smallBtnText}>{on ? t('common.deactivate') : t('common.activate')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Edit zone" onPress={() => navigation.navigate('ShippingZoneForm', { id })} style={opsStyles.smallBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('shipping.editZone')} onPress={() => navigation.navigate('ShippingZoneForm', { id })} style={opsStyles.smallBtn}>
             <EditIcon size={14} color={colors.text} />
-            <Text style={opsStyles.smallBtnText}>Edit</Text>
+            <Text style={opsStyles.smallBtnText}>{t('common.edit')}</Text>
           </Pressable>
         </View>
 
-        <SectionCard icon={TruckIcon} title="Details">
-          <Detail label="Slug" value={String(z.zoneSlug ?? '')} />
-          <Detail label="Covered States" value={coveredLabel(z.coveredStates)} />
-          <Detail label="Created" value={formatDay(z.createdAt)} />
-          <Detail label="Updated" value={formatDay(z.updatedAt)} />
+        <SectionCard icon={TruckIcon} title={t('common.details')}>
+          <Detail label={t('common.slug')} value={String(z.zoneSlug ?? '')} />
+          <Detail label={t('shipping.coveredStates')} value={coveredLabel(z.coveredStates)} />
+          <Detail label={t('common.created')} value={formatDay(z.createdAt)} />
+          <Detail label={t('common.updated')} value={formatDay(z.updatedAt)} />
           {z.description ? <Text style={opsStyles.meta}>{String(z.description)}</Text> : null}
         </SectionCard>
 
         <SectionCard
           icon={ClockIcon}
-          title="Shipping Methods"
-          subtitle="Each method can use a fixed, per-kg, or order-percentage rate."
+          title={t('shipping.shippingMethods')}
+          subtitle={t('shipping.eachMethodCanUseAFixed')}
           action={
-            <Pressable accessibilityRole="button" accessibilityLabel="Add method" onPress={() => setEditing('new')} style={styles.add}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('shipping.addMethod')} onPress={() => setEditing('new')} style={styles.add}>
               <PlusIcon size={14} color={colors.white} strokeWidth={2.4} />
-              <Text style={styles.addText}>Add</Text>
+              <Text style={styles.addText}>{t('common.add')}</Text>
             </Pressable>
           }
         >
@@ -155,22 +157,22 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
                       <Text style={opsStyles.title}>{String(m.methodTitle)}</Text>
                       <Text style={opsStyles.muted}>{String(m.methodSlug ?? '')}</Text>
                     </View>
-                    <Badge label={mOn ? 'Active' : 'Inactive'} tone={mOn ? 'green' : 'slate'} />
+                    <Badge label={mOn ? t('common.active') : t('common.inactive')} tone={mOn ? 'green' : 'slate'} />
                   </View>
                   <View style={styles.facts}>
-                    <Fact label="Rate" value={rateLabel(m)} strong />
-                    <Fact label="Free above" value={m.freeAboveOrderValue ? `₹${Number(m.freeAboveOrderValue).toLocaleString('en-IN')}` : '—'} />
-                    <Fact label="Delivery" value={eta ?? '—'} />
+                    <Fact label={t('shipping.rate')} value={rateLabel(m)} strong />
+                    <Fact label={t('shipping.freeAbove')} value={m.freeAboveOrderValue ? `₹${Number(m.freeAboveOrderValue).toLocaleString('en-IN')}` : '—'} />
+                    <Fact label={t('common.delivery')} value={eta ?? '—'} />
                   </View>
                   <View style={styles.methodActions}>
-                    <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${String(m.methodTitle)}`} onPress={() => setEditing(m)} style={[opsStyles.smallBtn, styles.grow]}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('shipping.editMethodtitle', { methodTitle: String(m.methodTitle) })} onPress={() => setEditing(m)} style={[opsStyles.smallBtn, styles.grow]}>
                       <EditIcon size={13} color={colors.text} />
-                      <Text style={opsStyles.smallBtnText}>Edit</Text>
+                      <Text style={opsStyles.smallBtnText}>{t('common.edit')}</Text>
                     </Pressable>
                     <Pressable accessibilityRole="button" accessibilityLabel={`${mOn ? 'Deactivate' : 'Activate'} ${String(m.methodTitle)}`} onPress={() => toggleMethod(m)} style={[opsStyles.smallBtn, styles.grow]}>
-                      <Text style={opsStyles.smallBtnText}>{mOn ? 'Deactivate' : 'Activate'}</Text>
+                      <Text style={opsStyles.smallBtnText}>{mOn ? t('common.deactivate') : t('common.activate')}</Text>
                     </Pressable>
-                    <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${String(m.methodTitle)}`} onPress={() => removeMethod(m)} style={opsStyles.smallBtn}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('shipping.deleteMethodtitle', { methodTitle: String(m.methodTitle) })} onPress={() => removeMethod(m)} style={opsStyles.smallBtn}>
                       <TrashIcon size={14} color={colors.error} />
                     </Pressable>
                   </View>
@@ -179,8 +181,8 @@ export function ShippingZoneScreen({ navigation, route }: ScreenProps<'ShippingZ
             })
           ) : (
             <View style={styles.empty}>
-              <Text style={[opsStyles.muted, styles.center]}>No shipping methods yet — add the first one.</Text>
-              <Button title="Add Shipping Method" onPress={() => setEditing('new')} />
+              <Text style={[opsStyles.muted, styles.center]}>{t('shipping.noShippingMethodsYetAddThe')}</Text>
+              <Button title={t('shipping.addShippingMethod')} onPress={() => setEditing('new')} />
             </View>
           )}
         </SectionCard>
@@ -213,6 +215,7 @@ function Fact({ label, value, strong }: { label: string; value: string; strong?:
 
 /** Add or edit one shipping method of the zone. */
 function MethodSheet({ visible, zoneId, method, onClose, onSaved }: { visible: boolean; zoneId: string; method: Row | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState<MethodForm>(EMPTY_METHOD);
   // The slug follows the title until it's typed in by hand.
@@ -237,7 +240,7 @@ function MethodSheet({ visible, zoneId, method, onClose, onSaved }: { visible: b
       const payload = methodPayload(form, zoneId);
       if (method) await shippingMethodService.update(method.id, { ...payload, status: Number(form.status) });
       else await shippingMethodService.create(payload);
-      toast(method ? 'Shipping method updated' : 'Shipping method added');
+      toast(method ? t('shipping.shippingMethodUpdated') : t('shipping.shippingMethodAdded'));
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -248,17 +251,17 @@ function MethodSheet({ visible, zoneId, method, onClose, onSaved }: { visible: b
 
   const rate = RATE_TYPES.find(r => r.value === form.rateType)!;
   return (
-    <Sheet visible={visible} title={method ? 'Edit Shipping Method' : 'Add Shipping Method'} onClose={onClose} footer={<Button title={method ? 'Save Changes' : 'Add Method'} loading={saving} onPress={save} />}>
-      <Field label="Method Title" required>
+    <Sheet visible={visible} title={method ? t('shipping.editShippingMethod') : t('shipping.addShippingMethod')} onClose={onClose} footer={<Button title={method ? t('common.saveChanges') : t('shipping.addMethod2')} loading={saving} onPress={save} />}>
+      <Field label={t('shipping.methodTitle')} required>
         <Input
           value={form.methodTitle}
           onChangeText={v => setForm(f => ({ ...f, methodTitle: v, methodSlug: slugTouched ? f.methodSlug : slugify(v) }))}
           placeholder="e.g. Standard Delivery"
           maxLength={255}
-          accessibilityLabel="Method Title"
+          accessibilityLabel={t('shipping.methodTitle')}
         />
       </Field>
-      <Field label="Slug" required>
+      <Field label={t('common.slug')} required>
         <Input
           value={form.methodSlug}
           onChangeText={v => {
@@ -267,36 +270,36 @@ function MethodSheet({ visible, zoneId, method, onClose, onSaved }: { visible: b
           }}
           autoCapitalize="none"
           maxLength={255}
-          accessibilityLabel="Method Slug"
+          accessibilityLabel={t('shipping.methodSlug')}
         />
       </Field>
-      <Field label="Rate Type" hint={rate.hint}>
+      <Field label={t('shipping.rateType')} hint={rate.hint}>
         <Choices options={RATE_TYPES.map(r => ({ value: r.value, label: r.label }))} value={form.rateType} onChange={v => set('rateType', v as RateType)} />
       </Field>
-      <Field label={form.rateType === 'PERCENTAGE_OF_ORDER' ? 'Rate (%)' : form.rateType === 'PER_KG' ? 'Rate (₹ per kg)' : 'Rate (₹)'} required>
-        <Input value={form.rate} onChangeText={v => set('rate', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" placeholder="49.00" accessibilityLabel="Rate" />
+      <Field label={form.rateType === 'PERCENTAGE_OF_ORDER' ? t('shipping.ratePercent') : form.rateType === 'PER_KG' ? t('shipping.rateRsPerKg') : t('shipping.rateRs')} required>
+        <Input value={form.rate} onChangeText={v => set('rate', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" placeholder="49.00" accessibilityLabel={t('shipping.rate')} />
       </Field>
-      <Field label="Free Above Order Value (₹)" hint="Orders worth this or more ship free. Leave empty for none.">
-        <Input value={form.freeAboveOrderValue} onChangeText={v => set('freeAboveOrderValue', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" placeholder="999.00" accessibilityLabel="Free Above" />
+      <Field label={t('shipping.freeAboveOrderValueRs')} hint={t('shipping.ordersWorthThisOrMoreShip')}>
+        <Input value={form.freeAboveOrderValue} onChangeText={v => set('freeAboveOrderValue', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" placeholder="999.00" accessibilityLabel={t('shipping.freeAbove2')} />
       </Field>
       <View style={styles.row}>
         <View style={styles.flex}>
-          <Field label="Min Days">
-            <Input value={form.estimatedDaysMin} onChangeText={v => set('estimatedDaysMin', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="3" accessibilityLabel="Min Days" />
+          <Field label={t('shipping.minDays')}>
+            <Input value={form.estimatedDaysMin} onChangeText={v => set('estimatedDaysMin', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="3" accessibilityLabel={t('shipping.minDays')} />
           </Field>
         </View>
         <View style={styles.flex}>
-          <Field label="Max Days">
-            <Input value={form.estimatedDaysMax} onChangeText={v => set('estimatedDaysMax', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="5" accessibilityLabel="Max Days" />
+          <Field label={t('shipping.maxDays')}>
+            <Input value={form.estimatedDaysMax} onChangeText={v => set('estimatedDaysMax', v.replace(/\D/g, ''))} keyboardType="number-pad" placeholder="5" accessibilityLabel={t('shipping.maxDays')} />
           </Field>
         </View>
       </View>
       {method ? (
-        <Field label="Status">
+        <Field label={t('common.status')}>
           <Choices
             options={[
-              { value: '1', label: 'Active' },
-              { value: '0', label: 'Inactive' },
+              { value: '1', label: t('common.active') },
+              { value: '0', label: t('common.inactive') },
             ]}
             value={form.status}
             onChange={v => set('status', v)}

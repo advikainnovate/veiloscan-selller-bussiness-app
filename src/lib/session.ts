@@ -14,6 +14,8 @@ export interface SessionUser {
   lastName?: string;
   email?: string;
   userType?: string;
+  /** The interface language saved on the account ('en' | 'hi'); null until chosen. */
+  preferredLanguage?: string | null;
   [key: string]: unknown;
 }
 

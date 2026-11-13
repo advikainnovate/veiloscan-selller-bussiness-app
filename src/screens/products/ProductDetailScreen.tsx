@@ -34,16 +34,18 @@ import { MeasuresSheet, SeoSheet, TagEditor } from '../../components/products/Pr
 import { ShareProductSheet } from '../../components/products/ShareProduct';
 import { BanIcon, BoxIcon, CheckCircleIcon, CheckIcon, CopyIcon, EditIcon, FileTextIcon, ShareIcon, TrashIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'variants', label: 'Variants' },
-  { value: 'inventory', label: 'Inventory' },
-  { value: 'specifications', label: 'Specifications' },
-  { value: 'measurements', label: 'Measurements' },
+  { value: 'overview', get label() { return i18n.t('common.overview'); } },
+  { value: 'variants', get label() { return i18n.t('products.variants'); } },
+  { value: 'inventory', get label() { return i18n.t('common.inventory'); } },
+  { value: 'specifications', get label() { return i18n.t('products.specifications'); } },
+  { value: 'measurements', get label() { return i18n.t('products.measurements'); } },
   { value: 'seo', label: 'SEO' },
-  { value: 'media', label: 'Media' },
-  { value: 'activity', label: 'Activity' },
+  { value: 'media', get label() { return i18n.t('products.media'); } },
+  { value: 'activity', get label() { return i18n.t('common.activity'); } },
 ] as const;
 type Tab = (typeof TABS)[number]['value'];
 
@@ -54,15 +56,16 @@ const BANNER_TONE: Record<ProductStageKey, { bg: string; border: string; fg: str
   published: { bg: '#ecfdf5', border: '#a7f3d0', fg: '#047857' },
   unpublished: { bg: '#f8fafc', border: '#e2e8f0', fg: '#475569' },
 };
-const FLOW = ['Draft', 'In Review', 'Approved', 'Published'];
+const FLOW = ['products.flowDraft', 'products.flowInReview', 'products.flowApproved', 'products.flowPublished'] as const;
 const flowIndex = (key: ProductStageKey) => (key === 'published' ? 3 : key === 'unpublished' ? 2 : key === 'in_review' ? 1 : 0);
 
 const forProduct = (rows: Row[] | undefined, id: string) => (rows ?? []).filter(r => r.productId === id);
 const text = (v: unknown) => (v === null || v === undefined || v === '' ? null : String(v));
-const yesNo = (v: unknown) => (v === null || v === undefined ? null : v ? 'Yes' : 'No');
+const yesNo = (v: unknown) => (v === null || v === undefined ? null : v ? i18n.t('common.yes') : i18n.t('common.no'));
 
 /** One product, as the Seller Panel's product page: status, details, SKUs, stock, specs, media and activity. */
 export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const allowed = hasPermission('products-master:manage');
@@ -113,15 +116,15 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Product" onBack={navigation.goBack} />
-        <ComingSoon label="Products" icon={BoxIcon} allowed={false} />
+        <AppHeader title={t('common.product')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.products')} icon={BoxIcon} allowed={false} />
       </View>
     );
   }
   if (record.loading || (!record.data && !record.error)) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Product" onBack={navigation.goBack} />
+        <AppHeader title={t('common.product')} onBack={navigation.goBack} />
         <View style={styles.content}>
           <ListSkeleton rows={4} height={120} />
         </View>
@@ -131,8 +134,8 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
   if (!record.data) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Product" onBack={navigation.goBack} />
-        <ErrorState message={record.error ?? 'Product not found.'} onRetry={() => record.reload()} />
+        <AppHeader title={t('common.product')} onBack={navigation.goBack} />
+        <ErrorState message={record.error ?? t('products.productNotFound')} onRetry={() => record.reload()} />
       </View>
     );
   }
@@ -151,8 +154,8 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
     }
     return titles.join(' › ') || '—';
   })();
-  const brand = p.brandId ? String((brands.data ?? []).find(b => b.id === p.brandId)?.title ?? '—') : 'No brand';
-  const productType = skus.length > 1 || skus.some(s => s.options.length > 0) ? 'Variable product' : 'Simple product';
+  const brand = p.brandId ? String((brands.data ?? []).find(b => b.id === p.brandId)?.title ?? '—') : t('products.noBrand');
+  const productType = skus.length > 1 || skus.some(s => s.options.length > 0) ? t('products.variableProduct') : t('products.simpleProduct');
 
   // Pricing: the cheapest SKU's price, with its MRP and cost.
   const cheapest = skus.length ? skus.reduce((a, b) => (b.sellingPrice < a.sellingPrice ? b : a)) : null;
@@ -171,7 +174,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
     setSubmitting(true);
     try {
       await productsService.submitForApproval(id);
-      toast('Product submitted for approval');
+      toast(t('products.productSubmittedForApproval'));
       await reloadAll();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -186,7 +189,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
 
   return (
     <View style={styles.screen}>
-      <AppHeader title={name} subtitle={`SKU ${text(p.skuItemNumber) ?? '—'} · ${productType}`} onBack={navigation.goBack} />
+      <AppHeader title={name} subtitle={t('products.skuCountProducttype', { count: text(p.skuItemNumber) ?? '—', productType })} onBack={navigation.goBack} />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={record.refreshing} onRefresh={() => reloadAll(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
@@ -196,7 +199,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
           <Gallery urls={gallery} badges={<>
             <Badge label={stage.label} tone={stage.tone} />
             {canPublish(p) || stage.key === 'published' || stage.key === 'unpublished' ? (
-              <Badge label={Number(p.status) === 1 ? 'Active' : 'Inactive'} tone={Number(p.status) === 1 ? 'green' : 'slate'} />
+              <Badge label={Number(p.status) === 1 ? t('common.active') : t('common.inactive')} tone={Number(p.status) === 1 ? 'green' : 'slate'} />
             ) : null}
           </>} />
           <View style={styles.heroBody}>
@@ -209,39 +212,40 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
               {cheapest?.mrp && cheapest.mrp > cheapest.sellingPrice ? (
                 <>
                   <Text style={styles.mrp}>{formatRupees(cheapest.mrp)}</Text>
-                  <Text style={styles.off}>{`${Math.round(((cheapest.mrp - cheapest.sellingPrice) / cheapest.mrp) * 100)}% off`}</Text>
+                  <Text style={styles.off}>{t('products.roundPercentOff', { round: Math.round(((cheapest.mrp - cheapest.sellingPrice) / cheapest.mrp) * 100) })}</Text>
                 </>
               ) : null}
             </View>
-            {skus.length > 1 ? <Text style={styles.from}>{`Lowest of ${skus.length} SKUs`}</Text> : null}
+            {skus.length > 1 ? <Text style={styles.from}>{t('products.lowestOfSkuscountSkus', { skusCount: skus.length })}</Text> : null}
             <View style={styles.chips}>
-              {margin !== null ? <Text style={[styles.chip, styles.chipGood]}>{`Margin ${margin.toFixed(1)}%`}</Text> : null}
-              {cheapest?.costPrice ? <Text style={styles.chip}>{`Cost ${formatRupees(cheapest.costPrice)}`}</Text> : null}
+              {margin !== null ? <Text style={[styles.chip, styles.chipGood]}>{t('products.marginFixedPercent', { fixed: margin.toFixed(1) })}</Text> : null}
+              {cheapest?.costPrice ? <Text style={styles.chip}>{t('products.costCostprice', { costPrice: formatRupees(cheapest.costPrice) })}</Text> : null}
               <Text style={styles.chip}>{productType}</Text>
             </View>
           </View>
           <View style={styles.stock}>
-            <StockStat label="Available" value={formatNumber(totals.available)} color={totals.available > 0 ? '#047857' : colors.error} />
+            <StockStat label={t('common.available')} value={formatNumber(totals.available)} color={totals.available > 0 ? '#047857' : colors.error} />
             <View style={styles.stockDivider} />
-            <StockStat label="Reserved" value={formatNumber(totals.reserved)} color={colors.text} />
+            <StockStat label={t('common.reserved')} value={formatNumber(totals.reserved)} color={colors.text} />
             <View style={styles.stockDivider} />
-            <StockStat label="Out of stock" value={`${totals.outOfStock} SKU${totals.outOfStock === 1 ? '' : 's'}`} color={totals.outOfStock ? colors.error : colors.textSecondary} />
+            <StockStat label={t('common.outOfStock2')} value={t('common.skuCount', { count: totals.outOfStock })} color={totals.outOfStock ? colors.error : colors.textSecondary} />
           </View>
         </View>
 
         {/* Where it is in the approval workflow */}
         <View style={[styles.card, { borderColor: tone.border }, styles.approval]}>
           <View style={styles.approvalHead}>
-            <Text style={styles.cardTitle}>Approval</Text>
+            <Text style={styles.cardTitle}>{t('products.approval')}</Text>
             {stageDate ? (
               <Text style={styles.metaSmall}>
-                {stage.key === 'in_review' ? 'Submitted' : 'Reviewed'} {formatWhen(stageDate)}
+                {stage.key === 'in_review' ? t('products.submitted') : t('products.reviewed')} {formatWhen(stageDate)}
               </Text>
             ) : null}
           </View>
           {stage.key !== 'changes_required' ? (
             <View style={styles.steps}>
-              {FLOW.map((label, i) => {
+              {FLOW.map((labelKey, i) => {
+                const label = t(labelKey);
                 const at = flowIndex(stage.key);
                 const done = i < at || stage.key === 'published';
                 const current = i === at && stage.key !== 'published';
@@ -260,7 +264,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
           <Text style={[styles.bannerText, { color: tone.fg }]}>{stage.description}</Text>
           {remarks ? (
             <View style={[styles.remarks, { backgroundColor: tone.bg }]}>
-              <Text style={styles.remarksLabel}>Reviewer note</Text>
+              <Text style={styles.remarksLabel}>{t('products.reviewerNote')}</Text>
               <Text style={styles.remarksText}>{remarks}</Text>
             </View>
           ) : null}
@@ -268,7 +272,7 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
             <>
               {issues.length ? (
                 <View style={styles.issues}>
-                  <Text style={styles.issuesTitle}>Before you submit:</Text>
+                  <Text style={styles.issuesTitle}>{t('products.beforeYouSubmit')}</Text>
                   {issues.map(issue => (
                     <Text key={issue} style={styles.issue}>
                       • {issue}
@@ -276,10 +280,10 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
                   ))}
                 </View>
               ) : check.data?.ready ? (
-                <Text style={styles.ready}>✓ Ready to submit</Text>
+                <Text style={styles.ready}>{t('products.readyToSubmit')}</Text>
               ) : null}
               <Button
-                title={stage.key === 'changes_required' ? 'Resubmit for approval' : 'Submit for approval'}
+                title={stage.key === 'changes_required' ? t('products.resubmitForApproval') : t('products.submitForApproval')}
                 loading={submitting}
                 disabled={issues.length > 0}
                 onPress={submit}
@@ -291,18 +295,18 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
 
         {/* Quick actions */}
         <View style={styles.quick}>
-          <QuickAction icon={ShareIcon} label="Share" onPress={() => setEditing('share')} />
-          <QuickAction icon={CopyIcon} label="Duplicate" onPress={() => actions.duplicate({ id, productName: name })} />
+          <QuickAction icon={ShareIcon} label={t('common.share')} onPress={() => setEditing('share')} />
+          <QuickAction icon={CopyIcon} label={t('common.duplicate')} onPress={() => actions.duplicate({ id, productName: name })} />
           {canPublish(p) ? (
             <QuickAction
               icon={Number(p.status) === 1 ? BanIcon : CheckCircleIcon}
-              label={Number(p.status) === 1 ? 'Deactivate' : 'Activate'}
+              label={Number(p.status) === 1 ? t('common.deactivate') : t('common.activate')}
               onPress={() => actions.toggleStatus({ id, productName: name, status: p.status })}
             />
           ) : null}
           <QuickAction
             icon={TrashIcon}
-            label="Delete"
+            label={t('common.delete')}
             danger
             onPress={async () => {
               await actions.remove({ id, productName: name });
@@ -314,16 +318,16 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
 
         {tab === 'overview' ? (
           <>
-            <Card title="Details">
-              <InfoRow label="Category" value={categoryPath} />
-              <InfoRow label="Brand" value={brand} />
-              <InfoRow label="Type" value={productType} />
+            <Card title={t('common.details')}>
+              <InfoRow label={t('common.category')} value={categoryPath} />
+              <InfoRow label={t('common.brand')} value={brand} />
+              <InfoRow label={t('common.type')} value={productType} />
               <InfoRow label="SKUs" value={String(skus.length)} />
-              <Text style={styles.tagsLabel}>Tags</Text>
+              <Text style={styles.tagsLabel}>{t('products.tags')}</Text>
               <TagEditor productId={id} tags={productTags} onChange={() => tags.reload()} />
             </Card>
             {text(p.productShortDescription) || text(p.productLongDescription) ? (
-              <Card title="Description">
+              <Card title={t('common.description')}>
                 {text(p.productShortDescription) ? <Text style={styles.short}>{htmlToText(text(p.productShortDescription))}</Text> : null}
                 {text(p.productLongDescription) ? <Text style={styles.long}>{htmlToText(text(p.productLongDescription))}</Text> : null}
               </Card>
@@ -351,18 +355,18 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
                       {s.barcode ? ` · ${s.barcode}` : ''}
                     </Text>
                   </View>
-                  <Badge label={s.status === 1 ? 'On sale' : 'Hidden'} tone={s.status === 1 ? 'green' : 'slate'} />
+                  <Badge label={s.status === 1 ? t('products.onSale') : t('products.hidden')} tone={s.status === 1 ? 'green' : 'slate'} />
                 </View>
                 <View style={styles.skuPrices}>
-                  <Price label="Price" value={formatRupees(s.sellingPrice)} />
+                  <Price label={t('common.price')} value={formatRupees(s.sellingPrice)} />
                   <Price label="MRP" value={s.mrp ? formatRupees(s.mrp) : '—'} />
-                  <Price label="Cost" value={s.costPrice ? formatRupees(s.costPrice) : '—'} />
-                  <Price label="Stock" value={formatNumber(s.stock)} tone={s.stock <= 0 ? colors.error : undefined} />
+                  <Price label={t('common.cost')} value={s.costPrice ? formatRupees(s.costPrice) : '—'} />
+                  <Price label={t('common.stock')} value={formatNumber(s.stock)} tone={s.stock <= 0 ? colors.error : undefined} />
                 </View>
               </Card>
             ))
           ) : (
-            <Empty text="No SKUs yet. Add variants from Edit product." />
+            <Empty text={t('products.noSkusYetAddVariantsFrom')} />
           )
         ) : null}
 
@@ -375,36 +379,35 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
                     <View key={r.warehouseId} style={styles.invRow}>
                       <Text style={styles.invWarehouse}>{r.warehouseTitle}</Text>
                       <Text style={styles.invNumbers}>
-                        {formatNumber(r.availableStock)} available · {formatNumber(r.reservedStock)} reserved
-                        {r.minimumStock ? ` · min ${formatNumber(r.minimumStock)}` : ''}
+                        {[t('products.availableCount', { count: formatNumber(r.availableStock) }), t('products.reservedCount', { count: formatNumber(r.reservedStock) }), r.minimumStock ? t('products.minimumCount', { count: formatNumber(r.minimumStock) }) : null].filter(Boolean).join(' · ')}
                       </Text>
                     </View>
                   ))
                 ) : (
-                  <Text style={styles.muted}>No stock recorded.</Text>
+                  <Text style={styles.muted}>{t('products.noStockRecorded')}</Text>
                 )}
               </Card>
             ))
           ) : (
-            <Empty text="No SKUs yet." />
+            <Empty text={t('products.noSkusYet')} />
           )
         ) : null}
 
         {tab === 'specifications' ? (
           <>
             {(specs.data ?? []).length ? (
-              <Card title="Product specifications">
+              <Card title={t('products.productSpecifications')}>
                 {(specs.data ?? []).map(sv => (
                   <InfoRow key={sv.specificationId} label={sv.title} value={sv.value ?? sv.options.map(o => o.title).join(', ') ?? '—'} />
                 ))}
               </Card>
             ) : (
-              <Empty text="No specifications yet. Add them from Edit product." />
+              <Empty text={t('products.noSpecificationsYetAddThemFrom')} />
             )}
             {(variantSpecs.data ?? [])
               .filter(v => v.values.length)
               .map(v => (
-                <Card key={v.variantId} title={`${v.sku} overrides`}>
+                <Card key={v.variantId} title={t('products.skuOverrides', { sku: v.sku })}>
                   {v.values.map(sv => (
                     <InfoRow key={sv.specificationId} label={sv.title} value={sv.value ?? sv.options.map(o => o.title).join(', ')} />
                   ))}
@@ -414,30 +417,30 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
         ) : null}
 
         {tab === 'measurements' ? (
-          <Card title="Measurements" action={<Edit onPress={() => setEditing('measures')} />}>
+          <Card title={t('products.measurements')} action={<Edit onPress={() => setEditing('measures')} />}>
             {measures ? (
               <>
-                <InfoRow label="Product (L × W × H)" value={dims(measures, 'product')} />
-                <InfoRow label="Product weight" value={weight(measures, 'product')} />
-                <InfoRow label="Package (L × W × H)" value={dims(measures, 'package')} />
-                <InfoRow label="Package weight" value={weight(measures, 'package')} />
-                <InfoRow label="Items in a package" value={text(measures.packageQuantity) ?? '—'} />
-                <InfoRow label="Condition" value={`${text(measures.itemCondition) ?? '—'}${text(measures.itemConditionNote) ? ` · ${text(measures.itemConditionNote)}` : ''}`} />
+                <InfoRow label={t('products.productLWH')} value={dims(measures, 'product')} />
+                <InfoRow label={t('products.productWeight')} value={weight(measures, 'product')} />
+                <InfoRow label={t('products.packageLWH')} value={dims(measures, 'package')} />
+                <InfoRow label={t('products.packageWeight')} value={weight(measures, 'package')} />
+                <InfoRow label={t('products.itemsInAPackage')} value={text(measures.packageQuantity) ?? '—'} />
+                <InfoRow label={t('common.condition')} value={`${text(measures.itemCondition) ?? '—'}${text(measures.itemConditionNote) ? ` · ${text(measures.itemConditionNote)}` : ''}`} />
               </>
             ) : (
-              <Text style={styles.muted}>No measurements yet.</Text>
+              <Text style={styles.muted}>{t('products.noMeasurementsYet')}</Text>
             )}
           </Card>
         ) : null}
 
         {tab === 'seo' ? (
           <Card title="SEO" action={<Edit onPress={() => setEditing('seo')} />}>
-            <InfoRow label="Meta title" value={text(p.metaTitle) ?? '—'} />
-            <InfoRow label="Meta description" value={text(p.metaDescription) ?? '—'} />
-            <InfoRow label="Share title" value={text(seo?.ogTitle) ?? '—'} />
-            <InfoRow label="Share description" value={text(seo?.ogDescription) ?? '—'} />
-            <InfoRow label="Canonical URL" value={text(seo?.canonicalUrl) ?? '—'} />
-            <InfoRow label="Search engines" value={`${seo?.robotsIndex === false ? 'No index' : 'Index'} · ${seo?.robotsFollow === false ? 'No follow' : 'Follow'}`} />
+            <InfoRow label={t('products.metaTitle')} value={text(p.metaTitle) ?? '—'} />
+            <InfoRow label={t('products.metaDescription')} value={text(p.metaDescription) ?? '—'} />
+            <InfoRow label={t('products.shareTitle')} value={text(seo?.ogTitle) ?? '—'} />
+            <InfoRow label={t('products.shareDescription')} value={text(seo?.ogDescription) ?? '—'} />
+            <InfoRow label={t('products.canonicalUrl')} value={text(seo?.canonicalUrl) ?? '—'} />
+            <InfoRow label={t('products.searchEngines')} value={`${seo?.robotsIndex === false ? 'No index' : 'Index'} · ${seo?.robotsFollow === false ? 'No follow' : 'Follow'}`} />
           </Card>
         ) : null}
 
@@ -450,12 +453,12 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
         ) : null}
 
         {tab === 'activity' ? (
-          <Card title="Activity">
+          <Card title={t('common.activity')}>
             {[
-              { label: 'Product created', at: p.createdAt },
-              p.submittedAt ? { label: 'Submitted for approval', at: p.submittedAt } : null,
-              p.reviewedAt ? { label: p.approvalStatus === 'CHANGES_REQUIRED' ? 'Changes requested' : 'Approved', at: p.reviewedAt } : null,
-              p.updatedAt && p.updatedAt !== p.createdAt ? { label: 'Product updated', at: p.updatedAt } : null,
+              { label: t('products.productCreated'), at: p.createdAt },
+              p.submittedAt ? { label: t('common.submittedForApproval'), at: p.submittedAt } : null,
+              p.reviewedAt ? { label: p.approvalStatus === 'CHANGES_REQUIRED' ? t('common.changesRequested') : t('common.approved'), at: p.reviewedAt } : null,
+              p.updatedAt && p.updatedAt !== p.createdAt ? { label: t('products.productUpdated'), at: p.updatedAt } : null,
             ]
               .filter((e): e is { label: string; at: unknown } => !!e && !!e.at)
               .sort((a, b) => new Date(String(b.at)).getTime() - new Date(String(a.at)).getTime())
@@ -474,10 +477,10 @@ export function ProductDetailScreen({ navigation, route }: ScreenProps<'ProductD
 
       {/* Editing is the main thing to do here: always in reach */}
       <View style={[styles.bar, { paddingBottom: insets.bottom + 12 }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Share" onPress={() => setEditing('share')} style={({ pressed }) => [styles.barIcon, pressed && styles.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.share')} onPress={() => setEditing('share')} style={({ pressed }) => [styles.barIcon, pressed && styles.pressed]}>
           <ShareIcon size={20} color={colors.text} />
         </Pressable>
-        <Button title="Edit product" icon={<EditIcon size={18} color={colors.white} />} onPress={() => navigation.navigate('ProductEditor', { id })} style={styles.flex} />
+        <Button title={t('products.editProduct')} icon={<EditIcon size={18} color={colors.white} />} onPress={() => navigation.navigate('ProductEditor', { id })} style={styles.flex} />
       </View>
 
       <MeasuresSheet
@@ -518,76 +521,77 @@ function weight(m: Row, prefix: 'product' | 'package') {
 
 /** Every product field the Seller Panel's Product Information panel shows, grouped. */
 function ProductInformation({ record: p }: { record: Row }) {
+  const { t } = useTranslation();
   const groups: { title: string; rows: [string, string | null][] }[] = [
     {
-      title: 'Identity',
+      title: t('products.identity'),
       rows: [
-        ['Product ID', text(p.idd)],
-        ['Slug', text(p.productSlug)],
-        ['ID type', text(p.productIdType)],
-        ['Manufacturer', text(p.manufacturer)],
-        ['Country of origin', text(p.countryOfOrigin)],
+        [t('products.productId'), text(p.idd)],
+        [t('common.slug'), text(p.productSlug)],
+        [t('products.idType'), text(p.productIdType)],
+        [t('common.manufacturer'), text(p.manufacturer)],
+        [t('products.countryOfOrigin'), text(p.countryOfOrigin)],
       ],
     },
-    { title: 'Tax', rows: [['HSN code', text(p.hsnCode)], ['GST', text(p.gstPercentage) ? `${text(p.gstPercentage)}%` : null]] },
+    { title: t('common.tax'), rows: [[t('products.hsnCode'), text(p.hsnCode)], ['GST', text(p.gstPercentage) ? `${text(p.gstPercentage)}%` : null]] },
     {
-      title: 'Ordering & delivery',
+      title: t('products.orderingAndDelivery'),
       rows: [
-        ['Minimum order quantity', text(p.minimumOrderQuantity)],
-        ['Maximum order quantity', text(p.maximumOrderQuantity)],
-        ['Fulfilment', text(p.fulfillmentType)],
-        ['Handling time', text(p.handlingTime)],
-        ['Shipping charge', text(p.shippingAmount) ? formatRupees(Number(p.shippingAmount)) : null],
-        ['Cash on delivery', yesNo(p.isCodAvailable)],
-      ],
-    },
-    {
-      title: 'Returns & warranty',
-      rows: [
-        ['Returnable', yesNo(p.isReturnable)],
-        ['Return period', text(p.returnPeriod)],
-        ['Warranty', text(p.warrantyPeriod)],
+        [t('products.minimumOrderQuantity'), text(p.minimumOrderQuantity)],
+        [t('products.maximumOrderQuantity'), text(p.maximumOrderQuantity)],
+        [t('products.fulfilment'), text(p.fulfillmentType)],
+        [t('products.handlingTime'), text(p.handlingTime)],
+        [t('products.shippingCharge'), text(p.shippingAmount) ? formatRupees(Number(p.shippingAmount)) : null],
+        [t('common.cashOnDelivery2'), yesNo(p.isCodAvailable)],
       ],
     },
     {
-      title: 'Gifting',
+      title: t('products.returnsAndWarranty'),
       rows: [
-        ['Can be a gift', yesNo(p.canBeGift)],
-        ['Gift wrap', yesNo(p.isGiftWrapAvailable)],
-        ['Gift wrap charge', text(p.giftWrapCharges) ? formatRupees(Number(p.giftWrapCharges)) : null],
+        [t('products.returnable'), yesNo(p.isReturnable)],
+        [t('products.returnPeriod'), text(p.returnPeriod)],
+        [t('products.warranty'), text(p.warrantyPeriod)],
       ],
     },
     {
-      title: 'Labels',
+      title: t('products.gifting'),
       rows: [
-        ['Featured', yesNo(p.isFeatured)],
-        ['New arrival', yesNo(p.isNewArrival)],
-        ['Best seller', yesNo(p.isBestSeller)],
-        ['Has expiry dates', yesNo(p.requiresExpiry)],
+        [t('products.canBeAGift'), yesNo(p.canBeGift)],
+        [t('products.giftWrap'), yesNo(p.isGiftWrapAvailable)],
+        [t('products.giftWrapCharge'), text(p.giftWrapCharges) ? formatRupees(Number(p.giftWrapCharges)) : null],
       ],
     },
     {
-      title: 'Sold in',
-      rows: [['Stores', p.storeScope === 'SPECIFIC_STORES' ? `${((p.storeIds as unknown[]) ?? []).length} selected stores` : 'All your stores']],
-    },
-    {
-      title: 'Highlights & search',
+      title: t('products.labels'),
       rows: [
-        ...[1, 2, 3, 4, 5].map(i => [`Highlight ${i}`, text(p[`productKeyFeature${i}`])] as [string, string | null]),
-        ['Search keywords', text(p.searchKeywords)],
-        ...[1, 2, 3, 4, 5].map(i => [`Search phrase ${i}`, text(p[`productSearchTerm${i}`])] as [string, string | null]),
+        [t('products.featured'), yesNo(p.isFeatured)],
+        [t('products.newArrival'), yesNo(p.isNewArrival)],
+        [t('products.bestSeller'), yesNo(p.isBestSeller)],
+        [t('products.hasExpiryDates'), yesNo(p.requiresExpiry)],
       ],
     },
     {
-      title: 'Policies',
+      title: t('products.soldIn'),
+      rows: [[t('common.stores'), p.storeScope === 'SPECIFIC_STORES' ? t('products.countcountSelectedStores', { countCount: ((p.storeIds as unknown[]) ?? []).length }) : t('products.allYourStores')]],
+    },
+    {
+      title: t('products.highlightsAndSearch'),
       rows: [
-        ['Terms & conditions', text(p.productTermsAndConditions)],
-        ['Legal disclaimer', text(p.legalDisclaimerDescription)],
+        ...[1, 2, 3, 4, 5].map(i => [t('products.highlightI', { i }), text(p[`productKeyFeature${i}`])] as [string, string | null]),
+        [t('products.searchKeywords'), text(p.searchKeywords)],
+        ...[1, 2, 3, 4, 5].map(i => [t('products.searchPhraseI', { i }), text(p[`productSearchTerm${i}`])] as [string, string | null]),
+      ],
+    },
+    {
+      title: t('products.policies'),
+      rows: [
+        [t('products.termsAndConditions'), text(p.productTermsAndConditions)],
+        [t('products.legalDisclaimer'), text(p.legalDisclaimerDescription)],
       ],
     },
   ];
   return (
-    <Card title="Product information">
+    <Card title={t('products.productInformation')}>
       {groups.map(group => {
         const rows = group.rows.filter(([, v]) => v);
         if (!rows.length) return null;
@@ -606,6 +610,7 @@ function ProductInformation({ record: p }: { record: Row }) {
 
 /** Photos, one per page, with dots; the badges sit on top. */
 function Gallery({ urls, badges }: { urls: string[]; badges: React.ReactNode }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const pageWidth = width - 32;
   const [page, setPage] = useState(0);
@@ -625,7 +630,7 @@ function Gallery({ urls, badges }: { urls: string[]; badges: React.ReactNode }) 
       ) : (
         <View style={[styles.galleryImg, styles.galleryEmpty]}>
           <BoxIcon size={36} color={colors.textMuted} />
-          <Text style={styles.metaSmall}>No photos yet</Text>
+          <Text style={styles.metaSmall}>{t('products.noPhotosYet')}</Text>
         </View>
       )}
       <View style={styles.galleryBadges}>{badges}</View>
@@ -664,9 +669,10 @@ function QuickAction({ icon: Icon, label, onPress, danger }: { icon: ComponentTy
 }
 
 function Edit({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={onPress} hitSlop={8}>
-      <Text style={styles.edit}>Edit</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('common.edit')} onPress={onPress} hitSlop={8}>
+      <Text style={styles.edit}>{t('common.edit')}</Text>
     </Pressable>
   );
 }

@@ -25,6 +25,7 @@ import { navigationRef, openMenuKey } from '../../navigation/navigationRef';
 import { ChevronDownIcon, ChevronRightIcon, CloseIcon, LockIcon, LogoutIcon, PlusIcon, StoreIcon } from '../icons';
 import { Avatar, displayName } from './Avatar';
 import { StorePickerSheet } from './StoreSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const markWhite = require('../../assets/brand/logo-mark-white.png');
 const { version } = require('../../../package.json');
@@ -37,6 +38,7 @@ const NAVY_LIGHT = '#0b2a55';
  * expandable children as on the web. `activeKey` is the page on screen.
  */
 export function AppDrawer({ activeKey }: { activeKey: string | null }) {
+  const { t: tr } = useTranslation();
   const { isOpen, close } = useDrawer();
   const { user, hasPermission, logout } = useAuth();
   const { stores, current: currentStore } = useStore();
@@ -100,10 +102,10 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
   }
 
   function confirmSignOut() {
-    NativeAlert.alert('Sign out?', 'You will need to sign in again to manage your store.', [
-      { text: 'Cancel', style: 'cancel' },
+    NativeAlert.alert(tr('common.signOut2'), tr('common.youWillNeedToSignIn'), [
+      { text: tr('common.cancel'), style: 'cancel' },
       {
-        text: 'Sign Out',
+        text: tr('common.signOut'),
         style: 'destructive',
         onPress: () => {
           close();
@@ -123,7 +125,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={isOpen ? 'auto' : 'none'}>
       <Animated.View style={[styles.backdrop, { opacity: progress }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close menu" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel={tr('layout.closeMenu')} />
       </Animated.View>
 
       <Animated.View
@@ -135,11 +137,11 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
           <Image source={markWhite} style={styles.mark} resizeMode="contain" />
           <View style={styles.flex}>
             <Text style={styles.brand}>
-              Veilo<Text style={styles.brandAccent}>Scan</Text>
+              {tr('common.veilo')}<Text style={styles.brandAccent}>{tr('common.scan')}</Text>
             </Text>
-            <Text style={styles.brandSub}>Seller Business</Text>
+            <Text style={styles.brandSub}>{tr('layout.sellerBusiness')}</Text>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close menu" hitSlop={10} onPress={close} style={styles.closeBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('layout.closeMenu')} hitSlop={10} onPress={close} style={styles.closeBtn}>
             <CloseIcon size={18} color="rgba(255,255,255,0.75)" />
           </Pressable>
         </View>
@@ -151,7 +153,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
               {displayName(user)}
             </Text>
             <Text style={styles.userMeta} numberOfLines={1}>
-              {user?.userType === 'SELLER_USER' ? 'Store staff' : 'Store owner'}
+              {user?.userType === 'SELLER_USER' ? tr('layout.storeStaff') : tr('layout.storeOwner')}
               {user?.email ? ` · ${user.email}` : ''}
             </Text>
           </View>
@@ -161,23 +163,23 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
         {currentStore ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={stores.length > 1 ? `Store: ${currentStore.name}. Switch store` : `Store: ${currentStore.name}. Manage store`}
+            accessibilityLabel={stores.length > 1 ? tr('layout.storeNameSwitchStore', { name: currentStore.name }) : tr('layout.storeNameManageStore', { name: currentStore.name })}
             onPress={() => setPickingStore(true)}
             style={({ pressed }) => [styles.storeRow, pressed && styles.pressed]}
           >
             <StoreIcon size={18} color="#ff8a33" />
             <View style={styles.flex}>
-              <Text style={styles.storeLabel}>{stores.length > 1 ? 'CURRENT STORE' : 'STORE'}</Text>
+              <Text style={styles.storeLabel}>{stores.length > 1 ? tr('layout.currentStore') : 'STORE'}</Text>
               <Text style={styles.storeName} numberOfLines={1}>
                 {currentStore.name}
               </Text>
             </View>
-            <Text style={styles.storeSwitch}>{stores.length > 1 ? 'Switch' : 'Manage'}</Text>
+            <Text style={styles.storeSwitch}>{stores.length > 1 ? tr('layout.switch') : tr('common.manage')}</Text>
           </Pressable>
         ) : hasPermission('stores:create') ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Set up store"
+            accessibilityLabel={tr('common.setUpStore')}
             onPress={() => {
               close();
               if (navigationRef.isReady()) navigationRef.navigate('CreateStore');
@@ -186,7 +188,7 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
           >
             <PlusIcon size={18} color="#ff8a33" />
             <View style={styles.flex}>
-              <Text style={styles.storeName}>Set up store</Text>
+              <Text style={styles.storeName}>{tr('common.setUpStore')}</Text>
             </View>
           </Pressable>
         ) : null}
@@ -218,9 +220,9 @@ export function AppDrawer({ activeKey }: { activeKey: string | null }) {
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable onPress={confirmSignOut} style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}>
             <LogoutIcon size={20} color="#ff8a33" />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={styles.signOutText}>{tr('common.signOut')}</Text>
           </Pressable>
-          <Text style={styles.version}>VeiloScan Business v{version}</Text>
+          <Text style={styles.version}>{tr('layout.veiloscanBusinessVVersion', { version })}</Text>
         </View>
       </Animated.View>
       <StorePickerSheet visible={pickingStore} onClose={() => setPickingStore(false)} onSwitched={close} />
@@ -245,6 +247,7 @@ function DrawerItem({
   onToggle: (next: boolean) => void;
   onOpen: (key: string) => void;
 }) {
+  const { t } = useTranslation();
   const children = item.children?.filter(c => !c.permission || hasPermission(c.permission)) ?? [];
   const childActive = children.some(c => c.key === activeKey);
   const onItem = item.key === activeKey || childActive;
@@ -268,7 +271,7 @@ function DrawerItem({
             {item.label}
           </Text>
           {locked ? (
-            <View accessible accessibilityLabel="Not included in your plan">
+            <View accessible accessibilityLabel={t('common.notIncludedInYourPlan')}>
               <LockIcon size={14} color="#94a3b8" />
             </View>
           ) : children.length ? (

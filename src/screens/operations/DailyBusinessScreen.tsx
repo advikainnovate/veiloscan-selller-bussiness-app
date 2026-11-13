@@ -10,7 +10,7 @@ import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { DateField } from '../../components/form/Fields';
 import { EmptyState, ErrorState } from '../../components/list/ListParts';
-import { NoData, OpsCard, opsStyles, PageTitle, Placeholder, PROFIT_HIDDEN, StatCard, StatGrid } from '../../components/operations/OpsParts';
+import { NoData, OpsCard, opsStyles, PageTitle, Placeholder, profitHidden, StatCard, StatGrid } from '../../components/operations/OpsParts';
 import {
   BarChartIcon,
   BoxIcon,
@@ -29,18 +29,21 @@ import {
   type IconProps,
 } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const EVENT: Record<TimelineEvent['type'], { label: string; icon: ComponentType<IconProps>; tone: [string, string] }> = {
-  ORDER: { label: 'Order', icon: ShoppingBagIcon, tone: ['#fff7ed', '#ea580c'] },
-  EXPENSE: { label: 'Expense', icon: WalletIcon, tone: ['#fef2f2', '#dc2626'] },
-  STOCK_RECEIVED: { label: 'Stock Received', icon: TruckIcon, tone: ['#ecfdf5', '#059669'] },
-  STOCK_ADJUSTED: { label: 'Stock Adjusted', icon: SlidersIcon, tone: ['#f1f5f9', '#475569'] },
-  NOTE: { label: 'Note Added', icon: ClipboardListIcon, tone: ['#f5f3ff', '#7c3aed'] },
-  CREDIT_PAYMENT: { label: 'Credit Collected', icon: CreditCardIcon, tone: ['#f0f9ff', '#0284c7'] },
+  ORDER: { get label() { return i18n.t('common.order'); }, icon: ShoppingBagIcon, tone: ['#fff7ed', '#ea580c'] },
+  EXPENSE: { get label() { return i18n.t('common.expense'); }, icon: WalletIcon, tone: ['#fef2f2', '#dc2626'] },
+  STOCK_RECEIVED: { get label() { return i18n.t('common.stockReceived'); }, icon: TruckIcon, tone: ['#ecfdf5', '#059669'] },
+  STOCK_ADJUSTED: { get label() { return i18n.t('operations.stockAdjusted'); }, icon: SlidersIcon, tone: ['#f1f5f9', '#475569'] },
+  NOTE: { get label() { return i18n.t('operations.noteAdded'); }, icon: ClipboardListIcon, tone: ['#f5f3ff', '#7c3aed'] },
+  CREDIT_PAYMENT: { get label() { return i18n.t('operations.creditCollected'); }, icon: CreditCardIcon, tone: ['#f0f9ff', '#0284c7'] },
 };
 
 /** Operations › Daily Business: everything that happened in the store on a day. */
 export function DailyBusinessScreen({ navigation }: ScreenProps<'DailyBusiness'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-operations:manage');
   const { current: store } = useStore();
@@ -52,15 +55,15 @@ export function DailyBusinessScreen({ navigation }: ScreenProps<'DailyBusiness'>
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Daily Business" onBack={navigation.goBack} />
-        <ComingSoon label="Daily Business" icon={CalendarIcon} allowed={false} />
+        <AppHeader title={t('common.dailyBusiness')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.dailyBusiness')} icon={CalendarIcon} allowed={false} />
       </View>
     );
   }
 
   const m = data?.metrics;
   const canProfit = data?.canViewProfit ?? false;
-  const margin = (v: number | null | undefined) => (canProfit ? (v != null ? `${v}% margin` : undefined) : PROFIT_HIDDEN);
+  const margin = (v: number | null | undefined) => (canProfit ? (v != null ? t('operations.vPercentMargin', { v }) : undefined) : profitHidden());
 
   // Where an activity opens: orders and credits have their own pages.
   function open(e: TimelineEvent) {
@@ -71,28 +74,28 @@ export function DailyBusinessScreen({ navigation }: ScreenProps<'DailyBusiness'>
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Daily Business" onBack={navigation.goBack} />
+      <AppHeader title={t('common.dailyBusiness')} onBack={navigation.goBack} />
       <ScrollView
         contentContainerStyle={opsStyles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
       >
-        <PageTitle title="Daily Business" subtitle={`Everything that happened in the store on ${day(date)}${date === today ? ' (today)' : ''}.`} />
+        <PageTitle title={t('common.dailyBusiness')} subtitle={t(date === today ? 'operations.everythingThatHappenedToday' : 'operations.everythingThatHappenedOn', { date: day(date) })} />
         {!store ? (
-          <EmptyState icon={StoreIcon} title="You don't have a store yet" />
+          <EmptyState icon={StoreIcon} title={t('common.youDonTHaveAStore')} />
         ) : (
           <>
             <View style={styles.dayBar}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Previous day" onPress={() => setDate(d => shiftDay(d, -1))} style={styles.arrow}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('operations.previousDay')} onPress={() => setDate(d => shiftDay(d, -1))} style={styles.arrow}>
                 <View style={styles.flip}>
                   <ChevronRightIcon size={18} color={colors.text} strokeWidth={2.2} />
                 </View>
               </Pressable>
               <View style={styles.flex}>
-                <DateField label="Day" required value={date} onChange={d => d && setDate(d > today ? today : d)} maximumDate={new Date()} />
+                <DateField label={t('operations.day')} required value={date} onChange={d => d && setDate(d > today ? today : d)} maximumDate={new Date()} />
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Next day"
+                accessibilityLabel={t('operations.nextDay')}
                 accessibilityState={{ disabled: date >= today }}
                 disabled={date >= today}
                 onPress={() => setDate(d => shiftDay(d, 1))}
@@ -103,68 +106,68 @@ export function DailyBusinessScreen({ navigation }: ScreenProps<'DailyBusiness'>
             </View>
             {date !== today ? (
               <Pressable accessibilityRole="button" onPress={() => setDate(today)} style={styles.todayBtn}>
-                <Text style={styles.todayText}>Back to today</Text>
+                <Text style={styles.todayText}>{t('operations.backToToday')}</Text>
               </Pressable>
             ) : null}
 
             {error && !data ? <ErrorState message={error} onRetry={() => reload()} /> : null}
 
             <StatGrid>
-              <StatCard icon={CartIcon} tone="orange" label="Sales" value={money(m?.sales)} loading={loading} />
+              <StatCard icon={CartIcon} tone="orange" label={t('common.sales')} value={money(m?.sales)} loading={loading} />
               <StatCard
                 icon={ChartTrendIcon}
                 tone="blue"
-                label="Gross Profit"
+                label={t('common.grossProfit')}
                 value={canProfit ? money(m?.grossProfit) : '—'}
                 negative={(m?.grossProfit ?? 0) < 0}
                 sub={margin(m?.grossMargin)}
                 loading={loading}
               />
-              <StatCard icon={WalletIcon} tone="red" label="Expenses" value={money(m?.expenses)} loading={loading} />
+              <StatCard icon={WalletIcon} tone="red" label={t('common.expenses')} value={money(m?.expenses)} loading={loading} />
               <StatCard
                 icon={BarChartIcon}
                 tone="emerald"
-                label="Net Profit"
+                label={t('operations.netProfit')}
                 value={canProfit ? money(m?.netProfit) : '—'}
                 negative={(m?.netProfit ?? 0) < 0}
                 sub={margin(m?.netMargin)}
                 loading={loading}
               />
-              <StatCard icon={ShoppingBagIcon} tone="violet" label="Orders" value={count(m?.orders)} loading={loading} />
+              <StatCard icon={ShoppingBagIcon} tone="violet" label={t('common.orders')} value={count(m?.orders)} loading={loading} />
               <StatCard
                 icon={WalletIcon}
                 tone="sky"
-                label="Collection"
+                label={t('operations.collection')}
                 value={money(m?.collection)}
-                sub={m ? `Cash ${money(m.cashCollection)} · Online ${money(m.onlineCollection)}` : undefined}
+                sub={m ? t('operations.cashCashcollectionOnlineOnlinecollection', { cashCollection: money(m.cashCollection), onlineCollection: money(m.onlineCollection) }) : undefined}
                 loading={loading}
               />
-              <StatCard icon={WalletIcon} tone="emerald" label="Cash Collection" value={money(m?.cashCollection)} loading={loading} />
-              <StatCard icon={CreditCardIcon} tone="blue" label="Online Collection" value={money(m?.onlineCollection)} loading={loading} />
-              <StatCard icon={FileTextIcon} tone="amber" label="Credit Given" value={money(data?.credit.creditGiven)} sub="On this day's orders" loading={loading} />
-              <StatCard icon={WalletIcon} tone="red" label="Credit Outstanding" value={money(data?.credit.creditOutstanding)} sub="All open credit, now" loading={loading} />
+              <StatCard icon={WalletIcon} tone="emerald" label={t('operations.cashCollection')} value={money(m?.cashCollection)} loading={loading} />
+              <StatCard icon={CreditCardIcon} tone="blue" label={t('operations.onlineCollection')} value={money(m?.onlineCollection)} loading={loading} />
+              <StatCard icon={FileTextIcon} tone="amber" label={t('operations.creditGiven')} value={money(data?.credit.creditGiven)} sub={t('operations.onThisDaysOrders')} loading={loading} />
+              <StatCard icon={WalletIcon} tone="red" label={t('operations.creditOutstanding')} value={money(data?.credit.creditOutstanding)} sub={t('operations.allOpenCreditNow')} loading={loading} />
               <StatCard
                 icon={TruckIcon}
                 tone="sky"
-                label="Stock Received"
-                value={data ? `${count(data.stock.receivedUnits)} units` : '—'}
-                sub={data ? `${data.stock.receipts} receipt${data.stock.receipts === 1 ? '' : 's'}` : undefined}
+                label={t('common.stockReceived')}
+                value={data ? t('common.unitsValue', { units: count(data.stock.receivedUnits) }) : '—'}
+                sub={data ? t('operations.receiptCount', { count: data.stock.receipts }) : undefined}
                 loading={loading}
               />
-              <StatCard icon={SlidersIcon} tone="slate" label="Stock Adjustments" value={data ? String(data.stock.adjustments) : '—'} sub="Counts, damage, write-offs" loading={loading} />
+              <StatCard icon={SlidersIcon} tone="slate" label={t('operations.stockAdjustments')} value={data ? String(data.stock.adjustments) : '—'} sub={t('operations.countsDamageWriteOffs')} loading={loading} />
             </StatGrid>
 
-            <OpsCard title="Activity Timeline" description="Orders, expenses, stock movements, notes and credit collections, in time order">
+            <OpsCard title={t('operations.activityTimeline')} description={t('operations.ordersExpensesStockMovementsNotesAnd')}>
               {loading ? (
                 <Placeholder height={200} />
               ) : !data?.timeline.length ? (
-                <NoData text="Nothing recorded on this day" />
+                <NoData text={t('operations.nothingRecordedOnThisDay')} />
               ) : (
                 data.timeline.map((e, i) => {
                   const meta = EVENT[e.type] ?? { label: e.type, icon: BoxIcon, tone: ['#f1f5f9', '#475569'] as [string, string] };
                   const Icon = meta.icon;
                   const title =
-                    e.type === 'ORDER' ? `Order #${e.title}` : e.type === 'EXPENSE' ? `Expense: ${e.title}` : e.type === 'CREDIT_PAYMENT' ? `Credit payment ${e.title}` : e.title ?? meta.label;
+                    e.type === 'ORDER' ? t('operations.orderTitle', { title: e.title }) : e.type === 'EXPENSE' ? t('operations.expenseTitle', { title: e.title }) : e.type === 'CREDIT_PAYMENT' ? t('operations.creditPaymentTitle', { title: e.title }) : e.title ?? meta.label;
                   return (
                     <Pressable key={`${e.type}-${e.id}-${i}`} accessibilityRole="button" onPress={() => open(e)} style={styles.event}>
                       <Text style={styles.time}>{time(e.at)}</Text>
@@ -181,7 +184,7 @@ export function DailyBusinessScreen({ navigation }: ScreenProps<'DailyBusiness'>
                         </Text>
                       </View>
                       <Text style={[opsStyles.amount, e.type === 'EXPENSE' && opsStyles.danger]}>
-                        {e.amount !== null ? money(e.amount) : e.units !== null ? `${count(e.units)} units` : ''}
+                        {e.amount !== null ? money(e.amount) : e.units !== null ? t('operations.unitsUnits', { units: count(e.units) }) : ''}
                       </Text>
                     </Pressable>
                   );

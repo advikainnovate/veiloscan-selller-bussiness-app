@@ -3,6 +3,7 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import { API_URL } from '../config/env';
 import { api } from './api';
 import { getAccessToken } from './session';
+import i18n from '../i18n';
 
 /**
  * Downloads a PDF the API serves (it needs the sign-in token) to the app's
@@ -20,7 +21,7 @@ export async function openPdf(path: string, fileName: string) {
   const status = res.info().status;
   if (status >= 400) {
     await ReactNativeBlobUtil.fs.unlink(target).catch(() => {});
-    throw new Error(status === 404 ? 'This document is no longer available.' : `Couldn't download the document (${status}).`);
+    throw new Error(status === 404 ? i18n.t('orders.thisDocumentIsNoLongerAvailable') : i18n.t('orders.couldnTDownloadTheDocumentStatus', { status }));
   }
   if (Platform.OS === 'ios') {
     ReactNativeBlobUtil.ios.previewDocument(target);
@@ -34,7 +35,7 @@ export async function openPdf(path: string, fileName: string) {
     await ReactNativeBlobUtil.android.actionViewIntent(target, 'application/pdf');
   } catch (err) {
     if ((err as { code?: string })?.code === 'ENOAPP' || /No app installed/i.test(String((err as Error)?.message))) {
-      throw new Error('No PDF viewer app is installed. Install one (e.g. Google Drive PDF Viewer) to open this document.');
+      throw new Error(i18n.t('orders.noPdfViewerAppIsInstalled'));
     }
     throw err;
   }

@@ -16,6 +16,8 @@ import { Choices, DateField, Field, Input, Section, SelectField } from '../../..
 import { SwitchRow } from '../../../components/products/ProductEditors';
 import type { StepHandle } from './VariantsStep';
 import type { SpecificationRow } from './types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 interface Draft {
   optionIds: string[];
@@ -48,7 +50,7 @@ const isFilled = (d: Draft | undefined, type?: string) =>
 function inputOf(spec: ConfiguredSpecification, d: Draft, where = ''): SpecificationInput {
   if (isOptionSpecificationType(spec.dataType)) return { specificationId: spec.id, optionIds: d.optionIds };
   if (isStructuredSpecificationType(spec.dataType)) {
-    if (spec.dataType === 'RANGE' && (d.numericValue === '' || d.maxValue === '')) throw new Error(`Enter both the lowest and highest ${spec.title}${where}`);
+    if (spec.dataType === 'RANGE' && (d.numericValue === '' || d.maxValue === '')) throw new Error(i18n.t('products.enterBothTheLowestAndHighest', { title: spec.title, where }));
     return {
       specificationId: spec.id,
       numericValue: Number(d.numericValue),
@@ -76,6 +78,7 @@ export function SpecificationsStep({
   categoryId: string;
   onSummaryChange: (rows: SpecificationRow[]) => void;
 }) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<ProductConfiguration | null>(null);
   const [saved, setSaved] = useState<SpecificationValue[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
@@ -203,9 +206,9 @@ export function SpecificationsStep({
           .filter(s => missing.has(s.id))
           .map(s => {
             const skus = missing.get(s.id);
-            return skus ? `${s.title} (${skus.length} variant${skus.length === 1 ? '' : 's'})` : s.title;
+            return skus ? `${s.title} (${t('products.variantCount', { count: skus.length })})` : s.title;
           });
-        throw new Error(`Fill in the required specifications: ${names.join(', ')}`);
+        throw new Error(t('products.fillInTheRequiredSpecificationsJoin', { join: names.join(', ') }));
       }
       const values = shared.filter(s => s.scope !== 'VARIANT' && isFilled(drafts[s.id], s.dataType)).map(s => inputOf(s, drafts[s.id]));
       const own = singleSku ? all.filter(s => s.scope === 'VARIANT' && !sourced(s)) : columns;
@@ -258,13 +261,13 @@ export function SpecificationsStep({
     }
   }
 
-  if (!productId) return <Section title="Specifications" subtitle="Save the basic information first." children={null} />;
+  if (!productId) return <Section title={t('products.specifications')} subtitle={t('products.saveTheBasicInformationFirst')} children={null} />;
   if (loadError && !config) return <Alert message={loadError} />;
-  if (!config) return <Section title="Specifications" subtitle="Loading the category's specifications…" children={null} />;
+  if (!config) return <Section title={t('products.specifications')} subtitle={t('products.loadingTheCategorysSpecifications')} children={null} />;
   if (!all.length) {
     return (
-      <Section title="Specifications" subtitle={config.category.path.map(c => c.title).join(' › ')}>
-        <Text style={styles.muted}>This category has no specifications set up, so there's nothing to fill in here.</Text>
+      <Section title={t('products.specifications')} subtitle={config.category.path.map(c => c.title).join(' › ')}>
+        <Text style={styles.muted}>{t('products.thisCategoryHasNoSpecificationsSet')}</Text>
       </Section>
     );
   }
@@ -275,7 +278,7 @@ export function SpecificationsStep({
     <View style={styles.wrap}>
       {loadError ? <Alert message={loadError} /> : null}
       {groups.map(({ group, specs }) => (
-        <Section key={group} title={group} subtitle={group === groups[0].group ? `From ${config.category.path.map(c => c.title).join(' › ')}` : undefined}>
+        <Section key={group} title={group} subtitle={group === groups[0].group ? t('products.fromJoin', { join: config.category.path.map(c => c.title).join(' › ') }) : undefined}>
           {specs.map(spec => (
             <View key={spec.id} style={styles.specBlock}>
               <SpecificationField
@@ -286,8 +289,8 @@ export function SpecificationsStep({
               />
               {spec.scope === 'BOTH' && variants.length > 1 && !singleSku ? (
                 <SwitchRow
-                  label="Different per variant"
-                  hint="Give each SKU its own value (blank SKUs use the one above)."
+                  label={t('products.differentPerVariant')}
+                  hint={t('products.giveEachSkuItsOwnValue')}
                   value={!!perVariant[spec.id]}
                   onChange={v => setPerVariant(prev => ({ ...prev, [spec.id]: v }))}
                 />
@@ -297,18 +300,18 @@ export function SpecificationsStep({
         </Section>
       ))}
 
-      {waitingForSkus ? <Alert message="Some specifications are entered per variant — generate the SKUs in the Variants step first." /> : null}
+      {waitingForSkus ? <Alert message={t('products.someSpecificationsAreEnteredPerVariant')} /> : null}
 
       {columns.map(spec => (
-        <Section key={spec.id} title={`${spec.title}${spec.required ? ' *' : ''}`} subtitle="Per variant">
+        <Section key={spec.id} title={`${spec.title}${spec.required ? ' *' : ''}`} subtitle={t('products.perVariant')}>
           {variants.length > 1 ? (
             <View style={styles.fillRow}>
               <Pressable onPress={() => fill(spec, 'all')} style={styles.fillBtn}>
-                <Text style={styles.fillText}>Same for all</Text>
+                <Text style={styles.fillText}>{t('products.sameForAll')}</Text>
               </Pressable>
               {variantAttributes.map(([id, title]) => (
                 <Pressable key={id} onPress={() => fill(spec, id)} style={styles.fillBtn}>
-                  <Text style={styles.fillText}>Same per {title}</Text>
+                  <Text style={styles.fillText}>{t('products.samePerTitle', { title })}</Text>
                 </Pressable>
               ))}
             </View>
@@ -321,7 +324,7 @@ export function SpecificationsStep({
                 spec={withUsedOptions(spec)}
                 draft={cell(v.id, spec.id)}
                 invalid={showMissing && (missing.get(spec.id) ?? []).includes(v.id)}
-                placeholder={spec.scope === 'BOTH' && isFilled(drafts[spec.id], spec.dataType) ? 'Uses the product value' : undefined}
+                placeholder={spec.scope === 'BOTH' && isFilled(drafts[spec.id], spec.dataType) ? t('products.usesTheProductValue') : undefined}
                 onChange={patch => setCell(v.id, spec.id, patch)}
               />
             </View>
@@ -330,7 +333,7 @@ export function SpecificationsStep({
       ))}
 
       {fromAttributes.length ? (
-        <Section title="From the variant options" subtitle="Each SKU's option gives these — nothing to type.">
+        <Section title={t('products.fromTheVariantOptions')} subtitle={t('products.eachSkusOptionGivesTheseNothing')}>
           {fromAttributes.map(s => (
             <Text key={s.id} style={styles.muted}>
               • {s.title}
@@ -340,14 +343,14 @@ export function SpecificationsStep({
       ) : null}
 
       {foreign.length ? (
-        <Section title="No longer in this category" subtitle="Values saved before the category changed. Remove them, or they stay on the product page.">
+        <Section title={t('products.noLongerInThisCategory')} subtitle={t('products.valuesSavedBeforeTheCategoryChanged')}>
           {foreign.map(v => (
             <View key={v.specificationId} style={styles.foreign}>
               <Text style={styles.foreignText}>
                 {v.title}: {v.value ?? v.options.map(o => o.title).join(', ')}
               </Text>
               <Pressable onPress={() => removeForeign(v.specificationId)} disabled={removing === v.specificationId}>
-                <Text style={styles.remove}>{removing === v.specificationId ? 'Removing…' : 'Remove'}</Text>
+                <Text style={styles.remove}>{removing === v.specificationId ? t('products.removing') : t('common.remove')}</Text>
               </Pressable>
             </View>
           ))}
@@ -373,10 +376,11 @@ function SpecificationField({
   placeholder?: string;
   onChange: (patch: Partial<Draft>) => void;
 }) {
+  const { t: tr } = useTranslation();
   const type = spec.dataType;
   const value = draft?.value ?? '';
   const label = compact ? '' : spec.title;
-  const error = invalid ? `${spec.title} is required` : null;
+  const error = invalid ? tr('products.titleIsRequired', { title: spec.title }) : null;
   const hint = !compact ? spec.description ?? undefined : undefined;
 
   if (isOptionSpecificationType(type) && spec.multiselect) {
@@ -398,7 +402,7 @@ function SpecificationField({
               </Pressable>
             );
           })}
-          {!spec.options.length ? <Text style={styles.muted}>No options set up.</Text> : null}
+          {!spec.options.length ? <Text style={styles.muted}>{tr('products.noOptionsSetUp')}</Text> : null}
         </View>
       </Field>
     );
@@ -409,10 +413,10 @@ function SpecificationField({
         label={label || spec.title}
         required={!compact && spec.required}
         hint={error ?? hint}
-        placeholder={placeholder ?? `Select ${spec.title.toLowerCase()}`}
+        placeholder={placeholder ?? tr('products.selectLowercase', { lowerCase: spec.title.toLowerCase() })}
         value={draft?.optionIds[0] ?? ''}
         options={spec.options.map(o => ({ value: o.id, label: o.title }))}
-        allowClear="None"
+        allowClear={tr('common.none')}
         onChange={v => onChange({ optionIds: v ? [v] : [] })}
       />
     );
@@ -422,8 +426,8 @@ function SpecificationField({
       <Field label={label} required={!compact && spec.required} hint={hint} error={error}>
         <Choices
           options={[
-            { value: 'true', label: 'Yes' },
-            { value: 'false', label: 'No' },
+            { value: 'true', label: tr('common.yes') },
+            { value: 'false', label: tr('common.no') },
           ]}
           value={value}
           // Tapping the chosen answer again clears it.
@@ -444,23 +448,23 @@ function SpecificationField({
             value={draft?.numericValue ?? ''}
             onChangeText={t => onChange({ numericValue: t.replace(/[^0-9.-]/g, '') })}
             keyboardType="numbers-and-punctuation"
-            placeholder={type === 'RANGE' ? 'From' : placeholder ?? 'e.g. 500'}
+            placeholder={type === 'RANGE' ? tr('common.from') : placeholder ?? 'e.g. 500'}
             style={styles.flex}
           />
-          {type === 'RANGE' ? <Text style={styles.muted}>to</Text> : null}
+          {type === 'RANGE' ? <Text style={styles.muted}>{tr('common.to2')}</Text> : null}
           {type === 'RANGE' ? (
             <Input
               value={draft?.maxValue ?? ''}
               onChangeText={t => onChange({ maxValue: t.replace(/[^0-9.-]/g, '') })}
               keyboardType="numbers-and-punctuation"
-              placeholder="To"
+              placeholder={tr('common.to')}
               style={styles.flex}
             />
           ) : null}
           {!spec.units.length && spec.unitLabel ? <Text style={styles.muted}>{spec.unitLabel}</Text> : null}
         </View>
         {spec.units.length > 1 ? <Choices options={spec.units.map(u => ({ value: u, label: u }))} value={unit} onChange={u => onChange({ unit: u })} /> : null}
-        {spec.units.length === 1 ? <Text style={styles.muted}>in {spec.units[0]}</Text> : null}
+        {spec.units.length === 1 ? <Text style={styles.muted}>{tr('products.inUnits', { units: spec.units[0] })}</Text> : null}
       </Field>
     );
   }

@@ -2,9 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../../theme';
 import type { SessionUser } from '../../lib/session';
+import i18n from '../../i18n';
 
 export function displayName(user: SessionUser | null) {
-  return [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Seller';
+  return [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || i18n.t('layout.seller');
 }
 
 function initials(user: SessionUser | null) {

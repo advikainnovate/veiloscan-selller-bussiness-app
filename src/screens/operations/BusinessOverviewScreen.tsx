@@ -15,16 +15,18 @@ import { Choices } from '../../components/form/Fields';
 import { EmptyState, ErrorState } from '../../components/list/ListParts';
 import { Ring } from '../../components/reports/SalesCharts';
 import { ComboChart } from '../../components/operations/OpsCharts';
-import { LinkButton, NoData, OpsCard, opsStyles, PageTitle, Placeholder, PROFIT_HIDDEN, RangeChips, StatCard, StatGrid } from '../../components/operations/OpsParts';
+import { LinkButton, NoData, OpsCard, opsStyles, PageTitle, Placeholder, profitHidden, RangeChips, StatCard, StatGrid } from '../../components/operations/OpsParts';
 import { BarChartIcon, BoxIcon, CartIcon, ChartTrendIcon, ClockIcon, StoreIcon, TruckIcon, WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PRESET_KEYS = ['today', 'yesterday', 'week', 'month', '3m'];
 const COMPARE: Record<string, string> = {
-  today: 'vs yesterday',
-  yesterday: 'vs day before',
-  week: 'vs last week',
-  month: 'vs last month',
+  get today() { return i18n.t('common.vsYesterday'); },
+  get yesterday() { return i18n.t('operations.vsDayBefore'); },
+  get week() { return i18n.t('operations.vsLastWeek'); },
+  get month() { return i18n.t('common.vsLastMonth'); },
   '3m': 'vs previous 3 months',
 };
 const COLORS = { sales: '#3b82f6', gross: '#16a34a', net: '#f97316', expenses: CHART_COLORS[7] };
@@ -32,6 +34,7 @@ type SeriesView = 'all' | 'expenses' | 'sales';
 
 /** Operations › Business Overview: sales, profit, expenses and stock alerts at a glance. */
 export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOverview'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-operations:manage');
   const { current: store } = useStore();
@@ -57,25 +60,25 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
     const label = (d: string) => (interval === 'month' ? formatReportDay(d, true).slice(3).replace(/ (\d\d)(\d\d)$/, ' $2') : formatReportDay(d, false));
     return {
       labels: points.map(p => label(p.date)),
-      full: points.map(p => (interval === 'week' ? `Week of ${formatReportDay(p.date)}` : interval === 'month' ? label(p.date) : formatReportDay(p.date))),
-      bars: { key: 'sales', label: 'Sales', color: COLORS.sales, values: points.map(p => p.sales) },
+      full: points.map(p => (interval === 'week' ? t('operations.weekOfDate', { date: formatReportDay(p.date) }) : interval === 'month' ? label(p.date) : formatReportDay(p.date))),
+      bars: { key: 'sales', label: t('common.sales'), color: COLORS.sales, values: points.map(p => p.sales) },
       lines: [
         ...(view === 'all' && profitOk
           ? [
-              { key: 'gross', label: 'Gross Profit', color: COLORS.gross, values: points.map(p => p.grossProfit) },
-              { key: 'net', label: 'Net Profit', color: COLORS.net, values: points.map(p => p.netProfit) },
+              { key: 'gross', label: t('common.grossProfit'), color: COLORS.gross, values: points.map(p => p.grossProfit) },
+              { key: 'net', label: t('operations.netProfit'), color: COLORS.net, values: points.map(p => p.netProfit) },
             ]
           : []),
-        ...(view === 'expenses' ? [{ key: 'expenses', label: 'Expenses', color: COLORS.expenses, values: points.map(p => p.expenses) }] : []),
+        ...(view === 'expenses' ? [{ key: 'expenses', label: t('common.expenses'), color: COLORS.expenses, values: points.map(p => p.expenses) }] : []),
       ],
     };
-  }, [points, interval, view, profitOk]);
+  }, [points, interval, view, profitOk, t]);
 
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Business Overview" onBack={navigation.goBack} />
-        <ComingSoon label="Business Overview" icon={ChartTrendIcon} allowed={false} />
+        <AppHeader title={t('common.businessOverview')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.businessOverview')} icon={ChartTrendIcon} allowed={false} />
       </View>
     );
   }
@@ -84,7 +87,7 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
   const p = overview.data?.previous;
   const canProfit = overview.data?.canViewProfit ?? false;
   const loading = overview.loading;
-  const compare = COMPARE[range.key] ?? 'vs previous period';
+  const compare = COMPARE[range.key] ?? t('operations.vsPreviousPeriod');
 
   const categories = breakdown.data?.byCategory ?? [];
   const catTotal = categories.reduce((s, c) => s + c.sales, 0);
@@ -99,14 +102,14 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Business Overview" onBack={navigation.goBack} />
+      <AppHeader title={t('common.businessOverview')} onBack={navigation.goBack} />
       <ScrollView
         contentContainerStyle={opsStyles.content}
         refreshControl={<RefreshControl refreshing={overview.refreshing} onRefresh={reloadAll} tintColor={colors.secondary} colors={[colors.secondary]} />}
       >
-        <PageTitle title="Business Overview" subtitle="Sales, profit, expenses and stock alerts at a glance." />
+        <PageTitle title={t('common.businessOverview')} subtitle={t('operations.salesProfitExpensesAndStockAlerts')} />
         {!store ? (
-          <EmptyState icon={StoreIcon} title="You don't have a store yet" text="Set up your store on the Seller Panel to see its business here." />
+          <EmptyState icon={StoreIcon} title={t('common.youDonTHaveAStore')} text={t('operations.setUpYourStoreOnThe')} />
         ) : (
           <>
             <RangeChips
@@ -122,52 +125,52 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
             {overview.error && !overview.data ? <ErrorState message={overview.error} onRetry={() => overview.reload()} /> : null}
 
             <StatGrid>
-              <StatCard icon={CartIcon} tone="orange" label="Total Sales" value={money(m?.sales)} delta={change(m?.sales, p?.sales)} sub={compare} loading={loading} />
+              <StatCard icon={CartIcon} tone="orange" label={t('common.totalSales')} value={money(m?.sales)} delta={change(m?.sales, p?.sales)} sub={compare} loading={loading} />
               <StatCard
                 icon={ChartTrendIcon}
                 tone="blue"
-                label="Gross Profit"
+                label={t('common.grossProfit')}
                 value={canProfit ? money(m?.grossProfit) : '—'}
                 negative={(m?.grossProfit ?? 0) < 0}
                 delta={canProfit ? change(m?.grossProfit, p?.grossProfit) : null}
-                sub={canProfit ? compare : PROFIT_HIDDEN}
+                sub={canProfit ? compare : profitHidden()}
                 loading={loading}
               />
-              <StatCard icon={WalletIcon} tone="red" label="Expenses" value={money(m?.expenses)} delta={change(m?.expenses, p?.expenses)} invertDelta sub={compare} loading={loading} />
+              <StatCard icon={WalletIcon} tone="red" label={t('common.expenses')} value={money(m?.expenses)} delta={change(m?.expenses, p?.expenses)} invertDelta sub={compare} loading={loading} />
               <StatCard
                 icon={BarChartIcon}
                 tone="emerald"
-                label="Net Profit"
+                label={t('operations.netProfit')}
                 value={canProfit ? money(m?.netProfit) : '—'}
                 negative={(m?.netProfit ?? 0) < 0}
                 delta={canProfit ? change(m?.netProfit, p?.netProfit) : null}
-                sub={canProfit ? compare : PROFIT_HIDDEN}
+                sub={canProfit ? compare : profitHidden()}
                 loading={loading}
               />
-              <StatCard icon={BoxIcon} tone="violet" label="Total Orders" value={count(m?.orders)} delta={change(m?.orders, p?.orders)} sub={compare} loading={loading} />
+              <StatCard icon={BoxIcon} tone="violet" label={t('common.totalOrders')} value={count(m?.orders)} delta={change(m?.orders, p?.orders)} sub={compare} loading={loading} />
             </StatGrid>
             {canProfit && (m?.linesWithoutCost ?? 0) > 0 ? (
               <Text style={opsStyles.warn}>
-                {`${m!.linesWithoutCost} sold item${m!.linesWithoutCost === 1 ? ' has' : 's have'} no cost price, so profit is overstated. Add cost prices to the product variants.`}
+                {t('operations.soldItemsWithoutCost', { count: m!.linesWithoutCost })}
               </Text>
             ) : null}
 
-            <OpsCard title="Sales & Profit" description="Compare sales, gross profit and net profit over time.">
+            <OpsCard title={t('operations.salesAndProfit')} description={t('operations.compareSalesGrossProfitAndNet')}>
               <View style={styles.controls}>
                 <Choices
                   options={[
-                    { value: 'day', label: 'Daily' },
-                    { value: 'week', label: 'Weekly' },
-                    { value: 'month', label: 'Monthly' },
+                    { value: 'day', label: t('common.daily') },
+                    { value: 'week', label: t('common.weekly') },
+                    { value: 'month', label: t('common.monthly') },
                   ]}
                   value={interval}
                   onChange={v => setChosenInterval(v as TrendInterval)}
                 />
                 <Choices
                   options={[
-                    { value: 'all', label: 'Sales, Profit & Expenses' },
-                    { value: 'expenses', label: 'Sales & Expenses' },
-                    { value: 'sales', label: 'Sales only' },
+                    { value: 'all', label: t('operations.salesProfitAndExpenses') },
+                    { value: 'expenses', label: t('operations.salesAndExpenses') },
+                    { value: 'sales', label: t('operations.salesOnly') },
                   ]}
                   value={view}
                   onChange={v => setView(v as SeriesView)}
@@ -182,14 +185,14 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
               )}
             </OpsCard>
 
-            <OpsCard title="Sales by Category">
+            <OpsCard title={t('operations.salesByCategory')}>
               {breakdown.loading ? (
                 <Placeholder />
               ) : catRows.length === 0 ? (
-                <NoData text={`No sales in ${rangeLabel(range)}.`} />
+                <NoData text={t('operations.noSalesInRange', { range: rangeLabel(range) })} />
               ) : (
                 <View style={styles.ring}>
-                  <Ring segments={catRows.map(c => ({ key: c.key, value: c.sales, color: c.color }))} centerValue={money(catTotal)} centerLabel="Total Sales" selected={selectedCat} />
+                  <Ring segments={catRows.map(c => ({ key: c.key, value: c.sales, color: c.color }))} centerValue={money(catTotal)} centerLabel={t('common.totalSales')} selected={selectedCat} />
                   <View style={styles.legend}>
                     {catRows.map(c => (
                       <Pressable
@@ -211,11 +214,11 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
               )}
             </OpsCard>
 
-            <OpsCard title="Top Selling Products" description="Best performing products by sales value." action={<LinkButton label="View All →" onPress={() => openMenuKey('sales-reports')} />}>
+            <OpsCard title={t('operations.topSellingProducts')} description={t('operations.bestPerformingProductsBySalesValue')} action={<LinkButton label={t('operations.viewAll')} onPress={() => openMenuKey('sales-reports')} />}>
               {top.loading ? (
                 <Placeholder height={120} />
               ) : !top.data?.items.length ? (
-                <NoData text="No products sold in this period." />
+                <NoData text={t('operations.noProductsSoldInThisPeriod')} />
               ) : (
                 (top.data.items as SalesGroupRow[]).map((r, i) => (
                   <View key={r.key} style={[opsStyles.row, i > 0 && opsStyles.listRow]}>
@@ -225,7 +228,7 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
                       <Text style={opsStyles.title} numberOfLines={1}>
                         {r.label}
                       </Text>
-                      <Text style={opsStyles.meta} numberOfLines={1}>{`${count(r.units)} sold · ${r.sub ?? '—'}`}</Text>
+                      <Text style={opsStyles.meta} numberOfLines={1}>{t('operations.unitsSoldSub', { units: count(r.units), sub: r.sub ?? '—' })}</Text>
                     </View>
                     <View style={styles.right}>
                       <Text style={opsStyles.amount}>{money(r.sales)}</Text>
@@ -236,11 +239,11 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
               )}
             </OpsCard>
 
-            <OpsCard title="Recent Orders" description="Latest orders in this period." action={<LinkButton label="View All →" onPress={() => openMenuKey('orders')} />}>
+            <OpsCard title={t('operations.recentOrders')} description={t('operations.latestOrdersInThisPeriod')} action={<LinkButton label={t('operations.viewAll')} onPress={() => openMenuKey('orders')} />}>
               {recent.loading ? (
                 <Placeholder height={120} />
               ) : !recent.data?.items.length ? (
-                <NoData text="No orders in this period." />
+                <NoData text={t('operations.noOrdersInThisPeriod')} />
               ) : (
                 (recent.data.items as SalesOrderRow[]).map((o, i) => {
                   const s = saleStatus(o.orderStatus);
@@ -257,7 +260,7 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
                           {o.orderNumber}
                         </Text>
                         <Text style={opsStyles.meta} numberOfLines={1}>
-                          {o.customerName ?? 'Walk-in customer'}
+                          {o.customerName ?? t('common.walkInCustomer')}
                         </Text>
                       </View>
                       <View style={styles.right}>
@@ -270,11 +273,11 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
               )}
             </OpsCard>
 
-            <OpsCard title="Stock Alerts" description="Products need attention." action={<LinkButton label="View All →" onPress={() => openMenuKey('stock-health')} />}>
+            <OpsCard title={t('operations.stockAlerts')} description={t('operations.productsNeedAttention')} action={<LinkButton label={t('operations.viewAll')} onPress={() => openMenuKey('stock-health')} />}>
               {stock.loading ? (
                 <Placeholder height={120} />
               ) : alerts.length === 0 ? (
-                <NoData text="All products are above their minimum stock." />
+                <NoData text={t('operations.allProductsAreAboveTheirMinimum')} />
               ) : (
                 alerts.map((r, i) => (
                   <View key={r.variantId} style={[opsStyles.row, i > 0 && opsStyles.listRow]}>
@@ -287,7 +290,7 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
                         {r.sku}
                       </Text>
                     </View>
-                    <Badge label={r.health === 'out' ? 'Out of stock' : 'Low stock'} tone={r.health === 'out' ? 'red' : 'amber'} />
+                    <Badge label={r.health === 'out' ? t('common.outOfStock2') : t('common.lowStock2')} tone={r.health === 'out' ? 'red' : 'amber'} />
                     <Text style={styles.qty}>{`${count(Math.max(0, r.available))} ${r.uom.toUpperCase()}`}</Text>
                   </View>
                 ))
@@ -297,13 +300,13 @@ export function BusinessOverviewScreen({ navigation }: ScreenProps<'BusinessOver
                   {pending > 0 ? (
                     <Pressable accessibilityRole="button" onPress={() => openMenuKey('pending-stock')} style={[styles.pill, styles.pillSky]}>
                       <TruckIcon size={14} color="#0369a1" />
-                      <Text style={[styles.pillText, styles.pillTextSky]}>{`${pending} pending stock order${pending === 1 ? '' : 's'}`}</Text>
+                      <Text style={[styles.pillText, styles.pillTextSky]}>{t('operations.pendingStockOrders', { count: pending })}</Text>
                     </Pressable>
                   ) : null}
                   {delayed > 0 ? (
                     <Pressable accessibilityRole="button" onPress={() => openMenuKey('pending-stock')} style={[styles.pill, styles.pillOrange]}>
                       <ClockIcon size={14} color="#c2410c" />
-                      <Text style={[styles.pillText, styles.pillTextOrange]}>{`${delayed} delayed`}</Text>
+                      <Text style={[styles.pillText, styles.pillTextOrange]}>{t('operations.delayedDelayed', { delayed })}</Text>
                     </Pressable>
                   ) : null}
                 </View>

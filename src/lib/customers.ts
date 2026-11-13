@@ -1,11 +1,12 @@
 import type { CustomerRow } from '../services/customer-service';
+import i18n from '../i18n';
 
 // Mirrors eshop-backend src/common/constants/store-customer.constant.ts:
 // customers created from a store order get a placeholder email.
 const STORE_CUSTOMER_EMAIL_DOMAIN = 'store-customer.veiloscan.invalid';
 
 export function customerName(row: Pick<CustomerRow, 'firstName' | 'lastName'>) {
-  return [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || 'Customer';
+  return [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || i18n.t('common.customer');
 }
 
 /** "RK" for Rajesh Kumar, "M" for a one-word name. */

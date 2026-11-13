@@ -34,6 +34,7 @@ import { ErrorState, FilterChips, ListSkeleton } from '../../components/list/Lis
 import { opsStyles } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, EditIcon, FileTextIcon, HelpCircleIcon, ImageIcon, LockIcon, StarIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { Trans, useTranslation } from 'react-i18next';
 
 type Modal = null | { kind: 'transition'; to: TicketStatus } | { kind: 'resolve' | 'assign' | 'escalate' | 'edit' } | { kind: 'message'; message: SupportMessage } | { kind: 'escalation'; id: string };
 
@@ -41,6 +42,7 @@ const SLA_COLOR = { ok: '#047857', soon: '#b45309', late: colors.error, none: co
 
 /** One ticket: what was reported, the conversation, status, assignment, SLA, escalations and files, as the panel's ticket page. */
 export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportTicket'>) {
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const { user, hasPermission } = useAuth();
   const toast = useToast();
@@ -61,12 +63,12 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
     }
   }
 
-  const header = <AppHeader title={data?.ticket.ticketNumber ?? 'Ticket'} subtitle="Support Tickets" onBack={navigation.goBack} />;
+  const header = <AppHeader title={data?.ticket.ticketNumber ?? tr('support.ticket')} subtitle={tr('common.supportTickets')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Support Tickets" icon={HelpCircleIcon} allowed={false} />
+        <ComingSoon label={tr('common.supportTickets')} icon={HelpCircleIcon} allowed={false} />
       </View>
     );
   }
@@ -82,7 +84,7 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Not found.'} onRetry={reload} />
+        <ErrorState message={error || tr('common.notFound')} onRetry={reload} />
       </View>
     );
   }
@@ -104,10 +106,10 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
             <Badge label={st.label} tone={st.tone} />
             <Badge label={`${t.priority === 'URGENT' ? '● ' : ''}${priorityLabel(t.priority)}`} tone={PRIORITY_TONE[t.priority]} />
             <Badge label={t.ticketType.name} tone="slate" />
-            {t.customer.isStore ? <Badge label="Store request" tone="orange" /> : null}
-            {t.customer.isGuest ? <Badge label="Guest" tone="slate" /> : null}
-            {t.escalationLevel ? <Badge label={`Escalation level ${t.escalationLevel}`} tone="red" /> : null}
-            {t.reopenCount ? <Badge label={`Reopened ×${t.reopenCount}`} tone="amber" /> : null}
+            {t.customer.isStore ? <Badge label={tr('support.storeRequest')} tone="orange" /> : null}
+            {t.customer.isGuest ? <Badge label={tr('support.guest')} tone="slate" /> : null}
+            {t.escalationLevel ? <Badge label={tr('support.escalationLevelEscalationlevel', { escalationLevel: t.escalationLevel })} tone="red" /> : null}
+            {t.reopenCount ? <Badge label={tr('support.reopenedReopencount', { reopenCount: t.reopenCount })} tone="amber" /> : null}
           </View>
         </View>
 
@@ -120,30 +122,30 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
                 onPress={() => setModal(to === 'RESOLVED' ? { kind: 'resolve' } : { kind: 'transition', to })}
                 style={[opsStyles.smallBtn, to === 'RESOLVED' && styles.resolveBtn]}
               >
-                <Text style={[opsStyles.smallBtnText, to === 'RESOLVED' && styles.white]}>{to === 'RESOLVED' ? 'Resolve' : statusOf(to).label}</Text>
+                <Text style={[opsStyles.smallBtnText, to === 'RESOLVED' && styles.white]}>{to === 'RESOLVED' ? tr('support.resolve') : statusOf(to).label}</Text>
               </Pressable>
             ))}
             {can.escalate && isActiveStatus(t.status) ? (
               <Pressable accessibilityRole="button" onPress={() => setModal({ kind: 'escalate' })} style={[opsStyles.smallBtn, styles.escalateBtn]}>
                 <AlertCircleIcon size={14} color={colors.error} />
-                <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Escalate</Text>
+                <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{tr('support.escalate')}</Text>
               </Pressable>
             ) : null}
             {can.edit ? (
               <Pressable accessibilityRole="button" onPress={() => setModal({ kind: 'edit' })} style={opsStyles.smallBtn}>
                 <EditIcon size={14} color={colors.text} />
-                <Text style={opsStyles.smallBtnText}>Edit</Text>
+                <Text style={opsStyles.smallBtnText}>{tr('common.edit')}</Text>
               </Pressable>
             ) : null}
           </ScrollView>
         ) : null}
 
-        <Group title={t.customer.isStore ? "THE STORE'S REQUEST" : "CUSTOMER'S REPORT"}>
+        <Group title={t.customer.isStore ? tr('support.theStoreSRequest') : tr('support.customerSReport')}>
           <View style={styles.block}>
             <Text style={styles.body}>{htmlToText(t.description) || '—'}</Text>
             {t.resolutionSummary ? (
               <View style={styles.resolution}>
-                <Text style={styles.resolutionLabel}>RESOLUTION</Text>
+                <Text style={styles.resolutionLabel}>{tr('support.resolution')}</Text>
                 <Text style={styles.resolutionText}>{t.resolutionSummary}</Text>
               </View>
             ) : null}
@@ -156,19 +158,19 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
             {can.reply || can.internalNote ? (
               <Composer key={data.messages.length} ticketId={id} detail={data} onSent={reload} />
             ) : (
-              <Text style={[opsStyles.muted, styles.readOnly]}>{t.status === 'CLOSED' ? 'This ticket is closed. Reopen it to reply.' : 'You have read-only access to this ticket.'}</Text>
+              <Text style={[opsStyles.muted, styles.readOnly]}>{t.status === 'CLOSED' ? tr('support.thisTicketIsClosedReopenIt') : tr('support.youHaveReadOnlyAccessTo')}</Text>
             )}
           </View>
         </Group>
 
         <Group title="DETAILS">
-          <Row label={t.customer.isStore ? 'Requested by' : t.customer.isGuest ? 'Guest' : 'Customer'} value={t.customer.name ?? '—'} />
-          {t.customer.isStore && t.raisedBy ? <Row label="Raised by" value={t.raisedBy.name ?? '—'} /> : null}
-          <Row label="Email" value={t.customer.email ?? '—'} />
-          <Row label="Phone" value={t.customer.phone ?? '—'} />
-          <Row label="Store" value={t.store?.name ?? 'Platform (VeiloScan)'} />
+          <Row label={t.customer.isStore ? tr('support.requestedBy') : t.customer.isGuest ? tr('support.guest') : tr('common.customer')} value={t.customer.name ?? '—'} />
+          {t.customer.isStore && t.raisedBy ? <Row label={tr('support.raisedBy')} value={t.raisedBy.name ?? '—'} /> : null}
+          <Row label={tr('common.email')} value={t.customer.email ?? '—'} />
+          <Row label={tr('common.phone')} value={t.customer.phone ?? '—'} />
+          <Row label={tr('common.store')} value={t.store?.name ?? 'Platform (VeiloScan)'} />
           <Row
-            label="Order"
+            label={tr('common.order')}
             value={
               t.order ? (
                 hasPermission('orders:manage') ? (
@@ -183,36 +185,36 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
               )
             }
           />
-          <Row label="Category" value={t.category?.name ?? '—'} />
-          <Row label="Source" value={SOURCE_LABEL[t.source] ?? t.source} />
-          {t.preferredContactChannel ? <Row label="Prefers" value={t.preferredContactChannel} /> : null}
-          <Row label="Created" value={dateTime(t.createdAt)} last={!t.closedAt} />
-          {t.closedAt ? <Row label="Closed" value={dateTime(t.closedAt)} last /> : null}
+          <Row label={tr('common.category')} value={t.category?.name ?? '—'} />
+          <Row label={tr('support.source')} value={SOURCE_LABEL[t.source] ?? t.source} />
+          {t.preferredContactChannel ? <Row label={tr('support.prefers')} value={t.preferredContactChannel} /> : null}
+          <Row label={tr('common.created')} value={dateTime(t.createdAt)} last={!t.closedAt} />
+          {t.closedAt ? <Row label={tr('common.closed')} value={dateTime(t.closedAt)} last /> : null}
         </Group>
 
         <Group title="SLA">
           {t.slaPolicy ? (
             <>
-              <Row label="Policy" value={`${t.slaPolicy.name} · ${t.slaPolicy.businessHoursOnly ? 'business hours' : '24/7'}`} />
-              <Row label="Targets" value={`${formatMinutes(t.slaPolicy.firstResponseMinutes)} / ${formatMinutes(t.slaPolicy.resolutionMinutes)}`} />
-              <Row label="First response" value={<Text style={[styles.sla, { color: SLA_COLOR[response.tone] }]}>{response.text}</Text>} />
-              <Row label="Resolution" value={<Text style={[styles.sla, { color: SLA_COLOR[resolution.tone] }]}>{resolution.text}</Text>} last />
+              <Row label={tr('support.policy')} value={`${t.slaPolicy.name} · ${t.slaPolicy.businessHoursOnly ? 'business hours' : '24/7'}`} />
+              <Row label={tr('support.targets')} value={`${formatMinutes(t.slaPolicy.firstResponseMinutes)} / ${formatMinutes(t.slaPolicy.resolutionMinutes)}`} />
+              <Row label={tr('support.firstResponse')} value={<Text style={[styles.sla, { color: SLA_COLOR[response.tone] }]}>{response.text}</Text>} />
+              <Row label={tr('support.resolution2')} value={<Text style={[styles.sla, { color: SLA_COLOR[resolution.tone] }]}>{resolution.text}</Text>} last />
             </>
           ) : (
-            <Row label="Policy" value={`None for ${priorityLabel(t.priority)} priority`} last />
+            <Row label={tr('support.policy')} value={tr('support.noneForPriority', { priority: priorityLabel(t.priority) })} last />
           )}
         </Group>
 
-        <Group title="ASSIGNMENT" action={can.assign ? { label: 'Change', onPress: () => setModal({ kind: 'assign' }) } : undefined}>
+        <Group title="ASSIGNMENT" action={can.assign ? { label: tr('common.change'), onPress: () => setModal({ kind: 'assign' }) } : undefined}>
           <View style={styles.block}>
             <View style={opsStyles.rowBetween}>
               <View style={styles.flex}>
-                <Text style={opsStyles.title}>{t.assignee?.name ?? 'Unassigned'}</Text>
-                {t.assignedTeam ? <Text style={opsStyles.meta}>{`Team: ${t.assignedTeam}`}</Text> : null}
+                <Text style={opsStyles.title}>{t.assignee?.name ?? tr('support.unassigned')}</Text>
+                {t.assignedTeam ? <Text style={opsStyles.meta}>{tr('support.teamAssignedteam', { assignedTeam: t.assignedTeam })}</Text> : null}
               </View>
               {canTake ? (
-                <Pressable accessibilityRole="button" onPress={() => run(() => supportService.assign(id, { assignedTo: myId }), 'Assigned to you')} style={opsStyles.smallBtn}>
-                  <Text style={opsStyles.smallBtnText}>Take it</Text>
+                <Pressable accessibilityRole="button" onPress={() => run(() => supportService.assign(id, { assignedTo: myId }), tr('support.assignedToYou'))} style={opsStyles.smallBtn}>
+                  <Text style={opsStyles.smallBtnText}>{tr('support.takeIt')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -225,12 +227,12 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
         </Group>
 
         {data.escalations.length ? (
-          <Group title={`ESCALATIONS${openEscalations.length ? ` (${openEscalations.length} OPEN)` : ''}`}>
+          <Group title={openEscalations.length ? tr('support.escalationsOpen', { count: openEscalations.length }) : tr('support.escalations')}>
             <View style={styles.block}>
               {data.escalations.map(e => (
                 <View key={e.id} style={styles.escalation}>
                   <View style={opsStyles.rowBetween}>
-                    <Text style={opsStyles.title}>{`Level ${e.level}${e.isAutomatic ? ' · automatic' : ''}`}</Text>
+                    <Text style={opsStyles.title}>{`${tr('support.levelNumber', { level: e.level })}${e.isAutomatic ? ` · ${tr('support.automatic')}` : ''}`}</Text>
                     <Badge label={e.status.charAt(0) + e.status.slice(1).toLowerCase()} tone={e.status === 'RESOLVED' ? 'green' : e.status === 'CANCELLED' ? 'slate' : e.status === 'ACKNOWLEDGED' ? 'amber' : 'red'} />
                   </View>
                   <Text style={styles.body}>{e.reason}</Text>
@@ -239,16 +241,13 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
                   {can.escalate && (e.status === 'OPEN' || e.status === 'ACKNOWLEDGED') ? (
                     <View style={styles.inline}>
                       {e.status === 'OPEN' ? (
-                        <Text style={styles.link} onPress={() => run(() => supportService.updateEscalation(id, e.id, 'ACKNOWLEDGED'), 'Escalation acknowledged')}>
-                          Acknowledge
-                        </Text>
+                        <Text style={styles.link} onPress={() => run(() => supportService.updateEscalation(id, e.id, 'ACKNOWLEDGED'), tr('support.escalationAcknowledged'))}>
+                          {tr('support.acknowledge')}</Text>
                       ) : null}
                       <Text style={styles.link} onPress={() => setModal({ kind: 'escalation', id: e.id })}>
-                        Resolve
-                      </Text>
-                      <Text style={[styles.link, styles.muted]} onPress={() => run(() => supportService.updateEscalation(id, e.id, 'CANCELLED'), 'Escalation cancelled')}>
-                        Cancel
-                      </Text>
+                        {tr('support.resolve')}</Text>
+                      <Text style={[styles.link, styles.muted]} onPress={() => run(() => supportService.updateEscalation(id, e.id, 'CANCELLED'), tr('support.escalationCancelled'))}>
+                        {tr('common.cancel')}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -257,22 +256,23 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
           </Group>
         ) : null}
 
-        <Group title={`FILES (${data.attachments.length})`}>
+        <Group title={tr('support.filesAttachmentscount', { attachmentsCount: data.attachments.length })}>
           <View style={styles.block}>
-            {data.attachments.length ? data.attachments.map(a => <AttachmentRow key={a.id} ticketId={id} attachment={a} />) : <Text style={opsStyles.muted}>No files yet.</Text>}
+            {data.attachments.length ? data.attachments.map(a => <AttachmentRow key={a.id} ticketId={id} attachment={a} />) : <Text style={opsStyles.muted}>{tr('support.noFilesYet')}</Text>}
           </View>
         </Group>
 
-        <Group title="LINKED TICKETS" action={can.assign ? { label: 'Log follow-up', onPress: () => navigation.navigate('SupportTicketForm', { relatedTo: { id: t.id, ticketNumber: t.ticketNumber, subject: t.subject, storeId: t.store?.id } }) } : undefined}>
+        <Group title={tr('support.linkedTickets')} action={can.assign ? { label: tr('support.logFollowUp'), onPress: () => navigation.navigate('SupportTicketForm', { relatedTo: { id: t.id, ticketNumber: t.ticketNumber, subject: t.subject, storeId: t.store?.id } }) } : undefined}>
           <View style={styles.block}>
             {t.relatedTicket || data.followUps.length ? (
               <>
                 {t.relatedTicket ? (
                   <Text style={opsStyles.meta}>
-                    {'Follows '}
-                    <Text style={styles.link} onPress={() => navigation.push('SupportTicket', { id: t.relatedTicket!.id })}>
-                      {t.relatedTicket.ticketNumber}
-                    </Text>
+                    <Trans
+                      i18nKey="support.followsTicket"
+                      values={{ number: t.relatedTicket.ticketNumber }}
+                      components={{ link: <Text style={styles.link} onPress={() => navigation.push('SupportTicket', { id: t.relatedTicket!.id })} /> }}
+                    />
                     {` · ${t.relatedTicket.subject} (${statusOf(t.relatedTicket.status).label})`}
                   </Text>
                 ) : null}
@@ -287,13 +287,13 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
                 ))}
               </>
             ) : (
-              <Text style={opsStyles.muted}>No earlier or follow-up tickets.</Text>
+              <Text style={opsStyles.muted}>{tr('support.noEarlierOrFollowUpTickets')}</Text>
             )}
           </View>
         </Group>
 
         {data.feedback ? (
-          <Group title="CUSTOMER FEEDBACK">
+          <Group title={tr('support.customerFeedback')}>
             <View style={styles.block}>
               <View style={styles.stars}>
                 {Array.from({ length: 5 }, (_, i) => (
@@ -308,7 +308,7 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
         ) : null}
 
         {can.viewAudit && data.events ? (
-          <Group title="AUDIT TRAIL" action={{ label: showAudit ? 'Hide' : `Show ${data.events.length}`, onPress: () => setShowAudit(v => !v) }}>
+          <Group title={tr('support.auditTrail')} action={{ label: showAudit ? tr('support.hide') : tr('support.showEventscount', { eventsCount: data.events.length }), onPress: () => setShowAudit(v => !v) }}>
             <View style={styles.block}>
               {showAudit ? (
                 data.events.map(e => (
@@ -324,7 +324,7 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
                   </View>
                 ))
               ) : (
-                <Text style={opsStyles.muted}>Every status, priority, assignment and file action, append-only.</Text>
+                <Text style={opsStyles.muted}>{tr('support.everyStatusPriorityAssignmentAndFile')}</Text>
               )}
             </View>
           </Group>
@@ -333,50 +333,51 @@ export function SupportTicketScreen({ navigation, route }: ScreenProps<'SupportT
 
       <TextSheet
         visible={modal?.kind === 'transition'}
-        title={modal?.kind === 'transition' ? `Move to ${statusOf(modal.to).label}` : ''}
-        label="Reason (audit trail — not shown to the customer)"
-        confirmLabel="Change status"
+        title={modal?.kind === 'transition' ? tr('support.moveToLabel', { label: statusOf(modal.to).label }) : ''}
+        label={tr('support.reasonAuditTrailNotShownTo')}
+        confirmLabel={tr('common.changeStatus')}
         onClose={() => setModal(null)}
-        onConfirm={reason => modal?.kind === 'transition' && run(() => supportService.transition(id, modal.to, { reason: reason || undefined }), `Status changed to ${statusOf(modal.to).label}`)}
+        onConfirm={reason => modal?.kind === 'transition' && run(() => supportService.transition(id, modal.to, { reason: reason || undefined }), tr('support.statusChangedToLabel', { label: statusOf(modal.to).label }))}
       />
       <TextSheet
         visible={modal?.kind === 'resolve'}
-        title="Resolve ticket"
-        message="Open escalations are closed with it. The ticket closes on its own if the customer doesn't reopen it."
-        label="Resolution summary (shown to the customer)"
+        title={tr('support.resolveTicket')}
+        message={tr('support.openEscalationsAreClosedWithIt')}
+        label={tr('support.resolutionSummaryShownToTheCustomer')}
         initial={t.resolutionSummary ?? ''}
-        confirmLabel="Resolve"
+        confirmLabel={tr('support.resolve')}
         onClose={() => setModal(null)}
-        onConfirm={summary => run(() => supportService.transition(id, 'RESOLVED', { resolutionSummary: summary || undefined }), 'Ticket resolved — the customer is asked for feedback')}
+        onConfirm={summary => run(() => supportService.transition(id, 'RESOLVED', { resolutionSummary: summary || undefined }), tr('support.ticketResolvedTheCustomerIsAsked'))}
       />
       <TextSheet
         visible={modal?.kind === 'message'}
-        title="Edit message"
-        message="The original is kept in the audit trail."
-        label="Message"
+        title={tr('support.editMessage')}
+        message={tr('support.theOriginalIsKeptInThe')}
+        label={tr('support.message')}
         initial={modal?.kind === 'message' ? modal.message.body : ''}
         required
-        confirmLabel="Save"
+        confirmLabel={tr('common.save')}
         onClose={() => setModal(null)}
-        onConfirm={body => modal?.kind === 'message' && run(() => supportService.editMessage(id, modal.message.id, body), 'Message updated')}
+        onConfirm={body => modal?.kind === 'message' && run(() => supportService.editMessage(id, modal.message.id, body), tr('support.messageUpdated'))}
       />
       <TextSheet
         visible={modal?.kind === 'escalation'}
-        title="Resolve escalation"
-        label="Outcome"
-        confirmLabel="Resolve"
+        title={tr('support.resolveEscalation')}
+        label={tr('support.outcome')}
+        confirmLabel={tr('support.resolve')}
         onClose={() => setModal(null)}
-        onConfirm={note => modal?.kind === 'escalation' && run(() => supportService.updateEscalation(id, modal.id, 'RESOLVED', note || undefined), 'Escalation resolved')}
+        onConfirm={note => modal?.kind === 'escalation' && run(() => supportService.updateEscalation(id, modal.id, 'RESOLVED', note || undefined), tr('support.escalationResolved'))}
       />
-      <AssignSheet visible={modal?.kind === 'assign'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.assign(id, payload), 'Assignment updated')} />
-      <EscalateSheet visible={modal?.kind === 'escalate'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.escalate(id, payload), 'Ticket escalated')} />
-      <EditSheet visible={modal?.kind === 'edit'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.update(id, payload), 'Ticket updated')} />
+      <AssignSheet visible={modal?.kind === 'assign'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.assign(id, payload), tr('support.assignmentUpdated'))} />
+      <EscalateSheet visible={modal?.kind === 'escalate'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.escalate(id, payload), tr('support.ticketEscalated'))} />
+      <EditSheet visible={modal?.kind === 'edit'} detail={data} onClose={() => setModal(null)} onSave={payload => run(() => supportService.update(id, payload), tr('support.ticketUpdated'))} />
     </KeyboardAvoidingView>
   );
 }
 
 function Conversation({ messages, myId, canEdit, ticketId, onEdit }: { messages: SupportMessage[]; myId: string; canEdit: boolean; ticketId: string; onEdit: (m: SupportMessage) => void }) {
-  if (!messages.length) return <Text style={opsStyles.muted}>No messages yet.</Text>;
+  const { t } = useTranslation();
+  if (!messages.length) return <Text style={opsStyles.muted}>{t('support.noMessagesYet')}</Text>;
   return (
     <View style={styles.messages}>
       {messages.map(m => {
@@ -391,11 +392,11 @@ function Conversation({ messages, myId, canEdit, ticketId, onEdit }: { messages:
         return (
           <View key={m.id} style={[styles.bubble, m.fromCustomer ? styles.fromCustomer : note ? styles.note : styles.fromStaff]}>
             <View style={styles.bubbleHead}>
-              <Text style={styles.author}>{m.author?.name ?? (m.fromCustomer ? 'Customer' : 'Staff')}</Text>
+              <Text style={styles.author}>{m.author?.name ?? (m.fromCustomer ? t('common.customer') : t('support.staff'))}</Text>
               {note ? (
                 <View style={styles.noteTag}>
                   <LockIcon size={11} color="#92400e" />
-                  <Text style={styles.noteTagText}>{m.internalAudience === 'STORE' ? 'Internal · store + VeiloScan' : 'Internal · VeiloScan only'}</Text>
+                  <Text style={styles.noteTagText}>{m.internalAudience === 'STORE' ? t('support.internalStoreVeiloscan') : t('support.internalVeiloscanOnly')}</Text>
                 </View>
               ) : null}
             </View>
@@ -404,11 +405,10 @@ function Conversation({ messages, myId, canEdit, ticketId, onEdit }: { messages:
               <AttachmentRow key={a.id} ticketId={ticketId} attachment={a} />
             ))}
             <View style={styles.inline}>
-              <Text style={opsStyles.muted}>{`${dateTime(m.createdAt)}${m.channel !== 'PORTAL' ? ` · via ${m.channel.toLowerCase()}` : ''}${m.editedAt ? ' · edited' : ''}`}</Text>
+              <Text style={opsStyles.muted}>{`${dateTime(m.createdAt)}${m.channel !== 'PORTAL' ? ` · ${t('support.viaChannel', { channel: m.channel.toLowerCase() })}` : ''}${m.editedAt ? ` · ${t('support.edited')}` : ''}`}</Text>
               {canEdit && m.author?.id === myId && !m.fromCustomer ? (
                 <Text style={styles.link} onPress={() => onEdit(m)}>
-                  Edit
-                </Text>
+                  {t('common.edit')}</Text>
               ) : null}
             </View>
           </View>
@@ -419,6 +419,7 @@ function Conversation({ messages, myId, canEdit, ticketId, onEdit }: { messages:
 }
 
 function AttachmentRow({ ticketId, attachment: a }: { ticketId: string; attachment: SupportAttachment }) {
+  const { t } = useTranslation();
   const toast = useToast();
   async function open() {
     try {
@@ -430,14 +431,14 @@ function AttachmentRow({ ticketId, attachment: a }: { ticketId: string; attachme
     }
   }
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Open ${a.fileName}`} onPress={open} style={styles.file}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('support.openFilename', { fileName: a.fileName })} onPress={open} style={styles.file}>
       <FileTextIcon size={16} color={colors.secondary} />
       <View style={styles.flex}>
         <Text style={opsStyles.title} numberOfLines={1}>
           {a.fileName}
         </Text>
         <Text style={opsStyles.muted}>
-          {`${formatBytes(a.sizeBytes)}${a.uploadedByCustomer ? ' · from customer' : ''}${!a.isCustomerVisible ? ` · internal (${a.internalAudience === 'STORE' ? 'store' : 'VeiloScan'})` : ''}`}
+          {`${formatBytes(a.sizeBytes)}${a.uploadedByCustomer ? ` · ${t('support.fromCustomer')}` : ''}${!a.isCustomerVisible ? ` · ${a.internalAudience === 'STORE' ? t('support.internalStore') : t('support.internalVeiloscan')}` : ''}`}
         </Text>
       </View>
     </Pressable>
@@ -446,18 +447,19 @@ function AttachmentRow({ ticketId, attachment: a }: { ticketId: string; attachme
 
 // A store team's notes are always shared with the team and VeiloScan (the API sets it).
 function Composer({ ticketId, detail, onSent }: { ticketId: string; detail: SupportTicketDetail; onSent: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const can = detail.allowed;
   const isStoreRequest = detail.ticket.customer.isStore;
-  const replyTo = isStoreRequest ? 'VeiloScan support' : 'the customer';
+  const replyTo = isStoreRequest ? t('support.veiloscanSupport') : t('support.theCustomer');
   const [mode, setMode] = useState<'REPLY' | 'INTERNAL_NOTE'>(can.reply ? 'REPLY' : 'INTERNAL_NOTE');
   const [body, setBody] = useState('');
   const [files, setFiles] = useState<PickedFile[]>([]);
   const [sending, setSending] = useState(false);
   const note = mode === 'INTERNAL_NOTE';
   const modes = [
-    ...(can.reply ? [{ value: 'REPLY', label: isStoreRequest ? 'Message VeiloScan' : 'Reply to customer' }] : []),
-    ...(can.internalNote ? [{ value: 'INTERNAL_NOTE', label: 'Internal note' }] : []),
+    ...(can.reply ? [{ value: 'REPLY', label: isStoreRequest ? t('support.messageVeiloscan') : t('support.replyToCustomer') }] : []),
+    ...(can.internalNote ? [{ value: 'INTERNAL_NOTE', label: t('support.internalNote') }] : []),
   ];
 
   async function attach() {
@@ -484,8 +486,8 @@ function Composer({ ticketId, detail, onSent }: { ticketId: string; detail: Supp
       }
       setBody('');
       setFiles([]);
-      if (failed.length) toast(`Sent, but some files failed — ${failed.join('; ')}`, 'error');
-      else toast(note ? 'Internal note added' : `Reply sent to ${replyTo}`);
+      if (failed.length) toast(t('support.sentButSomeFilesFailedJoin', { join: failed.join('; ') }), 'error');
+      else toast(note ? t('support.internalNoteAdded') : t('support.replySentToReplyto', { replyTo }));
       onSent();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -497,15 +499,15 @@ function Composer({ ticketId, detail, onSent }: { ticketId: string; detail: Supp
   return (
     <View style={[styles.composer, note && styles.composerNote]}>
       {modes.length > 1 ? <FilterChips options={modes} value={mode} onChange={v => setMode(v as typeof mode)} /> : null}
-      {note ? <Text style={styles.noteHint}>Seen by your store team and VeiloScan support — never the customer.</Text> : null}
+      {note ? <Text style={styles.noteHint}>{t('support.seenByYourStoreTeamAnd')}</Text> : null}
       <Input
         value={body}
         onChangeText={setBody}
         multiline
         maxLength={10000}
         style={styles.textArea}
-        placeholder={note ? 'For your team and VeiloScan. Never sent to the customer.' : `Write a reply — ${replyTo} is notified.`}
-        accessibilityLabel={note ? 'Internal note' : 'Reply'}
+        placeholder={note ? t('support.forYourTeamAndVeiloscanNever') : t('support.writeAReplyReplytoIsNotified', { replyTo })}
+        accessibilityLabel={note ? t('support.internalNote') : t('support.reply')}
       />
       {files.length ? (
         <View style={styles.wrap}>
@@ -519,10 +521,10 @@ function Composer({ ticketId, detail, onSent }: { ticketId: string; detail: Supp
       <View style={opsStyles.rowBetween}>
         <Pressable accessibilityRole="button" onPress={attach} style={styles.attach} hitSlop={6}>
           <ImageIcon size={16} color={colors.textSecondary} />
-          <Text style={opsStyles.smallBtnText}>Attach photos</Text>
+          <Text style={opsStyles.smallBtnText}>{t('support.attachPhotos')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={!body.trim() || sending} onPress={send} style={[opsStyles.primaryBtn, note && styles.noteBtn, (!body.trim() || sending) && styles.disabled]}>
-          <Text style={opsStyles.primaryBtnText}>{sending ? 'Sending…' : note ? 'Add note' : 'Send reply'}</Text>
+          <Text style={opsStyles.primaryBtnText}>{sending ? t('common.sending') : note ? t('support.addNote') : t('support.sendReply')}</Text>
         </Pressable>
       </View>
     </View>
@@ -551,6 +553,7 @@ function TextSheet({
   onClose: () => void;
   onConfirm: (text: string) => unknown;
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState(initial);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -577,7 +580,7 @@ function TextSheet({
           }}
           style={[opsStyles.primaryBtn, blocked && styles.disabled]}
         >
-          <Text style={opsStyles.primaryBtnText}>{busy ? 'Saving…' : confirmLabel}</Text>
+          <Text style={opsStyles.primaryBtnText}>{busy ? t('common.saving') : confirmLabel}</Text>
         </Pressable>
       }
     >
@@ -589,9 +592,10 @@ function TextSheet({
 }
 
 function SaveButton({ label, busy, danger, onPress }: { label: string; busy: boolean; danger?: boolean; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable accessibilityRole="button" disabled={busy} onPress={onPress} style={[opsStyles.primaryBtn, danger && styles.dangerBtn, busy && styles.disabled]}>
-      <Text style={opsStyles.primaryBtnText}>{busy ? 'Saving…' : label}</Text>
+      <Text style={opsStyles.primaryBtnText}>{busy ? t('common.saving') : label}</Text>
     </Pressable>
   );
 }
@@ -610,6 +614,7 @@ function useBusy() {
 }
 
 function AssignSheet({ visible, detail, onClose, onSave }: { visible: boolean; detail: SupportTicketDetail; onClose: () => void; onSave: (p: { assignedTo: string | null; assignedTeam: string | null; note?: string }) => unknown }) {
+  const { t: tr } = useTranslation();
   const t = detail.ticket;
   const people = useFetch(() => (visible ? supportService.assignees(t.id) : Promise.resolve([])), [visible, t.id]);
   const [assignedTo, setAssignedTo] = useState('');
@@ -625,26 +630,26 @@ function AssignSheet({ visible, detail, onClose, onSave }: { visible: boolean; d
   return (
     <Sheet
       visible={visible}
-      title="Assign ticket"
-      subtitle="Previous assignments stay in the history."
+      title={tr('support.assignTicket')}
+      subtitle={tr('support.previousAssignmentsStayInTheHistory')}
       onClose={onClose}
-      footer={<SaveButton label="Save" busy={busy} onPress={wrap(() => onSave({ assignedTo: assignedTo || null, assignedTeam: team.trim() || null, note: note.trim() || undefined }))} />}
+      footer={<SaveButton label={tr('common.save')} busy={busy} onPress={wrap(() => onSave({ assignedTo: assignedTo || null, assignedTeam: team.trim() || null, note: note.trim() || undefined }))} />}
     >
       <View style={styles.sheet}>
         <SelectField
-          label="Agent"
+          label={tr('support.agent')}
           value={assignedTo}
           options={(people.data ?? []).map(p => ({ value: p.id, label: p.name ?? p.email ?? '—' }))}
           onChange={setAssignedTo}
-          placeholder="Unassigned"
-          allowClear="Unassigned"
-          hint={detail.allowed.assignOthers ? undefined : 'Without supervisor access you can only take or release the ticket yourself'}
+          placeholder={tr('support.unassigned')}
+          allowClear={tr('support.unassigned')}
+          hint={detail.allowed.assignOthers ? undefined : tr('support.withoutSupervisorAccessYouCanOnly')}
         />
-        <Field label="Team">
-          <Input value={team} onChangeText={setTeam} maxLength={100} placeholder="e.g. Counter, Returns" accessibilityLabel="Team" />
+        <Field label={tr('support.team')}>
+          <Input value={team} onChangeText={setTeam} maxLength={100} placeholder="e.g. Counter, Returns" accessibilityLabel={tr('support.team')} />
         </Field>
-        <Field label="Note (optional)">
-          <Input value={note} onChangeText={setNote} multiline maxLength={1000} accessibilityLabel="Assignment note" />
+        <Field label={tr('common.noteOptional')}>
+          <Input value={note} onChangeText={setNote} multiline maxLength={1000} accessibilityLabel={tr('support.assignmentNote')} />
         </Field>
       </View>
     </Sheet>
@@ -652,6 +657,7 @@ function AssignSheet({ visible, detail, onClose, onSave }: { visible: boolean; d
 }
 
 function EscalateSheet({ visible, detail, onClose, onSave }: { visible: boolean; detail: SupportTicketDetail; onClose: () => void; onSave: (p: { reason: string; level: number; escalatedTo?: string; escalatedTeam?: string }) => unknown }) {
+  const { t: tr } = useTranslation();
   const t = detail.ticket;
   const nextLevel = Math.min((t.escalationLevel ?? 0) + 1, 5);
   const people = useFetch(() => (visible ? supportService.assignees(t.id) : Promise.resolve([])), [visible, t.id]);
@@ -670,28 +676,28 @@ function EscalateSheet({ visible, detail, onClose, onSave }: { visible: boolean;
   return (
     <Sheet
       visible={visible}
-      title="Escalate ticket"
+      title={tr('support.escalateTicket')}
       onClose={onClose}
-      footer={<SaveButton label="Escalate" danger busy={busy || !reason.trim()} onPress={wrap(() => onSave({ reason: reason.trim(), level: Number(level), escalatedTo: to || undefined, escalatedTeam: team.trim() || undefined }))} />}
+      footer={<SaveButton label={tr('support.escalate')} danger busy={busy || !reason.trim()} onPress={wrap(() => onSave({ reason: reason.trim(), level: Number(level), escalatedTo: to || undefined, escalatedTeam: team.trim() || undefined }))} />}
     >
       <View style={styles.sheet}>
-        <Field label="Reason" required>
-          <Input value={reason} onChangeText={setReason} multiline maxLength={2000} placeholder="Why this needs more senior attention" accessibilityLabel="Escalation reason" />
+        <Field label={tr('common.reason')} required>
+          <Input value={reason} onChangeText={setReason} multiline maxLength={2000} placeholder={tr('support.whyThisNeedsMoreSeniorAttention')} accessibilityLabel={tr('support.escalationReason')} />
         </Field>
-        <Field label="Level">
-          <FilterChips options={[1, 2, 3, 4, 5].filter(l => l >= nextLevel).map(l => ({ value: String(l), label: `Level ${l}` }))} value={level} onChange={setLevel} />
+        <Field label={tr('support.level')}>
+          <FilterChips options={[1, 2, 3, 4, 5].filter(l => l >= nextLevel).map(l => ({ value: String(l), label: tr('support.levelL', { l }) }))} value={level} onChange={setLevel} />
         </Field>
         <SelectField
-          label="Escalate to (optional)"
-          hint="Leave empty to raise it with VeiloScan support, or pick someone senior in your team"
+          label={tr('support.escalateToOptional')}
+          hint={tr('support.leaveEmptyToRaiseItWith')}
           value={to}
           options={(people.data ?? []).map(p => ({ value: p.id, label: `${p.name ?? '—'} ${p.isPlatform ? '· VeiloScan' : '· store team'}` }))}
           onChange={setTo}
-          placeholder="VeiloScan support"
-          allowClear="VeiloScan support"
+          placeholder={tr('support.veiloscanSupport')}
+          allowClear={tr('support.veiloscanSupport')}
         />
-        <Field label="Team">
-          <Input value={team} onChangeText={setTeam} maxLength={100} placeholder="VeiloScan Support" accessibilityLabel="Escalation team" />
+        <Field label={tr('support.team')}>
+          <Input value={team} onChangeText={setTeam} maxLength={100} placeholder={tr('support.veiloscanSupport2')} accessibilityLabel={tr('support.escalationTeam')} />
         </Field>
       </View>
     </Sheet>
@@ -699,6 +705,7 @@ function EscalateSheet({ visible, detail, onClose, onSave }: { visible: boolean;
 }
 
 function EditSheet({ visible, detail, onClose, onSave }: { visible: boolean; detail: SupportTicketDetail; onClose: () => void; onSave: (p: Record<string, unknown>) => unknown }) {
+  const { t: tr } = useTranslation();
   const t = detail.ticket;
   const types = useFetch(() => (visible ? supportService.ticketTypes() : Promise.resolve([])), [visible]);
   const categories = useFetch(() => (visible ? supportService.categories() : Promise.resolve([])), [visible]);
@@ -721,18 +728,18 @@ function EditSheet({ visible, detail, onClose, onSave }: { visible: boolean; det
   }
 
   return (
-    <Sheet visible={visible} title="Edit ticket" onClose={onClose} footer={<SaveButton label="Save" busy={busy} onPress={wrap(save)} />}>
+    <Sheet visible={visible} title={tr('support.editTicket')} onClose={onClose} footer={<SaveButton label={tr('common.save')} busy={busy} onPress={wrap(save)} />}>
       <View style={styles.sheet}>
-        <Field label="Subject">
-          <Input value={form.subject} onChangeText={set('subject')} maxLength={200} accessibilityLabel="Subject" />
+        <Field label={tr('support.subject')}>
+          <Input value={form.subject} onChangeText={set('subject')} maxLength={200} accessibilityLabel={tr('support.subject')} />
         </Field>
-        <SelectField label="Ticket type" value={form.ticketType} options={(types.data ?? []).map(x => ({ value: x.code, label: x.name }))} onChange={set('ticketType')} />
-        <SelectField label="Category" value={form.categoryId} options={categoryOptions(categories.data ?? [])} onChange={set('categoryId')} />
-        <Field label="Priority" hint="Changing it recalculates the SLA deadlines">
+        <SelectField label={tr('support.ticketType')} value={form.ticketType} options={(types.data ?? []).map(x => ({ value: x.code, label: x.name }))} onChange={set('ticketType')} />
+        <SelectField label={tr('common.category')} value={form.categoryId} options={categoryOptions(categories.data ?? [])} onChange={set('categoryId')} />
+        <Field label={tr('common.priority')} hint={tr('support.changingItRecalculatesTheSlaDeadlines')}>
           <FilterChips options={PRIORITIES.map(p => ({ value: p, label: priorityLabel(p) }))} value={form.priority} onChange={set('priority')} />
         </Field>
-        <Field label="Reason (audit trail)">
-          <Input value={form.reason} onChangeText={set('reason')} multiline maxLength={1000} accessibilityLabel="Edit reason" />
+        <Field label={tr('support.reasonAuditTrail')}>
+          <Input value={form.reason} onChangeText={set('reason')} multiline maxLength={1000} accessibilityLabel={tr('support.editReason')} />
         </Field>
       </View>
     </Sheet>

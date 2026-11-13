@@ -40,6 +40,8 @@ import {
 import { CreditTermsForm, creditPayload, creditTermsProblem, defaultCreditTerms, type CreditTerms } from '../../components/orders/CreditTermsForm';
 import { CartIcon, CheckCircleIcon, PlusIcon, SearchIcon, StoreIcon, TagIcon, UserIcon, WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 type Stage = 1 | 2 | 3;
 type SaleType = 'QUICK_SALE' | 'EXISTING' | 'NEW';
@@ -50,9 +52,9 @@ interface PaymentLine {
 }
 
 const STAGES: { value: Stage; label: string }[] = [
-  { value: 1, label: 'Products' },
-  { value: 2, label: 'Customer' },
-  { value: 3, label: 'Payment' },
+  { value: 1, get label() { return i18n.t('common.products'); } },
+  { value: 2, get label() { return i18n.t('common.customer'); } },
+  { value: 3, get label() { return i18n.t('common.payment'); } },
 ];
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -66,6 +68,7 @@ const newLine = (method: PaymentMethod = 'CASH'): PaymentLine => ({ method, amou
  * items filled in; saving links the order to the request).
  */
 export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrder'>) {
+  const { t } = useTranslation();
   const requestId = route.params?.requestId;
   const insets = useSafeAreaInsets();
   const { hasPermission } = useAuth();
@@ -180,36 +183,36 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
 
   // Why a step can't be left yet (first reason only), as the Seller Panel checks.
   const itemsBlocker = !store
-    ? 'Choose the store'
+    ? t('orders.chooseTheStore')
     : !lines.length
-      ? 'Add at least one item'
+      ? t('orders.addAtLeastOneItem')
       : badLine
-        ? `Check the quantity and discount of ${badLine.item.productName}`
+        ? t('orders.checkTheQuantityAndDiscountOf', { productName: badLine.item.productName })
         : pricing.couponProblem
           ? pricing.couponProblem
           : !shortConfirmed
-            ? `Confirm the out-of-stock item${shortLines.length === 1 ? '' : 's'} to continue`
+            ? t('orders.confirmOutOfStockItems', { count: shortLines.length })
             : null;
   const customerBlocker = quickSale
     ? null
     : !saleType
-      ? 'Choose who is buying'
+      ? t('orders.chooseWhoIsBuying')
       : customerProblem(customer, existing, existingMode ? 'EXISTING' : 'NEW');
   const reachable: Stage = itemsBlocker ? 1 : customerBlocker ? 2 : 3;
   const paymentBlocker = !store
-    ? 'Choose the store'
+    ? t('orders.chooseTheStore')
     : option === 'PAY_NOW' && split && paise(paidNow) !== paise(pricing.total)
-      ? `Payments must add up to ${formatRupees(pricing.total)} (${remaining > 0 ? `${formatRupees(remaining)} left` : `${formatRupees(-remaining)} too much`})`
+      ? t(remaining > 0 ? 'orders.paymentsMustAddUpLeft' : 'orders.paymentsMustAddUpTooMuch', { total: formatRupees(pricing.total), amount: formatRupees(Math.abs(remaining)) })
       : cashReceived !== null && paise(cashReceived) < paise(pricing.total)
-        ? `Received amount is ${formatRupees(round2(pricing.total - cashReceived))} short`
+        ? t('orders.receivedAmountIsAmountShort', { amount: formatRupees(round2(pricing.total - cashReceived)) })
         : option === 'PAY_CREDIT' && quickSale
-          ? 'A Quick Sale is paid now — choose a customer to sell on credit'
+          ? t('orders.aQuickSaleIsPaidNow')
           : option === 'PAY_CREDIT' && !store.creditAllowed
-            ? 'Customer Credit is turned off for this store'
+            ? t('orders.customerCreditIsTurnedOffFor')
             : option === 'PAY_CREDIT' && creditTermsProblem(terms, store.maxCreditDays)
               ? creditTermsProblem(terms, store.maxCreditDays)
               : option === 'PAY_CREDIT' && paise(paidNow) >= paise(pricing.total)
-                ? 'The upfront payment covers the whole order — use Pay now'
+                ? t('orders.theUpfrontPaymentCoversTheWhole')
                 : null;
   const blocker = itemsBlocker ?? customerBlocker ?? pricing.orderDiscountProblem ?? paymentBlocker;
 
@@ -269,8 +272,8 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
       if (gone.length || newlyShort.length) {
         setStockNotice(
           [
-            gone.length ? `No longer for sale here, removed: ${gone.map(l => l.item.productName).join(', ')}.` : '',
-            newlyShort.length ? `Stock changed — now out of stock: ${newlyShort.map(l => l.item.productName).join(', ')}.` : '',
+            gone.length ? t('orders.noLongerForSaleHereRemoved', { join: gone.map(l => l.item.productName).join(', ') }) : '',
+            newlyShort.length ? t('orders.stockChangedNowOutOfStock', { join: newlyShort.map(l => l.item.productName).join(', ') }) : '',
           ]
             .filter(Boolean)
             .join(' '),
@@ -379,19 +382,19 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
 
   function leave() {
     if (!lines.length || result) return navigation.goBack();
-    NativeAlert.alert('Discard this order?', 'The items and details you entered will be lost.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
+    NativeAlert.alert(t('orders.discardThisOrder'), t('orders.theItemsAndDetailsYouEntered'), [
+      { text: t('common.keepEditing'), style: 'cancel' },
+      { text: t('common.discard'), style: 'destructive', onPress: () => navigation.goBack() },
     ]);
   }
 
-  const title = request ? `Final bill · ${request.requestNumber}` : 'New order';
+  const title = request ? t('orders.finalBillRequestnumber', { requestNumber: request.requestNumber }) : t('common.newOrder');
 
   if (!hasPermission('orders:manage')) {
     return (
       <View style={styles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ErrorState message="You don't have permission to create orders." onRetry={navigation.goBack} />
+        <ErrorState message={t('orders.youDonTHavePermissionTo')} onRetry={navigation.goBack} />
       </View>
     );
   }
@@ -420,26 +423,29 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
     const customerName = quickSale ? null : existingMode ? existing?.name : customer.name.trim();
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order placed" onBack={navigation.goBack} />
+        <AppHeader title={t('common.orderPlaced')} onBack={navigation.goBack} />
         <ScrollView contentContainerStyle={[styles.content, styles.placed]}>
           <View style={styles.placedIcon}>
             <CheckCircleIcon size={44} color={colors.success} />
           </View>
-          <Text style={styles.placedTitle}>Order placed</Text>
+          <Text style={styles.placedTitle}>{t('common.orderPlaced')}</Text>
           <Text style={styles.placedText}>
-            #{result.orderNumber} {customerName ? `for ${customerName}` : '· Quick Sale'} at {store?.name} ·{' '}
-            {handOverNow ? 'completed and invoiced' : 'accepted, waiting for pickup'}
+            {t(handOverNow ? 'orders.placedCompletedAndInvoiced' : 'orders.placedWaitingForPickup', {
+              number: result.orderNumber,
+              who: customerName ? t('orders.forCustomer', { name: customerName }) : t('orders.quickSale'),
+              store: store?.name ?? '',
+            })}
           </Text>
           <Card style={styles.placedCard}>
-            <Row label="Total" value={formatRupees(result.totalAmount)} strong />
-            <Row label="Paid now" value={formatRupees(p.paidAtOrder)} />
-            {credit ? <Row label="On Customer Credit" value={`${formatRupees(p.onCredit)} · due ${formatDay(credit.dueDate)}`} tone="#7c3aed" /> : null}
+            <Row label={t('common.total')} value={formatRupees(result.totalAmount)} strong />
+            <Row label={t('orders.paidNow')} value={formatRupees(p.paidAtOrder)} />
+            {credit ? <Row label={t('orders.onCustomerCredit')} value={`${formatRupees(p.onCredit)} · ${t('orders.dueOn', { date: formatDay(credit.dueDate) })}`} tone="#7c3aed" /> : null}
           </Card>
-          <Button title="View order" onPress={() => navigation.replace('OrderDetail', { id: result.orderId })} style={styles.fullWidth} />
+          <Button title={t('orders.viewOrder')} onPress={() => navigation.replace('OrderDetail', { id: result.orderId })} style={styles.fullWidth} />
           {request ? (
-            <Button title="Back to request" variant="ghost" onPress={() => navigation.goBack()} style={styles.fullWidth} />
+            <Button title={t('orders.backToRequest')} variant="ghost" onPress={() => navigation.goBack()} style={styles.fullWidth} />
           ) : (
-            <Button title={quickSale ? 'New quick sale' : 'New order'} variant="ghost" onPress={startOver} style={styles.fullWidth} />
+            <Button title={quickSale ? t('orders.newQuickSale') : t('common.newOrder')} variant="ghost" onPress={startOver} style={styles.fullWidth} />
           )}
         </ScrollView>
       </View>
@@ -448,7 +454,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
 
   return (
     <View style={styles.screen}>
-      <AppHeader title={title} subtitle={store ? store.name : 'Choose the store'} onBack={leave} />
+      <AppHeader title={title} subtitle={store ? store.name : t('orders.chooseTheStore')} onBack={leave} />
 
       {/* 1 Products → 2 Customer → 3 Payment; earlier steps, and the next once ready, can be opened. */}
       <View style={styles.stages}>
@@ -469,7 +475,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                 <Text style={[styles.stageNum, (done || current) && styles.stageNumOn]}>{s.value}</Text>
               </View>
               <Text style={[styles.stageLabel, current && styles.stageLabelCurrent]}>
-                {s.value === 2 && quickSale ? 'Quick Sale' : s.label}
+                {s.value === 2 && quickSale ? t('orders.quickSale2') : s.label}
               </Text>
             </Pressable>
           );
@@ -481,7 +487,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
           {stage === 1 ? (
             <>
               {stores.length > 1 && !request ? (
-                <Card title="Store" icon={StoreIcon}>
+                <Card title={t('common.store')} icon={StoreIcon}>
                   <View style={styles.choices}>
                     {stores.map(s => (
                       <Pressable
@@ -501,17 +507,17 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
               {store ? (
                 <Pressable accessibilityRole="button" onPress={() => setPickerOpen(true)} style={styles.addProducts}>
                   <PlusIcon size={20} color={colors.secondary} strokeWidth={2.4} />
-                  <Text style={styles.addProductsText}>Add products</Text>
+                  <Text style={styles.addProductsText}>{t('orders.addProducts')}</Text>
                   <SearchIcon size={18} color={colors.textMuted} />
                 </Pressable>
               ) : null}
 
               {request && request.items.some(i => !i.catalogItem) ? (
                 <Alert
-                  message={`Not for sale now, left out: ${request.items
+                  message={t('orders.notForSaleNowLeftOut', { join: request.items
                     .filter(i => !i.catalogItem)
                     .map(i => i.name)
-                    .join(', ')}.`}
+                    .join(', ') })}
                 />
               ) : null}
 
@@ -528,7 +534,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
               ))}
 
               {lines.length ? (
-                <Card title="Coupon" icon={TagIcon}>
+                <Card title={t('common.coupon')} icon={TagIcon}>
                   {coupon ? (
                     <View style={styles.couponApplied}>
                       <Text style={styles.couponCode}>{coupon.code}</Text>
@@ -536,7 +542,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                         {pricing.couponProblem ?? `−${formatRupees(pricing.couponOff)} · ${coupon.title}`}
                       </Text>
                       <Pressable onPress={() => setCoupon(null)} hitSlop={8}>
-                        <Text style={styles.link}>Remove</Text>
+                        <Text style={styles.link}>{t('common.remove')}</Text>
                       </Pressable>
                     </View>
                   ) : (
@@ -544,14 +550,14 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                       <TextInput
                         value={couponCode}
                         onChangeText={text => setCouponCode(text.toUpperCase())}
-                        placeholder="Coupon code"
+                        placeholder={t('common.couponCode')}
                         placeholderTextColor={colors.textMuted}
                         autoCapitalize="characters"
                         selectionColor={colors.secondary}
                         style={styles.couponInput}
                       />
                       <Pressable onPress={applyCoupon} disabled={couponBusy || !couponCode.trim()} style={styles.applyBtn}>
-                        <Text style={styles.applyText}>{couponBusy ? 'Checking…' : 'Apply'}</Text>
+                        <Text style={styles.applyText}>{couponBusy ? t('common.checking') : t('common.apply')}</Text>
                       </Pressable>
                     </View>
                   )}
@@ -561,14 +567,14 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
 
               {shortLines.length ? (
                 <View style={styles.short}>
-                  <Text style={styles.shortTitle}>Not enough stock</Text>
+                  <Text style={styles.shortTitle}>{t('orders.notEnoughStock')}</Text>
                   {shortLines.map(l => (
                     <Text key={l.item.variantId} style={styles.shortText}>
                       {l.item.productName}: {stockShortfall(l)}
                     </Text>
                   ))}
                   <Checkbox
-                    label="Sell anyway — the stock goes below 0"
+                    label={t('orders.sellAnywayTheStockGoesBelow')}
                     checked={shortConfirmed}
                     onChange={on => setConfirmedShort(on ? shortKey : '')}
                   />
@@ -584,9 +590,9 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                 <View style={styles.saleTypes}>
                   {(
                     [
-                      ['QUICK_SALE', 'Quick Sale', 'No customer details', CartIcon],
-                      ['EXISTING', 'Existing', 'Search customers', SearchIcon],
-                      ['NEW', 'New customer', 'Enter details', UserIcon],
+                      ['QUICK_SALE', t('orders.quickSale2'), t('orders.noCustomerDetails'), CartIcon],
+                      ['EXISTING', t('orders.existing'), t('orders.searchCustomers'), SearchIcon],
+                      ['NEW', t('orders.newCustomer'), t('orders.enterDetails'), UserIcon],
                     ] as const
                   ).map(([value, label, hint, Icon]) => (
                     <Pressable
@@ -605,12 +611,12 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
               ) : null}
 
               {saleType === 'EXISTING' && store ? (
-                <Card title="Customer" icon={UserIcon}>
+                <Card title={t('common.customer')} icon={UserIcon}>
                   <ExistingCustomerPicker storeId={store.id} selected={existing} onSelect={pickExisting} onAddNew={addNewFromSearch} />
                 </Card>
               ) : null}
               {saleType === 'NEW' ? (
-                <Card title={request ? "Customer (from the request)" : 'New customer'} icon={UserIcon}>
+                <Card title={request ? t('orders.customerFromTheRequest') : t('orders.newCustomer')} icon={UserIcon}>
                   <NewCustomerForm value={customer} onChange={setCustomer} />
                 </Card>
               ) : null}
@@ -619,7 +625,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                   <CustomerNote value={customerNote} onChange={setCustomerNote} />
                   <View style={styles.gap} />
                   <Checkbox
-                    label="Phone order — the customer picks it up later"
+                    label={t('orders.phoneOrderTheCustomerPicksIt')}
                     checked={!handOverNow}
                     onChange={later => setHandOverNow(!later)}
                   />
@@ -630,13 +636,13 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
 
           {stage === 3 ? (
             <>
-              <Card title="Discount" icon={TagIcon}>
+              <Card title={t('common.discount')} icon={TagIcon}>
                 <View style={styles.choices}>
                   {(
                     [
-                      ['NONE', 'None'],
-                      ['FLAT', '₹ Flat'],
-                      ['PERCENTAGE', '% Percent'],
+                      ['NONE', t('common.none')],
+                      ['FLAT', t('orders.rsFlat')],
+                      ['PERCENTAGE', t('orders.percentPercent')],
                     ] as const
                   ).map(([value, label]) => (
                     <Pressable
@@ -655,7 +661,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                     value={discountValue}
                     onChangeText={text => setDiscountValue(text.replace(/[^0-9.]/g, ''))}
                     keyboardType="decimal-pad"
-                    placeholder={discountType === 'FLAT' ? 'Amount off (₹)' : 'Percent off'}
+                    placeholder={discountType === 'FLAT' ? t('orders.amountOffRs') : t('orders.percentOff')}
                     placeholderTextColor={colors.textMuted}
                     selectionColor={colors.secondary}
                     style={[styles.input, styles.inputGap]}
@@ -664,19 +670,19 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                 {pricing.orderDiscountProblem ? <Text style={styles.problem}>{pricing.orderDiscountProblem}</Text> : null}
               </Card>
 
-              <Card title="Payment" icon={WalletIcon}>
+              <Card title={t('common.payment')} icon={WalletIcon}>
                 {!quickSale && store?.creditAllowed ? (
                   <View style={[styles.choices, styles.inputGapBottom]}>
                     {(
                       [
-                        ['PAY_NOW', 'Pay now'],
-                        ['PAY_CREDIT', 'Customer Credit'],
+                        ['PAY_NOW', t('orders.payNow')],
+                        ['PAY_CREDIT', t('common.customerCredit')],
                       ] as const
                     ).map(([value, label]) => (
                       <Pressable
                         key={value}
                         accessibilityRole="radio"
-                        accessibilityLabel={`Payment option: ${label}`}
+                        accessibilityLabel={t('orders.paymentOptionLabel', { label })}
                         accessibilityState={{ selected: option === value }}
                         onPress={() => setOption(value)}
                         style={[styles.choice, styles.choiceWide, option === value && styles.choiceOn]}
@@ -690,7 +696,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                 {option === 'PAY_NOW' ? (
                   <>
                     <View style={styles.switchRow}>
-                      <Text style={styles.switchLabel}>Split across methods</Text>
+                      <Text style={styles.switchLabel}>{t('orders.splitAcrossMethods')}</Text>
                       <Switch value={split} onValueChange={setSplit} trackColor={{ true: colors.secondary, false: colors.border }} thumbColor={colors.white} />
                     </View>
                     {!split ? (
@@ -702,20 +708,20 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                               value={received}
                               onChangeText={text => setReceived(text.replace(/[^0-9.]/g, ''))}
                               keyboardType="decimal-pad"
-                              placeholder={`Cash received (₹${pricing.total})`}
+                              placeholder={t('orders.cashReceivedRsTotal', { total: pricing.total })}
                               placeholderTextColor={colors.textMuted}
                               selectionColor={colors.secondary}
                               style={[styles.input, styles.inputGap]}
                             />
                             {cashReceived !== null && cashReceived > pricing.total ? (
-                              <Text style={styles.change}>Give back {formatRupees(round2(cashReceived - pricing.total))}</Text>
+                              <Text style={styles.change}>{t('orders.giveBackAmount', { amount: formatRupees(round2(cashReceived - pricing.total)) })}</Text>
                             ) : null}
                           </>
                         ) : (
                           <TextInput
                             value={payments[0].reference}
                             onChangeText={reference => setPayments([{ ...payments[0], reference }])}
-                            placeholder="Reference / transaction ID (optional)"
+                            placeholder={t('orders.referenceTransactionIdOptional')}
                             placeholderTextColor={colors.textMuted}
                             selectionColor={colors.secondary}
                             maxLength={100}
@@ -733,17 +739,17 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                                 value={p.amount}
                                 onChangeText={amount => setPayments(prev => prev.map((x, j) => (j === i ? { ...x, amount: amount.replace(/[^0-9.]/g, '') } : x)))}
                                 keyboardType="decimal-pad"
-                                placeholder="Amount"
+                                placeholder={t('common.amount')}
                                 placeholderTextColor={colors.textMuted}
                                 selectionColor={colors.secondary}
-                                accessibilityLabel={`Payment ${i + 1} amount`}
+                                accessibilityLabel={t('orders.paymentIAmount', { i: i + 1 })}
                                 style={[styles.input, styles.flex]}
                               />
                               {p.method !== 'CASH' ? (
                                 <TextInput
                                   value={p.reference}
                                   onChangeText={reference => setPayments(prev => prev.map((x, j) => (j === i ? { ...x, reference } : x)))}
-                                  placeholder="Reference"
+                                  placeholder={t('common.reference')}
                                   placeholderTextColor={colors.textMuted}
                                   selectionColor={colors.secondary}
                                   style={[styles.input, styles.flex]}
@@ -752,23 +758,23 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                             </View>
                             {payments.length > 1 ? (
                               <Pressable onPress={() => setPayments(prev => prev.filter((_, j) => j !== i))} hitSlop={6}>
-                                <Text style={styles.removeLine}>Remove</Text>
+                                <Text style={styles.removeLine}>{t('common.remove')}</Text>
                               </Pressable>
                             ) : null}
                           </View>
                         ))}
                         <Pressable onPress={() => setPayments(prev => [...prev, newLine('UPI')])} style={styles.addLine}>
-                          <Text style={styles.link}>+ Add a payment method</Text>
+                          <Text style={styles.link}>{t('orders.addAPaymentMethod')}</Text>
                         </Pressable>
                         <Text style={styles.splitLeft}>
-                          {remaining === 0 ? 'Fully paid' : remaining > 0 ? `${formatRupees(remaining)} left` : `${formatRupees(-remaining)} too much`}
+                          {remaining === 0 ? t('orders.fullyPaid') : remaining > 0 ? t('common.remainingLeft', { remaining: formatRupees(remaining) }) : t('orders.amountTooMuch', { amount: formatRupees(-remaining) })}
                         </Text>
                       </>
                     )}
                   </>
                 ) : store ? (
                   <View style={styles.creditBox}>
-                    <Text style={styles.creditTitle}>Paid now (optional)</Text>
+                    <Text style={styles.creditTitle}>{t('orders.paidNowOptional')}</Text>
                     <MethodChips value={upfront.method} onChange={m => setUpfront({ ...upfront, method: m })} />
                     <TextInput
                       value={upfront.amount}
@@ -779,7 +785,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                       selectionColor={colors.secondary}
                       style={styles.input}
                     />
-                    <Text style={styles.creditTitle}>On credit: {formatRupees(Math.max(0, remaining))}</Text>
+                    <Text style={styles.creditTitle}>{t('orders.onCreditAmount', { amount: formatRupees(Math.max(0, remaining)) })}</Text>
                     <CreditTermsForm value={terms} onChange={setTerms} maxDays={store.maxCreditDays} />
                   </View>
                 ) : null}
@@ -788,9 +794,9 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
               <Card>
                 <View style={styles.switchRow}>
                   <View style={styles.flex}>
-                    <Text style={styles.switchLabel}>Hand over now</Text>
+                    <Text style={styles.switchLabel}>{t('orders.handOverNow')}</Text>
                     <Text style={styles.switchHint}>
-                      {handOverNow ? 'Completed and invoiced when placed' : 'Accepted; the customer picks it up later'}
+                      {handOverNow ? t('orders.completedAndInvoicedWhenPlaced') : t('orders.acceptedTheCustomerPicksItUp')}
                     </Text>
                   </View>
                   <Switch value={handOverNow} onValueChange={setHandOverNow} trackColor={{ true: colors.secondary, false: colors.border }} thumbColor={colors.white} />
@@ -798,23 +804,23 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
                 <TextInput
                   value={remarks}
                   onChangeText={setRemarks}
-                  placeholder="Remarks for the store (optional)"
+                  placeholder={t('orders.remarksForTheStoreOptional')}
                   placeholderTextColor={colors.textMuted}
                   selectionColor={colors.secondary}
                   style={[styles.input, styles.inputGap]}
                 />
               </Card>
 
-              <Card title="Summary">
-                <Row label={`Items (${units})`} value={formatRupees(pricing.gross)} />
-                {pricing.quantityOff > 0 ? <Row label="Quantity discounts" value={`−${formatRupees(pricing.quantityOff)}`} tone={colors.successDark} /> : null}
-                {pricing.lineDiscounts > 0 ? <Row label="Item discounts" value={`−${formatRupees(pricing.lineDiscounts)}`} tone={colors.successDark} /> : null}
-                {pricing.orderDiscountOff > 0 ? <Row label="Order discount" value={`−${formatRupees(pricing.orderDiscountOff)}`} tone={colors.successDark} /> : null}
-                {pricing.couponOff > 0 ? <Row label={`Coupon ${coupon?.code ?? ''}`} value={`−${formatRupees(pricing.couponOff)}`} tone={colors.successDark} /> : null}
-                <Row label={store?.taxInclusive === false ? 'GST' : 'GST (included)'} value={formatRupees(pricing.tax)} />
+              <Card title={t('orders.summary')}>
+                <Row label={t('orders.itemsUnits', { units })} value={formatRupees(pricing.gross)} />
+                {pricing.quantityOff > 0 ? <Row label={t('orders.quantityDiscounts')} value={`−${formatRupees(pricing.quantityOff)}`} tone={colors.successDark} /> : null}
+                {pricing.lineDiscounts > 0 ? <Row label={t('orders.itemDiscounts')} value={`−${formatRupees(pricing.lineDiscounts)}`} tone={colors.successDark} /> : null}
+                {pricing.orderDiscountOff > 0 ? <Row label={t('orders.orderDiscount')} value={`−${formatRupees(pricing.orderDiscountOff)}`} tone={colors.successDark} /> : null}
+                {pricing.couponOff > 0 ? <Row label={t('orders.couponCode', { code: coupon?.code ?? '' })} value={`−${formatRupees(pricing.couponOff)}`} tone={colors.successDark} /> : null}
+                <Row label={store?.taxInclusive === false ? 'GST' : t('orders.gstIncluded')} value={formatRupees(pricing.tax)} />
                 <View style={styles.divider} />
-                <Row label="Total" value={formatRupees(pricing.total)} strong />
-                {option === 'PAY_NOW' && !split ? <Row label="Paid by" value={methodLabel(method)} /> : null}
+                <Row label={t('common.total')} value={formatRupees(pricing.total)} strong />
+                {option === 'PAY_NOW' && !split ? <Row label={t('common.paidBy')} value={methodLabel(method)} /> : null}
               </Card>
               {error ? <Alert message={error} /> : null}
             </>
@@ -825,7 +831,7 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <View style={styles.footerTop}>
             <Text style={styles.footerItems}>
-              {units} item{units === 1 ? '' : 's'}
+              {t('common.itemCount', { count: units })}
             </Text>
             <Text style={styles.footerTotal}>{formatRupees(pricing.total)}</Text>
           </View>
@@ -835,18 +841,18 @@ export function CreateOrderScreen({ navigation, route }: ScreenProps<'CreateOrde
           <View style={styles.footerButtons}>
             {stage > 1 ? (
               <Pressable onPress={() => setStage(stage === 3 && quickSale ? 1 : ((stage - 1) as Stage))} style={styles.backBtn}>
-                <Text style={styles.backText}>Back</Text>
+                <Text style={styles.backText}>{t('common.back')}</Text>
               </Pressable>
             ) : null}
             {stage === 1 ? (
-              <Button title="Continue" loading={checkingStock} loadingTitle="Checking stock…" disabled={!!itemsBlocker} onPress={productsNext} style={styles.flex} />
+              <Button title={t('common.continue')} loading={checkingStock} loadingTitle={t('orders.checkingStock')} disabled={!!itemsBlocker} onPress={productsNext} style={styles.flex} />
             ) : stage === 2 ? (
-              <Button title="Continue to payment" disabled={!!customerBlocker} onPress={() => setStage(3)} style={styles.flex} />
+              <Button title={t('orders.continueToPayment')} disabled={!!customerBlocker} onPress={() => setStage(3)} style={styles.flex} />
             ) : (
               <Button
-                title={request ? 'Save bill & create order' : `Place order · ${formatRupees(pricing.total)}`}
+                title={request ? t('orders.saveBillAndCreateOrder') : t('orders.placeOrderTotal', { total: formatRupees(pricing.total) })}
                 loading={submitting}
-                loadingTitle="Placing order…"
+                loadingTitle={t('orders.placingOrder')}
                 disabled={!!blocker}
                 onPress={submit}
                 style={styles.flex}

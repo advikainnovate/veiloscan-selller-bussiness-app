@@ -1,5 +1,6 @@
 // Ported verbatim from the Seller Panel's src/lib/quantity-discount.ts — keep the two in step.
 import { formatNumber } from './format';
+import i18n from '../i18n';
 // Copy of eshop-backend/src/modules/quantity-discounts/engine/quantity-discount-engine.ts —
 // keep the two identical (the server applies the same arithmetic to the order).
 
@@ -203,9 +204,9 @@ export function slabRangeLabel(slab: QuantitySlab, unit: string): string {
 /** "5% off", "₹15 off per PCS", "₹100 off". */
 export function slabDiscountLabel(slab: QuantitySlab, unit: string): string {
   if (slab.discountType === 'PERCENTAGE')
-    return `${round4(slab.discountValue)}% off`;
+    return i18n.t('common.discountvaluePercentOff', { discountValue: round4(slab.discountValue) });
   const amount = `₹${formatNumber(round2(slab.discountValue))}`;
   return slab.flatMethod === 'PER_ORDER'
-    ? `${amount} off`
-    : `${amount} off per ${unit}`;
+    ? i18n.t('common.amountOff', { amount })
+    : i18n.t('products.amountOffPerUnit', { amount, unit });
 }

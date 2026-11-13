@@ -16,6 +16,7 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, LayersIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 interface Form {
   productId: string;
@@ -28,6 +29,7 @@ const EMPTY: Form = { productId: '', variantId: '', variantDataId: '', sequence:
 
 /** Map a product to one variant value (Product × Variant type × Value), as the panel's form. */
 export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'ProductVariantForm'>) {
+  const { t: tr } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -63,9 +65,9 @@ export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'Pro
 
   async function save() {
     setError('');
-    const missing = [!form.productId && 'Product', !form.variantId && 'Variant type', !form.variantDataId && 'Variant value'].filter(Boolean);
-    if (missing.length) return setError(`Please fill in: ${missing.join(', ')}`);
-    if (form.sequence.trim() && !(Number.isInteger(Number(form.sequence)) && Number(form.sequence) >= 0)) return setError('The sequence is a whole number');
+    const missing = [!form.productId && tr('common.product'), !form.variantId && tr('catalog.variantType'), !form.variantDataId && tr('catalog.variantValue')].filter(Boolean);
+    if (missing.length) return setError(tr('common.pleaseFillInJoin', { join: missing.join(', ') }));
+    if (form.sequence.trim() && !(Number.isInteger(Number(form.sequence)) && Number(form.sequence) >= 0)) return setError(tr('catalog.theSequenceIsAWholeNumber'));
     setSaving(true);
     try {
       const payload = {
@@ -77,7 +79,7 @@ export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'Pro
       };
       if (id) await productVariantService.update(id, payload);
       else await productVariantService.create(payload);
-      toast(id ? 'Variant mapping updated' : 'Variant mapping added');
+      toast(id ? tr('catalog.variantMappingUpdated') : tr('catalog.variantMappingAdded'));
       navigation.goBack();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -86,12 +88,12 @@ export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'Pro
     }
   }
 
-  const title = id ? 'Edit Variant Mapping' : 'Add Variant Mapping';
+  const title = id ? tr('catalog.editVariantMapping') : tr('catalog.addVariantMapping');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Product Variants" icon={LayersIcon} allowed={false} />
+        <ComingSoon label={tr('common.productVariants')} icon={LayersIcon} allowed={false} />
       </View>
     );
   }
@@ -106,37 +108,37 @@ export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'Pro
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title={title} subtitle="Product Variants" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={tr('common.productVariants')} onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>Map products to their variant combinations.</Text>
-        <SectionCard icon={LayersIcon} title="Variant mapping">
-          <SelectField label="Product" required value={form.productId} options={productOptions} onChange={v => set('productId', v)} placeholder={products.loading ? 'Loading…' : 'Select product'} />
+        <Text style={opsStyles.meta}>{tr('catalog.mapProductsToTheirVariantCombinations')}</Text>
+        <SectionCard icon={LayersIcon} title={tr('catalog.variantMapping')}>
+          <SelectField label={tr('common.product')} required value={form.productId} options={productOptions} onChange={v => set('productId', v)} placeholder={products.loading ? tr('common.loading') : tr('common.selectProduct')} />
           <SelectField
-            label="Variant type"
+            label={tr('catalog.variantType')}
             required
             value={form.variantId}
             options={typeOptions}
             onChange={v => setForm(f => ({ ...f, variantId: v, variantDataId: v === f.variantId ? f.variantDataId : '' }))}
-            placeholder={types.loading ? 'Loading…' : 'Select variant type'}
+            placeholder={types.loading ? tr('common.loading') : tr('catalog.selectVariantType')}
           />
           <SelectField
-            label="Variant value"
+            label={tr('catalog.variantValue')}
             required
             value={form.variantDataId}
             options={valueOptions}
             onChange={v => set('variantDataId', v)}
             disabled={!form.variantId}
-            placeholder={form.variantId ? 'Select value' : 'Choose the variant type first'}
-            emptyText="This variant type has no values yet."
+            placeholder={form.variantId ? tr('catalog.selectValue') : tr('catalog.chooseTheVariantTypeFirst')}
+            emptyText={tr('catalog.thisVariantTypeHasNoValues')}
           />
-          <Field label="Sequence">
-            <Input value={form.sequence} onChangeText={v => set('sequence', v.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={6} accessibilityLabel="Sequence" />
+          <Field label={tr('catalog.sequence')}>
+            <Input value={form.sequence} onChangeText={v => set('sequence', v.replace(/\D/g, ''))} keyboardType="number-pad" maxLength={6} accessibilityLabel={tr('catalog.sequence')} />
           </Field>
-          <Field label="Status">
+          <Field label={tr('common.status')}>
             <Choices
               options={[
-                { value: '1', label: 'Active' },
-                { value: '0', label: 'Inactive' },
+                { value: '1', label: tr('common.active') },
+                { value: '0', label: tr('common.inactive') },
               ]}
               value={form.status}
               onChange={v => set('status', v)}
@@ -150,7 +152,7 @@ export function ProductVariantFormScreen({ navigation, route }: ScreenProps<'Pro
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : 'Add Mapping'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? tr('common.saveChanges') : tr('catalog.addMapping')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </View>
   );
 }

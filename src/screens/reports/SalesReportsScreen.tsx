@@ -50,14 +50,16 @@ import {
   type IconProps,
 } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PAGE_SIZE = 10;
 const SEARCH_DELAY_MS = 300;
 const CATEGORY_ICONS = [TagIcon, ShoppingBagIcon, BoxIcon, LayersIcon, CartIcon];
 const INTERVALS: { value: TrendInterval; label: string }[] = [
-  { value: 'day', label: 'Daily' },
-  { value: 'week', label: 'Weekly' },
-  { value: 'month', label: 'Monthly' },
+  { value: 'day', get label() { return i18n.t('common.daily'); } },
+  { value: 'week', get label() { return i18n.t('common.weekly'); } },
+  { value: 'month', get label() { return i18n.t('common.monthly'); } },
 ];
 
 const KPI_TONES = {
@@ -75,6 +77,7 @@ const profitColor = (n: number | null | undefined) => ((n ?? 0) < 0 ? colors.err
 
 /** Reports tab: the Seller Panel's Sales Reports for one store and a date range. */
 export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-operations:manage');
   const canOpenOrders = hasPermission('orders:manage');
@@ -161,8 +164,8 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Sales Reports" />
-        <ComingSoon label="Sales Reports" icon={BarChartIcon} allowed={false} />
+        <AppHeader title={t('common.salesReports')} />
+        <ComingSoon label={t('common.salesReports')} icon={BarChartIcon} allowed={false} />
       </View>
     );
   }
@@ -205,7 +208,7 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Sales Reports" subtitle={store?.name ?? undefined} />
+      <AppHeader title={t('common.salesReports')} subtitle={store?.name ?? undefined} />
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.content}
@@ -219,8 +222,8 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
         ) : !store ? (
           <EmptyState
             icon={StoreIcon}
-            title="No store to report on"
-            text="Set up your store on the Seller Panel, or ask the store owner to give your role access to its stores."
+            title={t('reports.noStoreToReportOn')}
+            text={t('reports.setUpYourStoreOnThe')}
           />
         ) : (
           <>
@@ -240,22 +243,22 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
               <Gradient colors={[colors.primary, '#0b2a52']} direction="diagonal" borderRadius={22} />
               <View style={styles.heroGlow} />
               <View style={styles.heroTop}>
-                <Text style={styles.heroLabel}>Total Sales</Text>
+                <Text style={styles.heroLabel}>{t('common.totalSales')}</Text>
                 {loadingKpi ? null : <DeltaPill delta={change(cur?.sales, prev?.sales)} compare={compare} />}
               </View>
               {loadingKpi ? (
                 <View style={styles.heroSkeleton} />
               ) : (
-                <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} accessibilityLabel={`Total Sales: ${money(cur?.sales)}`}>
+                <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} accessibilityLabel={t('reports.totalSalesSales', { sales: money(cur?.sales) })}>
                   {money(cur?.sales)}
                 </Text>
               )}
               <View style={styles.heroStats}>
-                <HeroStat label="Total Orders" value={cur ? formatNumber(cur.orders) : '—'} delta={change(cur?.orders, prev?.orders)} loading={loadingKpi} />
-                <HeroStat label="Avg Order" value={money(aov(cur))} delta={change(aov(cur), aov(prev))} loading={loadingKpi} />
+                <HeroStat label={t('common.totalOrders')} value={cur ? formatNumber(cur.orders) : '—'} delta={change(cur?.orders, prev?.orders)} loading={loadingKpi} />
+                <HeroStat label={t('reports.avgOrder')} value={money(aov(cur))} delta={change(aov(cur), aov(prev))} loading={loadingKpi} />
                 {canProfit || loadingKpi ? (
                   <HeroStat
-                    label="Gross Profit"
+                    label={t('common.grossProfit')}
                     value={money(cur?.grossProfit)}
                     negative={(cur?.grossProfit ?? 0) < 0}
                     delta={change(cur?.grossProfit, prev?.grossProfit)}
@@ -266,12 +269,12 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
             </View>
 
             <View style={styles.kpis}>
-              <Kpi icon={BoxIcon} tone="rose" label="Expenses" value={money(cur?.expenses)} delta={change(cur?.expenses, prev?.expenses)} invert compare={compare} loading={loadingKpi} />
+              <Kpi icon={BoxIcon} tone="rose" label={t('common.expenses')} value={money(cur?.expenses)} delta={change(cur?.expenses, prev?.expenses)} invert compare={compare} loading={loadingKpi} />
               {canProfit || loadingKpi ? (
                 <Kpi
                   icon={PercentIcon}
                   tone="violet"
-                  label="Profit Margin"
+                  label={t('reports.profitMargin')}
                   value={cur?.grossMargin == null ? '—' : `${cur.grossMargin.toFixed(1)}%`}
                   negative={(cur?.grossMargin ?? 0) < 0}
                   delta={cur?.grossMargin != null && prev?.grossMargin != null ? cur.grossMargin - prev.grossMargin : null}
@@ -282,7 +285,7 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
             </View>
 
             <Panel
-              title="Sales & Profit Trend"
+              title={t('reports.salesAndProfitTrend')}
               action={
                 <View style={styles.segment}>
                   {INTERVALS.map(option => {
@@ -317,16 +320,16 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
               )}
             </Panel>
 
-            <Panel title="Sales by Payment Method">
+            <Panel title={t('reports.salesByPaymentMethod2')}>
               {breakdown.error && !breakdown.data ? (
                 <ErrorState message={breakdown.error} onRetry={() => breakdown.reload()} />
               ) : breakdown.loading ? (
                 <View style={styles.placeholder} />
               ) : methods.length === 0 ? (
-                <Text style={styles.noData}>No sales in this period</Text>
+                <Text style={styles.noData}>{t('reports.noSalesInThisPeriod')}</Text>
               ) : (
                 <View style={styles.ringBlock}>
-                  <Ring segments={methodSegments} centerValue={money(methodTotal)} centerLabel="Total Sales" selected={selectedMethod} />
+                  <Ring segments={methodSegments} centerValue={money(methodTotal)} centerLabel={t('common.totalSales')} selected={selectedMethod} />
                   <View style={styles.methodList}>
                     {methods.map((m, i) => {
                       const on = selectedMethod === m.method;
@@ -353,11 +356,11 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
             </Panel>
 
             <Panel
-              title="Top Product Categories"
+              title={t('reports.topProductCategories')}
               action={
                 categories.length ? (
                   <Pressable accessibilityRole="button" hitSlop={8} onPress={() => showGroup('category')}>
-                    <Text style={styles.link}>View All</Text>
+                    <Text style={styles.link}>{t('reports.viewAll')}</Text>
                   </Pressable>
                 ) : null
               }
@@ -365,7 +368,7 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
               {breakdown.loading ? (
                 <View style={styles.placeholder} />
               ) : topCats.length === 0 ? (
-                <Text style={styles.noData}>No sales in this period</Text>
+                <Text style={styles.noData}>{t('reports.noSalesInThisPeriod')}</Text>
               ) : (
                 <View style={styles.cats}>
                   {topCats.map((c, i) => {
@@ -403,11 +406,11 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
                 <FilterChips options={SALES_TABS} value={group} onChange={value => setGroup(value as SalesGroup)} />
                 <View style={styles.searchRow}>
                   <View style={styles.flex}>
-                    <SearchBar value={query} onChange={setQuery} placeholder="Search by order ID, customer, product…" />
+                    <SearchBar value={query} onChange={setQuery} placeholder={t('reports.searchByOrderIdCustomerProduct')} />
                   </View>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={method ? 'Filters, 1 applied' : 'Filters'}
+                    accessibilityLabel={method ? t('reports.filters1Applied') : t('common.filters')}
                     onPress={() => setFiltersOpen(true)}
                     style={[styles.filterBtn, method ? styles.filterBtnOn : null]}
                   >
@@ -424,7 +427,7 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
                   <ListSkeleton rows={4} height={64} />
                 </View>
               ) : !tableData?.items.length ? (
-                <Text style={styles.noData}>{search || method ? 'No sales match your search or filters.' : 'No sales in this period.'}</Text>
+                <Text style={styles.noData}>{search || method ? t('reports.noSalesMatchYourSearchOr') : t('reports.noSalesInThisPeriod2')}</Text>
               ) : tableData.groupBy === 'none' ? (
                 tableData.items.map(o => (
                   <SaleRow
@@ -441,11 +444,11 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
               {tableData && tableData.total > 0 ? (
                 <View style={styles.pager}>
                   <Text style={styles.pagerText}>
-                    {`Showing ${formatNumber((page - 1) * PAGE_SIZE + 1)}–${formatNumber(Math.min(page * PAGE_SIZE, tableData.total))} of ${formatNumber(tableData.total)} ${group === 'none' ? 'orders' : 'rows'}`}
+                    {t(group === 'none' ? 'reports.showingRangeOfOrders' : 'reports.showingRangeOfRows', { from: formatNumber((page - 1) * PAGE_SIZE + 1), to: formatNumber(Math.min(page * PAGE_SIZE, tableData.total)), total: formatNumber(tableData.total) })}
                   </Text>
-                  <PageButton label="Previous page" disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
+                  <PageButton label={t('common.previousPage')} disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
                   <Text style={styles.pagerCount}>{`${page} / ${pages}`}</Text>
-                  <PageButton label="Next page" disabled={page >= pages} onPress={() => goToPage(page + 1)} />
+                  <PageButton label={t('common.nextPage')} disabled={page >= pages} onPress={() => goToPage(page + 1)} />
                 </View>
               ) : null}
             </View>
@@ -453,9 +456,9 @@ export function SalesReportsScreen({ navigation }: TabScreenProps<'Reports'>) {
         )}
       </ScrollView>
 
-      <Sheet visible={filtersOpen} title="Filters" subtitle="Payment mode" onClose={() => setFiltersOpen(false)}>
+      <Sheet visible={filtersOpen} title={t('common.filters')} subtitle={t('reports.paymentMode')} onClose={() => setFiltersOpen(false)}>
         <View style={styles.options}>
-          {[{ value: '', label: 'All payment modes' }, ...methods.map(m => ({ value: m.method, label: paymentLabel(m.method) }))].map(option => {
+          {[{ value: '', label: t('reports.allPaymentModes') }, ...methods.map(m => ({ value: m.method, label: paymentLabel(m.method) }))].map(option => {
             const on = option.value === method;
             return (
               <Pressable
@@ -493,11 +496,12 @@ function Panel({ title, action, children }: { title: string; action?: ReactNode;
 
 /** "↑ 24.5% vs last month" on the dark card. */
 function DeltaPill({ delta, compare, invert }: { delta: number | null; compare: string; invert?: boolean }) {
+  const { t } = useTranslation();
   const good = delta !== null && (invert ? delta <= 0 : delta >= 0);
   return (
     <View style={[styles.deltaPill, delta === null ? styles.deltaPillNew : good ? styles.deltaPillUp : styles.deltaPillDown]}>
       <Text style={[styles.deltaPillText, delta === null ? styles.deltaTextNew : good ? styles.deltaTextUp : styles.deltaTextDown]} numberOfLines={1}>
-        {delta === null ? 'New ' : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
+        {delta === null ? t('reports.new') : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
         {compare}
       </Text>
     </View>
@@ -505,6 +509,7 @@ function DeltaPill({ delta, compare, invert }: { delta: number | null; compare: 
 }
 
 function HeroStat({ label, value, delta, negative, loading }: { label: string; value: string; delta: number | null; negative?: boolean; loading: boolean }) {
+  const { t } = useTranslation();
   const good = delta !== null && delta >= 0;
   return (
     <View style={styles.heroStat} accessible accessibilityLabel={`${label}: ${loading ? 'loading' : value}`}>
@@ -520,7 +525,7 @@ function HeroStat({ label, value, delta, negative, loading }: { label: string; v
       )}
       {loading ? null : (
         <Text style={[styles.heroStatDelta, delta === null ? styles.deltaTextNew : good ? styles.deltaTextUp : styles.deltaTextDown]} numberOfLines={1}>
-          {delta === null ? 'New ' : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
+          {delta === null ? t('reports.new') : `${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
         </Text>
       )}
     </View>
@@ -549,6 +554,7 @@ function Kpi({
   loading: boolean;
 }) {
   // Expenses going down is the good direction.
+  const { t } = useTranslation();
   const good = delta !== null && (invert ? delta <= 0 : delta >= 0);
   const [bg, fg] = KPI_TONES[tone];
   return (
@@ -571,7 +577,7 @@ function Kpi({
       {loading ? null : (
         <Text style={styles.kpiCompare} numberOfLines={2}>
           {delta === null ? (
-            <Text style={styles.kpiNew}>New </Text>
+            <Text style={styles.kpiNew}>{t('common.new')}{' '}</Text>
           ) : (
             <Text style={[styles.kpiDelta, { color: good ? colors.success : colors.error }]}>
               {`${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta).toFixed(1)}% `}
@@ -596,11 +602,12 @@ function ShareBar({ share, color = colors.secondary }: { share: number; color?: 
 }
 
 function SaleRow({ order, canProfit, onPress }: { order: SalesOrderRow; canProfit: boolean; onPress?: () => void }) {
+  const { t } = useTranslation();
   const status = saleStatus(order.orderStatus);
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`Order ${order.orderNumber}, ${formatRupees(order.amount)}`}
+      accessibilityLabel={t('reports.orderOrdernumberAmount', { orderNumber: order.orderNumber, amount: formatRupees(order.amount) })}
       disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -611,12 +618,12 @@ function SaleRow({ order, canProfit, onPress }: { order: SalesOrderRow; canProfi
             {order.orderNumber}
           </Text>
           <Text style={styles.rowMeta} numberOfLines={1}>
-            {`${formatWhen(order.orderedAt)} · ${order.items} item${order.items === 1 ? '' : 's'}`}
+            {`${formatWhen(order.orderedAt)} · ${t('common.itemCount', { count: order.items })}`}
           </Text>
         </View>
         <View style={styles.rowRight}>
           <Text style={styles.rowAmount}>{money(order.amount)}</Text>
-          {canProfit ? <Text style={[styles.rowProfit, { color: profitColor(order.profit) }]}>{`${money(order.profit)} profit`}</Text> : null}
+          {canProfit ? <Text style={[styles.rowProfit, { color: profitColor(order.profit) }]}>{t('common.profitProfit', { profit: money(order.profit) })}</Text> : null}
         </View>
       </View>
       <View style={styles.rowBottom}>
@@ -644,7 +651,7 @@ function GroupRows({ group, rows, canProfit }: { group: Exclude<SalesGroup, 'non
                   {groupLabel(group, r.label)}
                 </Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>
-                  {`${formatNumber(r.orders)} order${r.orders === 1 ? '' : 's'} · ${formatNumber(r.units)} unit${r.units === 1 ? '' : 's'}`}
+                  {`${i18n.t('reports.ordersFormatted', { count: r.orders, formatted: formatNumber(r.orders) })} · ${i18n.t('reports.unitsFormatted', { count: r.units, formatted: formatNumber(r.units) })}`}
                   {r.sub ? ` · ${r.sub}` : ''}
                 </Text>
               </View>

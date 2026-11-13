@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, shadow } from '../../theme';
 import { ArrowLeftIcon } from '../icons';
 import { KeyboardScroll } from '../layout/KeyboardScroll';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The signed-out screens' frame: the Seller Panel's peach background with
@@ -18,6 +19,7 @@ import { KeyboardScroll } from '../layout/KeyboardScroll';
  * keyboard, and an optional back button.
  */
 export function AuthScreen({ children, onBack }: { children: ReactNode; onBack?: () => void }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.screen}>
@@ -40,7 +42,7 @@ export function AuthScreen({ children, onBack }: { children: ReactNode; onBack?:
       {onBack ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
           hitSlop={8}
           onPress={onBack}
           style={({ pressed }) => [styles.back, { top: insets.top + 8, opacity: pressed ? 0.7 : 1 }]}

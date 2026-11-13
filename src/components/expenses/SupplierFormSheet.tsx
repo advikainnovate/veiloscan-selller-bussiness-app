@@ -8,6 +8,7 @@ import { expensesService, type Supplier, type SupplierLedger } from '../../servi
 import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { Field, Input } from '../form/Fields';
+import { useTranslation } from 'react-i18next';
 
 /** Add or edit a supplier's details (the panel's SupplierFormModal). */
 export function SupplierFormSheet({
@@ -23,6 +24,7 @@ export function SupplierFormSheet({
   onClose: () => void;
   onSaved: (s: SupplierLedger) => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', gstNumber: '', notes: '' });
   const [saving, setSaving] = useState(false);
@@ -43,9 +45,9 @@ export function SupplierFormSheet({
   }, [visible, supplier]);
 
   async function save() {
-    if (!form.name.trim()) return setError("Enter the supplier's name");
+    if (!form.name.trim()) return setError(t('common.enterTheSuppliersName'));
     const gst = form.gstNumber.trim().toUpperCase();
-    if (gst && !GSTIN.test(gst)) return setError('The GST number has 15 letters and digits');
+    if (gst && !GSTIN.test(gst)) return setError(t('common.theGstNumberHas15Letters'));
     setError('');
     setSaving(true);
     const payload = { ...form, name: form.name.trim(), gstNumber: gst };
@@ -58,7 +60,7 @@ export function SupplierFormSheet({
             phone: form.phone.trim() || undefined,
             email: form.email.trim() || undefined,
           });
-      toast(supplier ? 'Supplier updated' : 'Supplier added');
+      toast(supplier ? t('expenses.supplierUpdated') : t('expenses.supplierAdded'));
       onSaved(saved);
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -68,23 +70,23 @@ export function SupplierFormSheet({
   }
 
   return (
-    <Sheet visible={visible} title={supplier ? 'Edit Supplier' : 'Add Supplier'} onClose={onClose} footer={<Button title="Save" onPress={save} loading={saving} />}>
-      <Field label="Supplier Name" required>
+    <Sheet visible={visible} title={supplier ? t('expenses.editSupplier') : t('expenses.addSupplier')} onClose={onClose} footer={<Button title={t('common.save')} onPress={save} loading={saving} />}>
+      <Field label={t('expenses.supplierName')} required>
         <Input value={form.name} onChangeText={v => set('name', v)} maxLength={150} />
       </Field>
-      <Field label="Mobile Number">
+      <Field label={t('expenses.mobileNumber')}>
         <Input value={form.phone} onChangeText={v => set('phone', v)} maxLength={20} keyboardType="phone-pad" />
       </Field>
-      <Field label="Email">
+      <Field label={t('common.email')}>
         <Input value={form.email} onChangeText={v => set('email', v)} maxLength={150} keyboardType="email-address" autoCapitalize="none" />
       </Field>
-      <Field label="GST Number" hint="15 letters and digits">
+      <Field label={t('expenses.gstNumber')} hint={t('expenses.n15LettersAndDigits')}>
         <Input value={form.gstNumber} onChangeText={v => set('gstNumber', v.toUpperCase())} maxLength={15} autoCapitalize="characters" />
       </Field>
-      <Field label="Address">
+      <Field label={t('common.address')}>
         <Input value={form.address} onChangeText={v => set('address', v)} maxLength={500} multiline />
       </Field>
-      <Field label="Notes">
+      <Field label={t('common.notes')}>
         <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={2000} multiline />
       </Field>
       {error ? <Text style={styles.error}>{error}</Text> : null}

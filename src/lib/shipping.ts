@@ -1,6 +1,7 @@
 // Shipping zones and their methods, as the Seller Panel's shipping pages and
 // the backend's CreateShippingZoneDto / CreateShippingMethodDto.
 import type { Row } from '../services/products-service';
+import i18n from '../i18n';
 
 export const INDIAN_STATES = [
   'Andhra Pradesh',
@@ -43,9 +44,9 @@ export const INDIAN_STATES = [
 
 export type RateType = 'FIXED' | 'PER_KG' | 'PERCENTAGE_OF_ORDER';
 export const RATE_TYPES: { value: RateType; label: string; hint: string }[] = [
-  { value: 'FIXED', label: 'Fixed', hint: 'One charge per order' },
-  { value: 'PER_KG', label: 'Per kg', hint: 'Charged on the order weight' },
-  { value: 'PERCENTAGE_OF_ORDER', label: '% of order', hint: 'A share of the order value' },
+  { value: 'FIXED', get label() { return i18n.t('common.fixed'); }, get hint() { return i18n.t('shipping.oneChargePerOrder'); } },
+  { value: 'PER_KG', get label() { return i18n.t('shipping.perKg'); }, get hint() { return i18n.t('shipping.chargedOnTheOrderWeight'); } },
+  { value: 'PERCENTAGE_OF_ORDER', get label() { return i18n.t('shipping.percentOfOrder'); }, get hint() { return i18n.t('shipping.aShareOfTheOrderValue'); } },
 ];
 
 /** "₹49", "₹12/kg", "5%". */
@@ -60,12 +61,12 @@ export function etaLabel(m: Row) {
   const min = m.estimatedDaysMin;
   const max = m.estimatedDaysMax;
   if (min == null && max == null) return null;
-  if (min != null && max != null && Number(min) !== Number(max)) return `${min}–${max} days`;
+  if (min != null && max != null && Number(min) !== Number(max)) return i18n.t('shipping.minMaxDays', { min, max });
   const d = Number(min ?? max);
-  return `${d} day${d === 1 ? '' : 's'}`;
+  return i18n.t('common.dayCount', { count: d });
 }
 
-export const coveredLabel = (states: unknown) => (Array.isArray(states) && states.length ? (states as string[]).join(', ') : 'All / Unspecified');
+export const coveredLabel = (states: unknown) => (Array.isArray(states) && states.length ? (states as string[]).join(', ') : i18n.t('shipping.allUnspecified'));
 
 /** "South India" → "south-india". */
 export const slugify = (v: string) =>
@@ -96,8 +97,8 @@ export const zoneFromRecord = (r: Row): ZoneForm => ({
 });
 
 export function zoneProblem(f: ZoneForm): string | null {
-  const missing = [!f.zoneTitle.trim() && 'Zone Title', !f.zoneSlug.trim() && 'Slug'].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
+  const missing = [!f.zoneTitle.trim() && i18n.t('shipping.zoneTitle'), !f.zoneSlug.trim() && i18n.t('common.slug')].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
   return null;
 }
 
@@ -137,13 +138,13 @@ const isDays = (v: string) => /^\d+$/.test(v.trim());
 
 /** The backend's checks (numbers, whole days), plus min ≤ max and a percentage up to 100. */
 export function methodProblem(f: MethodForm): string | null {
-  const missing = [!f.methodTitle.trim() && 'Method Title', !f.methodSlug.trim() && 'Slug', !f.rate.trim() && 'Rate'].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (!isAmount(f.rate)) return 'The rate is an amount, e.g. 49 or 49.50';
-  if (f.rateType === 'PERCENTAGE_OF_ORDER' && Number(f.rate) > 100) return 'A percentage rate can be at most 100';
-  if (f.freeAboveOrderValue.trim() && !isAmount(f.freeAboveOrderValue)) return 'Free above is an order value, e.g. 999';
-  if ((f.estimatedDaysMin.trim() && !isDays(f.estimatedDaysMin)) || (f.estimatedDaysMax.trim() && !isDays(f.estimatedDaysMax))) return 'Delivery days are whole numbers';
-  if (f.estimatedDaysMin.trim() && f.estimatedDaysMax.trim() && Number(f.estimatedDaysMin) > Number(f.estimatedDaysMax)) return "Min days can't be more than max days";
+  const missing = [!f.methodTitle.trim() && i18n.t('shipping.methodTitle'), !f.methodSlug.trim() && i18n.t('common.slug'), !f.rate.trim() && i18n.t('shipping.rate')].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (!isAmount(f.rate)) return i18n.t('shipping.theRateIsAnAmountE');
+  if (f.rateType === 'PERCENTAGE_OF_ORDER' && Number(f.rate) > 100) return i18n.t('shipping.aPercentageRateCanBeAt');
+  if (f.freeAboveOrderValue.trim() && !isAmount(f.freeAboveOrderValue)) return i18n.t('shipping.freeAboveIsAnOrderValue');
+  if ((f.estimatedDaysMin.trim() && !isDays(f.estimatedDaysMin)) || (f.estimatedDaysMax.trim() && !isDays(f.estimatedDaysMax))) return i18n.t('shipping.deliveryDaysAreWholeNumbers');
+  if (f.estimatedDaysMin.trim() && f.estimatedDaysMax.trim() && Number(f.estimatedDaysMin) > Number(f.estimatedDaysMax)) return i18n.t('shipping.minDaysCanTBeMore');
   return null;
 }
 

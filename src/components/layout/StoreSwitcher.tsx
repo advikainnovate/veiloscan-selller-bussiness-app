@@ -7,23 +7,25 @@ import { navigationRef } from '../../navigation/navigationRef';
 import { useToast } from '../../context/ToastContext';
 import { Sheet } from '../ui/Sheet';
 import { CheckIcon, ChevronDownIcon, PlusIcon, SettingsIcon, StoreIcon, type IconProps } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /** Choose the store the whole app works in. */
 export function StorePickerSheet({ visible, onClose, onSwitched }: { visible: boolean; onClose: () => void; onSwitched?: () => void }) {
+  const { t } = useTranslation();
   const { stores, current, select } = useStore();
   const { hasPermission } = useAuth();
   const toast = useToast();
   // The panel's switcher links: manage the current store, every store, a new one.
   const links: { label: string; icon: React.ComponentType<IconProps>; go: () => void }[] = [
-    ...(current && hasPermission('stores:view') ? [{ label: 'Manage this store', icon: SettingsIcon, go: () => navigationRef.navigate('StoreSettings', { storeId: current.id }) }] : []),
-    ...(hasPermission('stores:view') ? [{ label: 'All stores', icon: StoreIcon, go: () => navigationRef.navigate('Stores') }] : []),
-    ...(hasPermission('stores:create') ? [{ label: 'Add New Store', icon: PlusIcon, go: () => navigationRef.navigate('CreateStore') }] : []),
+    ...(current && hasPermission('stores:view') ? [{ label: t('layout.manageThisStore'), icon: SettingsIcon, go: () => navigationRef.navigate('StoreSettings', { storeId: current.id }) }] : []),
+    ...(hasPermission('stores:view') ? [{ label: t('common.allStores2'), icon: StoreIcon, go: () => navigationRef.navigate('Stores') }] : []),
+    ...(hasPermission('stores:create') ? [{ label: t('common.addNewStore'), icon: PlusIcon, go: () => navigationRef.navigate('CreateStore') }] : []),
   ];
   return (
     <Sheet
       visible={visible}
-      title={stores.length > 1 ? 'Switch store' : 'Your store'}
-      subtitle="Orders, customers, products and reports show the store you pick."
+      title={stores.length > 1 ? t('layout.switchStore') : t('common.yourStore')}
+      subtitle={t('layout.ordersCustomersProductsAndReportsShow')}
       onClose={onClose}
     >
       <View style={styles.options}>
@@ -40,7 +42,7 @@ export function StorePickerSheet({ visible, onClose, onSwitched }: { visible: bo
                 if (on) return;
                 select(store.id);
                 onSwitched?.();
-                toast(`Switched to ${store.name}`);
+                toast(t('common.switchedToName', { name: store.name }));
               }}
               style={({ pressed }) => [styles.option, on && styles.optionOn, pressed && !on && styles.optionPressed]}
             >
@@ -90,6 +92,7 @@ export function StorePickerSheet({ visible, onClose, onSwitched }: { visible: bo
 
 /** The slim bar under the header: the current store, tap to switch. Only with more than one store. */
 export function StoreBar() {
+  const { t } = useTranslation();
   const { stores, current } = useStore();
   const [open, setOpen] = useState(false);
   if (stores.length < 2 || !current) return null;
@@ -97,16 +100,16 @@ export function StoreBar() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Store: ${current.name}. Switch store`}
+        accessibilityLabel={t('layout.storeNameSwitchStore', { name: current.name })}
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.bar, pressed && styles.barPressed]}
       >
         <StoreIcon size={15} color={colors.secondary} />
-        <Text style={styles.barLabel}>Store</Text>
+        <Text style={styles.barLabel}>{t('common.store')}</Text>
         <Text style={styles.barName} numberOfLines={1}>
           {current.name}
         </Text>
-        <Text style={styles.barAction}>Switch</Text>
+        <Text style={styles.barAction}>{t('layout.switch')}</Text>
         <ChevronDownIcon size={14} color={colors.secondary} strokeWidth={2.2} />
       </Pressable>
       <StorePickerSheet visible={open} onClose={() => setOpen(false)} />

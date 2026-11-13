@@ -16,6 +16,7 @@ import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { ChevronRightIcon, PlusIcon, UserPlusIcon, UsersIcon, WalletIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
+import { Trans, useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 50;
 const SEARCH_DELAY_MS = 300;
@@ -37,6 +38,7 @@ function avatarTone(id: string) {
 
 /** Customers tab: who buys from the store, what they've spent and what they owe. */
 export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('customers:manage');
   const [view, setView] = useState<CustomerView>('all');
@@ -82,8 +84,8 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Customers" />
-        <ComingSoon label="Customers" icon={UsersIcon} allowed={false} />
+        <AppHeader title={t('common.customers')} />
+        <ComingSoon label={t('common.customers')} icon={UsersIcon} allowed={false} />
       </View>
     );
   }
@@ -93,9 +95,9 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
   const showCredit = stats?.withCredit != null;
   const value = (n: number | null | undefined, format = formatNumber) => (n == null ? '—' : format(n));
   const tabs: { key: CustomerView; label: string; count?: number }[] = [
-    { key: 'all', label: 'All', count: stats?.total },
-    ...(showCredit ? [{ key: 'credit' as const, label: 'With Credit', count: stats?.withCredit ?? undefined }] : []),
-    { key: 'top', label: 'Top', count: stats?.top },
+    { key: 'all', label: t('common.all'), count: stats?.total },
+    ...(showCredit ? [{ key: 'credit' as const, label: t('customers.withCredit'), count: stats?.withCredit ?? undefined }] : []),
+    { key: 'top', label: t('customers.top'), count: stats?.top },
   ];
 
   const rows = list.data?.items ?? [];
@@ -113,28 +115,28 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
         <View style={styles.summaryGlow} />
         <View style={styles.summaryTop}>
           <View>
-            <Text style={styles.summaryLabel}>Total customers</Text>
+            <Text style={styles.summaryLabel}>{t('customers.totalCustomers')}</Text>
             <Text style={styles.summaryValue}>{value(stats?.total)}</Text>
           </View>
           {stats?.newThisMonth ? (
             <View style={styles.newPill}>
               <UserPlusIcon size={13} color="#bbf7d0" />
-              <Text style={styles.newPillText}>{`+${formatNumber(stats.newThisMonth)} this month`}</Text>
+              <Text style={styles.newPillText}>{t('customers.newthismonthThisMonth', { newThisMonth: formatNumber(stats.newThisMonth) })}</Text>
             </View>
           ) : null}
         </View>
         <View style={styles.summaryStats}>
           {showCredit ? (
             <>
-              <SummaryStat label="With credit" value={value(stats?.withCredit)} dot="#fb923c" active={view === 'credit'} onPress={() => setView(view === 'credit' ? 'all' : 'credit')} />
-              <SummaryStat label="Credit due" value={value(stats?.creditOutstanding, n => formatRupees(Math.round(n)))} dot="#f87171" active={false} onPress={() => setView('credit')} />
+              <SummaryStat label={t('customers.withCredit2')} value={value(stats?.withCredit)} dot="#fb923c" active={view === 'credit'} onPress={() => setView(view === 'credit' ? 'all' : 'credit')} />
+              <SummaryStat label={t('customers.creditDue')} value={value(stats?.creditOutstanding, n => formatRupees(Math.round(n)))} dot="#f87171" active={false} onPress={() => setView('credit')} />
             </>
           ) : null}
-          <SummaryStat label="Top buyers" value={value(stats?.top)} dot="#4ade80" active={view === 'top'} onPress={() => setView(view === 'top' ? 'all' : 'top')} />
+          <SummaryStat label={t('customers.topBuyers')} value={value(stats?.top)} dot="#4ade80" active={view === 'top'} onPress={() => setView(view === 'top' ? 'all' : 'top')} />
         </View>
       </View>
 
-      <SearchBar value={query} onChange={setQuery} placeholder="Search by name, mobile or customer ID" />
+      <SearchBar value={query} onChange={setQuery} placeholder={t('customers.searchByNameMobileOrCustomer')} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {tabs.map(tab => {
@@ -161,25 +163,25 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
     rows.length && total > PAGE_SIZE ? (
       <View style={styles.pager}>
         <Text style={styles.pagerText}>
-          Showing{' '}
-          <Text style={styles.pagerStrong}>
-            {formatNumber(first)}–{formatNumber(last)}
-          </Text>{' '}
-          of <Text style={styles.pagerStrong}>{formatNumber(total)}</Text> customers
+          <Trans
+            i18nKey="customers.showingRangeOfTotal"
+            values={{ from: formatNumber(first), to: formatNumber(last), total: formatNumber(total) }}
+            components={{ b: <Text style={styles.pagerStrong} /> }}
+          />
         </Text>
-        <PageButton label="Previous page" disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
+        <PageButton label={t('common.previousPage')} disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
         <Text style={styles.pagerCount}>{`${page} / ${pages}`}</Text>
-        <PageButton label="Next page" disabled={page >= pages} onPress={() => goToPage(page + 1)} />
+        <PageButton label={t('common.nextPage')} disabled={page >= pages} onPress={() => goToPage(page + 1)} />
       </View>
     ) : rows.length ? (
       <Text style={[styles.pagerText, styles.pagerAlone]}>
-        Showing <Text style={styles.pagerStrong}>{formatNumber(total)}</Text> customer{total === 1 ? '' : 's'}
+        <Trans i18nKey="customers.showingCustomers" count={total} values={{ total: formatNumber(total) }} components={{ b: <Text style={styles.pagerStrong} /> }} />
       </Text>
     ) : undefined;
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Customers" subtitle={stats ? `${formatNumber(stats.total)} customer${stats.total === 1 ? '' : 's'}` : undefined} />
+      <AppHeader title={t('common.customers')} subtitle={stats ? t('customers.customerTotal', { count: stats.total, total: formatNumber(stats.total) }) : undefined} />
       <FlatList
         ref={listRef}
         data={list.loading || (list.error && !list.data) ? [] : rows}
@@ -195,13 +197,13 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
           ) : (
             <EmptyState
               icon={UsersIcon}
-              title={searching ? 'No customers match' : 'No customers yet'}
+              title={searching ? t('common.noCustomersMatch') : t('customers.noCustomersYet')}
               text={
                 debounced
-                  ? 'Try another name, mobile number or customer ID.'
+                  ? t('customers.tryAnotherNameMobileNumberOr')
                   : view === 'credit'
-                    ? 'No customer owes you money right now.'
-                    : 'Customers show up here once they order from your store.'
+                    ? t('customers.noCustomerOwesYouMoneyRight')
+                    : t('customers.customersShowUpHereOnceThey')
               }
             />
           )
@@ -224,23 +226,23 @@ export function CustomersScreen({ navigation }: TabScreenProps<'Customers'>) {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Add Customer"
+        accessibilityLabel={t('customers.addCustomer')}
         onPress={() => setAdding(true)}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
       >
         <PlusIcon size={20} color={colors.white} strokeWidth={2.4} />
-        <Text style={styles.fabText}>Add customer</Text>
+        <Text style={styles.fabText}>{t('customers.addCustomer2')}</Text>
       </Pressable>
 
       {/* Customers are saved with their first order; there is no separate sign-up. */}
       <Sheet
         visible={adding}
-        title="Add a customer"
-        subtitle="Customers are saved when you bill them. Start a new order, choose New customer and enter their name and mobile number."
+        title={t('customers.addACustomer')}
+        subtitle={t('customers.customersAreSavedWhenYouBill')}
         onClose={() => setAdding(false)}
         footer={
           <Button
-            title="Start a new order"
+            title={t('customers.startANewOrder')}
             onPress={() => {
               setAdding(false);
               navigation.navigate('CreateOrder');
@@ -301,8 +303,11 @@ function CreditPill({ customer }: { customer: CustomerRow }) {
     <View style={[styles.pill, { backgroundColor: tone.bg }]}>
       <WalletIcon size={14} color={tone.fg} />
       <Text style={[styles.pillText, { color: tone.fg }]} numberOfLines={1}>
-        Credit: <Text style={styles.pillStrong}>{formatRupees(owed)}</Text>
-        {overdue > 0 ? ` (Overdue ${formatRupees(overdue)})` : owed > 0 ? ' (Due)' : ''}
+        <Trans
+          i18nKey={overdue > 0 ? 'customers.creditPillOverdue' : owed > 0 ? 'customers.creditPillDue' : 'customers.creditPill'}
+          values={{ amount: formatRupees(owed), overdue: formatRupees(overdue) }}
+          components={{ b: <Text style={styles.pillStrong} /> }}
+        />
       </Text>
     </View>
   );
@@ -315,13 +320,14 @@ const CREDIT_TONES = {
 };
 
 function CustomerCard({ customer, onPress }: { customer: CustomerRow; onPress: () => void }) {
+  const { t } = useTranslation();
   const name = customerName(customer);
   const phone = customerPhone(customer);
   const tone = avatarTone(customer.id);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${name}, lifetime purchase ${formatRupees(customer.lifetimePurchase)}`}
+      accessibilityLabel={t('customers.nameLifetimePurchaseLifetimepurchase', { name, lifetimePurchase: formatRupees(customer.lifetimePurchase) })}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
@@ -342,7 +348,7 @@ function CustomerCard({ customer, onPress }: { customer: CustomerRow; onPress: (
           <Text style={styles.spendValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {formatRupees(Math.round(customer.lifetimePurchase))}
           </Text>
-          <Text style={styles.spendLabel}>{`${formatNumber(customer.orderCount)} order${customer.orderCount === 1 ? '' : 's'}`}</Text>
+          <Text style={styles.spendLabel}>{t('common.orderCount', { count: customer.orderCount })}</Text>
         </View>
       </View>
       {customer.creditOutstanding != null || customer.lastOrderAt ? (
@@ -350,7 +356,7 @@ function CustomerCard({ customer, onPress }: { customer: CustomerRow; onPress: (
           <CreditPill customer={customer} />
           {customer.lastOrderAt ? (
             <Text style={styles.lastOrder} numberOfLines={1}>
-              {`Last order ${formatDay(customer.lastOrderAt)}`}
+              {t('customers.lastOrderLastorderat', { lastOrderAt: formatDay(customer.lastOrderAt) })}
             </Text>
           ) : null}
         </View>

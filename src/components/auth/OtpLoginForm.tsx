@@ -9,6 +9,7 @@ import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import { OtpInput } from '../ui/OtpInput';
 import { TextField } from '../ui/TextField';
+import { useTranslation } from 'react-i18next';
 
 const RESEND_SECONDS = 30;
 
@@ -18,6 +19,7 @@ const RESEND_SECONDS = 30;
  * go to the login card, which knows how to show "onboarding pending".
  */
 export function OtpLoginForm({ onError, onClearError }: { onError: (error: unknown) => void; onClearError: () => void }) {
+  const { t } = useTranslation();
   const { loginWithOtp } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -35,7 +37,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 
   async function sendCode() {
     if (!identifier.trim()) {
-      onError(new Error('Enter your email address or mobile number.'));
+      onError(new Error(t('auth.enterYourEmailAddressOrMobile')));
       return;
     }
     onClearError();
@@ -56,7 +58,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
   async function verify(code = otp) {
     if (isLoading) return;
     if (code.length !== 6) {
-      onError(new Error('Enter the 6-digit code.'));
+      onError(new Error(t('auth.enterThe6DigitCode')));
       return;
     }
     onClearError();
@@ -75,9 +77,9 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
       <View style={styles.form}>
         <View style={styles.fieldGroup}>
           <TextField
-            label="Mobile Number or Email"
+            label={t('auth.mobileNumberOrEmail')}
             hideLabel
-            placeholder="Enter mobile number or email"
+            placeholder={t('auth.enterMobileNumberOrEmail')}
             icon={<MailIcon size={20} color={colors.primary} />}
             fieldStyle={styles.field}
             style={styles.input}
@@ -93,12 +95,11 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
             onSubmitEditing={sendCode}
           />
           <Text style={styles.hint}>
-            We'll send a 6-digit code to your email and phone.
-          </Text>
+            {t('auth.weLlSendA6Digit')}</Text>
         </View>
         <Button
-          title="Send OTP"
-          loadingTitle="Sending..."
+          title={t('auth.sendOtp')}
+          loadingTitle={t('auth.sending')}
           loading={isLoading}
           onPress={sendCode}
           icon={<ArrowRightIcon size={18} color={colors.white} />}
@@ -114,8 +115,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
       <View style={styles.codeGroup}>
         <View style={styles.row}>
           <Text style={styles.codeFor} numberOfLines={1}>
-            Code for {identifier.trim()}
-          </Text>
+            {t('auth.codeForTrim', { trim: identifier.trim() })}</Text>
           <Pressable
             hitSlop={8}
             onPress={() => {
@@ -124,7 +124,7 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
               onClearError();
             }}
           >
-            <Text style={styles.link}>Change</Text>
+            <Text style={styles.link}>{t('common.change')}</Text>
           </Pressable>
         </View>
         <OtpInput
@@ -141,23 +141,23 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 
       <View style={styles.row}>
         <Checkbox
-          label="Remember me"
+          label={t('auth.rememberMe')}
           checked={remember}
           onChange={setRemember}
           labelColor="#d3dced"
         />
         {resendIn > 0 ? (
-          <Text style={styles.muted}>Resend in {resendIn}s</Text>
+          <Text style={styles.muted}>{t('auth.resendInResendinS', { resendIn })}</Text>
         ) : (
           <Pressable hitSlop={8} onPress={sendCode} disabled={isLoading}>
-            <Text style={styles.link}>Resend code</Text>
+            <Text style={styles.link}>{t('auth.resendCode')}</Text>
           </Pressable>
         )}
       </View>
 
       <Button
-        title="Verify & Login"
-        loadingTitle="Verifying..."
+        title={t('auth.verifyAndLogin')}
+        loadingTitle={t('auth.verifying')}
         loading={isLoading}
         onPress={() => verify()}
         icon={<ArrowRightIcon size={18} color={colors.white} />}

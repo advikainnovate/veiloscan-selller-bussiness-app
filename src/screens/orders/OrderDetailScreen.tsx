@@ -45,11 +45,13 @@ import {
   WalletIcon,
 } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** One order: where it stands, what's in it, who it's for, and the next step. */
 export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const insets = useSafeAreaInsets();
   const toast = useToast();
@@ -68,7 +70,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
   if (order.loading || (!order.data && !order.error)) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order" onBack={navigation.goBack} />
+        <AppHeader title={t('common.order')} onBack={navigation.goBack} />
         <View style={styles.content}>
           <ListSkeleton rows={4} height={120} />
         </View>
@@ -78,8 +80,8 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
   if (!order.data) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Order" onBack={navigation.goBack} />
-        <ErrorState message={order.error ?? "This order couldn't be loaded."} onRetry={() => order.reload()} />
+        <AppHeader title={t('common.order')} onBack={navigation.goBack} />
+        <ErrorState message={order.error ?? t('orders.thisOrderCouldnTBeLoaded')} onRetry={() => order.reload()} />
       </View>
     );
   }
@@ -130,8 +132,8 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
       nextStatus,
       () => orderService.updatePickupStatus(id, nextStatus, reason),
       nextStatus === 'CANCELLED'
-        ? 'Order cancelled'
-        : `Order marked ${orderStatusLabel({ orderStatus: nextStatus, fulfillmentType: 'PICKUP' }).toLowerCase()}`,
+        ? t('orders.orderCancelled')
+        : t('orders.orderMarkedStatus', { status: orderStatusLabel({ orderStatus: nextStatus, fulfillmentType: 'PICKUP' }).toLowerCase() }),
     );
 
   // Picked up on Customer Credit: nothing collected now; the whole balance is owed by the credit period.
@@ -141,7 +143,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
     return run(
       'credit',
       () => orderService.recordPayment(id, { payments: [], credit: { amount: pay.amountDue, dueDate }, completeOrder: true }),
-      `Picked up · ${formatRupees(pay.amountDue)} on credit until ${formatDay(dueDate)}`,
+      t('orders.pickedUpAmountdueOnCreditUntil', { amountDue: formatRupees(pay.amountDue), dueDate: formatDay(dueDate) }),
     );
   };
 
@@ -171,29 +173,29 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
           <View style={styles.heroGlow} />
           <View style={styles.heroTop}>
             <Badge label={orderStatusLabel(o)} tone={orderStatusTone(status)} />
-            {isQuickSale(o) ? <Badge label="Quick Sale" tone="orange" /> : null}
+            {isQuickSale(o) ? <Badge label={t('orders.quickSale2')} tone="orange" /> : null}
             {wholeOrder && discount ? (
               // "20% off · −₹60"; a flat discount already says its amount ("₹60 off").
               <Badge label={discount.label.includes('%') ? `${discount.label} · −${formatRupees(discount.amount)}` : discount.label} tone="green" />
             ) : null}
           </View>
-          <Text style={styles.heroLabel}>Order total</Text>
+          <Text style={styles.heroLabel}>{t('common.orderTotal')}</Text>
           <Text style={styles.heroTotal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             {formatRupees(wholeOrder ? Number(o.totalAmount) : itemsTotal)}
           </Text>
           <Text style={styles.heroMeta}>
-            {`Placed ${formatWhen(o.createdAt)} · ${items.length} item${items.length === 1 ? '' : 's'}${units !== items.length ? ` · ${units} units` : ''}`}
+            {[t('orders.placedOn', { when: formatWhen(o.createdAt) }), t('common.itemCount', { count: items.length }), units !== items.length ? t('common.unitsValue', { units }) : null].filter(Boolean).join(' · ')}
           </Text>
 
           <View style={styles.heroStats}>
-            <HeroStat label="Paid" value={paidTotal === null ? '…' : formatRupees(paidTotal)} dot="#4ade80" />
+            <HeroStat label={t('common.paid')} value={paidTotal === null ? '…' : formatRupees(paidTotal)} dot="#4ade80" />
             {credit ? (
-              <HeroStat label={`Credit · due ${formatDay(credit.dueDate)}`} value={formatRupees(credit.outstandingAmount)} dot="#c084fc" />
+              <HeroStat label={t('orders.creditDueDuedate', { dueDate: formatDay(credit.dueDate) })} value={formatRupees(credit.outstandingAmount)} dot="#c084fc" />
             ) : (
-              <HeroStat label={amountDue > 0 ? 'To collect' : 'Due'} value={pay ? formatRupees(amountDue) : '…'} dot={amountDue > 0 ? '#ff8a33' : '#94a3b8'} />
+              <HeroStat label={amountDue > 0 ? t('orders.toCollect') : t('common.due')} value={pay ? formatRupees(amountDue) : '…'} dot={amountDue > 0 ? '#ff8a33' : '#94a3b8'} />
             )}
             <HeroStat
-              label="Payment"
+              label={t('common.payment')}
               value={pay?.payments.length ? pay.payments.map(p => methodLabel(p.method)).join(' + ') : o.paymentMode === 'COD' ? 'At store' : 'Online'}
             />
           </View>
@@ -202,8 +204,8 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
             <View style={styles.cancelled}>
               <AlertCircleIcon size={18} color="#fca5a5" />
               <View style={styles.flex}>
-                <Text style={styles.cancelledTitle}>Cancelled {formatWhen(o.orderStatusTimestamp)}</Text>
-                {o.cancellationReason ? <Text style={styles.cancelledText}>Reason: {o.cancellationReason}</Text> : null}
+                <Text style={styles.cancelledTitle}>{t('orders.cancelledOrderstatustimestamp', { orderStatusTimestamp: formatWhen(o.orderStatusTimestamp) })}</Text>
+                {o.cancellationReason ? <Text style={styles.cancelledText}>{t('orders.reasonCancellationreason', { cancellationReason: o.cancellationReason })}</Text> : null}
               </View>
             </View>
           ) : pickup ? (
@@ -249,26 +251,26 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
               <View style={styles.requestIcon}>
                 <WalletIcon size={16} color="#7c3aed" />
               </View>
-              <Text style={styles.requestTitle}>Customer asked for credit</Text>
+              <Text style={styles.requestTitle}>{t('orders.customerAskedForCredit')}</Text>
             </View>
             <Text style={styles.requestText}>
-              Pay {formatRupees(pendingRequest.payNow)} now and {formatRupees(pendingRequest.creditAmount)} by{' '}
-              {formatDay(pendingRequest.dueDate)}.{pendingRequest.note ? ` “${pendingRequest.note}”` : ''}
+              {t('orders.payNowAndCreditBy', { payNow: formatRupees(pendingRequest.payNow), credit: formatRupees(pendingRequest.creditAmount), date: formatDay(pendingRequest.dueDate) })}
+              {pendingRequest.note ? ` “${pendingRequest.note}”` : ''}
             </Text>
             <View style={styles.requestActions}>
               <Button
-                title="Decline"
+                title={t('orders.decline')}
                 variant="ghost"
                 loading={saving === 'decline'}
                 disabled={!!saving}
-                onPress={() => run('decline', () => orderService.decideCreditRequest(id, false), 'Credit request declined')}
+                onPress={() => run('decline', () => orderService.decideCreditRequest(id, false), t('orders.creditRequestDeclined'))}
                 style={styles.flex}
               />
               <Button
-                title="Approve"
+                title={t('common.approve')}
                 loading={saving === 'approve'}
                 disabled={!!saving}
-                onPress={() => run('approve', () => orderService.decideCreditRequest(id, true), 'Credit request approved')}
+                onPress={() => run('approve', () => orderService.decideCreditRequest(id, true), t('orders.creditRequestApproved'))}
                 style={styles.flex}
               />
             </View>
@@ -283,8 +285,8 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
                 <UserIcon size={18} color={colors.textMuted} />
               </View>
               <View style={styles.flex}>
-                <Text style={styles.customerName}>Walk-in customer</Text>
-                <Text style={styles.meta}>Quick Sale — sold without customer details.</Text>
+                <Text style={styles.customerName}>{t('common.walkInCustomer')}</Text>
+                <Text style={styles.meta}>{t('orders.quickSaleSoldWithoutCustomerDetails')}</Text>
               </View>
             </View>
           ) : (
@@ -295,14 +297,14 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
                 </View>
                 <View style={styles.flex}>
                   <Text style={styles.customerName} numberOfLines={1}>
-                    {o.customerName || 'Registered customer'}
+                    {o.customerName || t('orders.registeredCustomer')}
                   </Text>
-                  <Text style={styles.meta}>{o.customerPhone || 'Customer'}</Text>
+                  <Text style={styles.meta}>{o.customerPhone || t('common.customer')}</Text>
                 </View>
                 {o.customerPhone ? (
                   <Pressable
                     accessibilityRole="link"
-                    accessibilityLabel={`Call ${o.customerPhone}`}
+                    accessibilityLabel={t('orders.callCustomerphone', { customerPhone: o.customerPhone })}
                     hitSlop={6}
                     onPress={() => Linking.openURL(`tel:${o.customerPhone}`)}
                     style={({ pressed }) => [styles.callBtn, pressed && styles.pressed]}
@@ -319,7 +321,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
               ) : null}
               {o.customerNote ? (
                 <View style={styles.note}>
-                  <Text style={styles.noteLabel}>Note from customer</Text>
+                  <Text style={styles.noteLabel}>{t('orders.noteFromCustomer')}</Text>
                   <Text style={styles.noteText}>{o.customerNote}</Text>
                 </View>
               ) : null}
@@ -330,7 +332,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
         {/* What's in it, and the bill */}
         <View style={[styles.card, styles.flush]}>
           <View style={styles.cardHead}>
-            <Text style={styles.cardTitle}>Items</Text>
+            <Text style={styles.cardTitle}>{t('orders.items')}</Text>
             <View style={styles.countPill}>
               <Text style={styles.countText}>{items.length}</Text>
             </View>
@@ -339,13 +341,13 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
             <ItemRow key={item.id} item={item} last={index === items.length - 1} />
           ))}
           <View style={styles.bill}>
-            <BillLine label="Items" value={formatRupees(wholeOrder ? itemsGross : itemsTotal)} />
-            {wholeOrder && itemOff > 0 ? <BillLine label="Item discounts" value={`−${formatRupees(itemOff)}`} good /> : null}
-            {wholeOrder && orderOff > 0 ? <BillLine label="Order discount" value={`−${formatRupees(orderOff)}`} good /> : null}
-            {wholeOrder && couponOff > 0 ? <BillLine label="Coupon" value={`−${formatRupees(couponOff)}`} good /> : null}
-            {wholeOrder && Number(o.taxAmount) > 0 ? <BillLine label="GST (included)" value={formatRupees(Number(o.taxAmount))} /> : null}
+            <BillLine label={t('orders.items')} value={formatRupees(wholeOrder ? itemsGross : itemsTotal)} />
+            {wholeOrder && itemOff > 0 ? <BillLine label={t('orders.itemDiscounts')} value={`−${formatRupees(itemOff)}`} good /> : null}
+            {wholeOrder && orderOff > 0 ? <BillLine label={t('orders.orderDiscount')} value={`−${formatRupees(orderOff)}`} good /> : null}
+            {wholeOrder && couponOff > 0 ? <BillLine label={t('common.coupon')} value={`−${formatRupees(couponOff)}`} good /> : null}
+            {wholeOrder && Number(o.taxAmount) > 0 ? <BillLine label={t('orders.gstIncluded')} value={formatRupees(Number(o.taxAmount))} /> : null}
             <View style={styles.billTotal}>
-              <Text style={styles.billTotalLabel}>Total</Text>
+              <Text style={styles.billTotalLabel}>{t('common.total')}</Text>
               <Text style={styles.billTotalValue}>{formatRupees(wholeOrder ? Number(o.totalAmount) : itemsTotal)}</Text>
             </View>
           </View>
@@ -354,7 +356,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
         {/* Money received, and any credit */}
         {pay && (pay.payments.length > 0 || credit) ? (
           <View style={styles.card}>
-            <Text style={[styles.cardTitle, styles.cardTitleSpaced]}>Payments</Text>
+            <Text style={[styles.cardTitle, styles.cardTitleSpaced]}>{t('common.payments')}</Text>
             {pay.payments.map(p => (
               <View key={p.id} style={styles.payRow}>
                 <View style={[styles.payIcon, styles.payIconPaid]}>
@@ -373,8 +375,8 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
                   <ClockIcon size={15} color="#7c3aed" />
                 </View>
                 <View style={styles.flex}>
-                  <Text style={styles.payTitle}>{`Customer Credit ${credit.idd}`}</Text>
-                  <Text style={styles.meta}>{`Due ${formatDay(credit.dueDate)} · ${credit.status.toLowerCase()}`}</Text>
+                  <Text style={styles.payTitle}>{t('orders.customerCreditIdd', { idd: credit.idd })}</Text>
+                  <Text style={styles.meta}>{t('orders.dueDuedateLowercase', { dueDate: formatDay(credit.dueDate), lowerCase: credit.status.toLowerCase() })}</Text>
                 </View>
                 <Text style={[styles.payAmount, styles.credit]}>{formatRupees(credit.outstandingAmount)}</Text>
               </View>
@@ -386,19 +388,19 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
         <View style={styles.card}>
           <View style={styles.remarksHead}>
             <FileTextIcon size={16} color={colors.textSecondary} />
-            <Text style={styles.remarksTitle}>Remarks</Text>
+            <Text style={styles.remarksTitle}>{t('orders.remarks')}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Edit order"
+              accessibilityLabel={t('orders.editOrder')}
               hitSlop={8}
               onPress={() => setEditing(true)}
               style={({ pressed }) => [styles.editBtn, pressed && styles.pressed]}
             >
               <EditIcon size={14} color={colors.secondary} />
-              <Text style={styles.editText}>Edit order</Text>
+              <Text style={styles.editText}>{t('orders.editOrder')}</Text>
             </Pressable>
           </View>
-          <Text style={o.remarks ? styles.remarksText : styles.meta}>{o.remarks || 'No remarks. Tap Edit order to add an internal note or change the status.'}</Text>
+          <Text style={o.remarks ? styles.remarksText : styles.meta}>{o.remarks || t('orders.noRemarksTapEditOrderTo')}</Text>
         </View>
 
         <OrderDocuments orderId={id} delivered={status === 'DELIVERED'} />
@@ -414,7 +416,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
               onPress={() => setCancelling(true)}
               style={({ pressed }) => [styles.cancelBtn, pressed && styles.pressed]}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
           ) : null}
           {next && collectsPayment ? (
@@ -426,10 +428,10 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
                   onPress={giveOnCredit}
                   style={({ pressed }) => [styles.creditBtn, pressed && styles.pressed]}
                 >
-                  <Text style={styles.creditText}>{saving === 'credit' ? 'Saving…' : 'On credit'}</Text>
+                  <Text style={styles.creditText}>{saving === 'credit' ? t('common.saving') : t('common.onCredit')}</Text>
                 </Pressable>
               ) : null}
-              <Button title="Collect payment" disabled={!!saving || !pay} onPress={() => setCollecting(true)} style={styles.flex} />
+              <Button title={t('orders.collectPayment')} disabled={!!saving || !pay} onPress={() => setCollecting(true)} style={styles.flex} />
             </>
           ) : next ? (
             <Button
@@ -468,12 +470,12 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
 
       <Sheet
         visible={cancelling}
-        title="Cancel this order?"
-        subtitle="The customer is told the order was cancelled. This can't be undone."
+        title={t('orders.cancelThisOrder')}
+        subtitle={t('orders.theCustomerIsToldTheOrder')}
         onClose={() => setCancelling(false)}
         footer={
           <Button
-            title="Cancel order"
+            title={t('common.cancelOrder')}
             loading={saving === 'CANCELLED'}
             onPress={async () => {
               await move('CANCELLED', cancelReason.trim() || undefined);
@@ -486,7 +488,7 @@ export function OrderDetailScreen({ navigation, route }: ScreenProps<'OrderDetai
         <TextInput
           value={cancelReason}
           onChangeText={setCancelReason}
-          placeholder="Reason (optional) — e.g. item out of stock"
+          placeholder={t('orders.reasonOptionalEGItemOut')}
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.secondary}
           multiline

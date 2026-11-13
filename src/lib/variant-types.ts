@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // Ported from the Seller Panel's src/lib/variant-types.ts — keep the two in step.
 // Variant attribute types (eshop-backend src/modules/variant-master).
 
@@ -20,28 +21,28 @@ export const VARIANT_TYPES: {
 }[] = [
   {
     value: 'SELECT',
-    label: 'List (Select)',
-    hint: 'Picked from a list of values — Color, Material, Size.',
+    get label() { return i18n.t('products.listSelect'); },
+    get hint() { return i18n.t('products.pickedFromAListOfValues'); },
   },
   {
     value: 'MEASUREMENT',
-    label: 'Measurement',
-    hint: 'A number with a unit — Length 20 mm, Weight 1.5 kg.',
+    get label() { return i18n.t('products.measurement'); },
+    get hint() { return i18n.t('products.aNumberWithAUnitLength'); },
   },
-  { value: 'NUMERIC', label: 'Number', hint: 'A plain number — Pack Size 6.' },
-  { value: 'TEXT', label: 'Text', hint: 'Typed in per product.' },
+  { value: 'NUMERIC', get label() { return i18n.t('products.number'); }, get hint() { return i18n.t('products.aPlainNumberPackSize6'); } },
+  { value: 'TEXT', get label() { return i18n.t('products.text'); }, get hint() { return i18n.t('products.typedInPerProduct'); } },
 ];
 
 export const MEASUREMENT_TYPES: { value: MeasurementType; label: string }[] = [
-  { value: 'LENGTH', label: 'Length (mm, cm, m, in, ft)' },
-  { value: 'WEIGHT', label: 'Weight (g, mg, kg, lb, oz, ton)' },
-  { value: 'VOLUME', label: 'Volume (ml, l, gal)' },
-  { value: 'STORAGE', label: 'Storage (KB, MB, GB, TB)' },
-  { value: 'FREQUENCY', label: 'Frequency (Hz, kHz, MHz, GHz)' },
-  { value: 'ELECTRICAL', label: 'Electrical (V, A, W, Wh, mAh…)' },
-  { value: 'COUNT', label: 'Count (pcs, pair, dozen)' },
-  { value: 'ROTATIONAL_SPEED', label: 'Rotational speed (rpm, rps)' },
-  { value: 'TORQUE', label: 'Torque (Nm, Ncm, kgfcm, lbft)' },
+  { value: 'LENGTH', get label() { return i18n.t('products.lengthMmCmMInFt'); } },
+  { value: 'WEIGHT', get label() { return i18n.t('products.weightGMgKgLbOz'); } },
+  { value: 'VOLUME', get label() { return i18n.t('products.volumeMlLGal'); } },
+  { value: 'STORAGE', get label() { return i18n.t('products.storageKbMbGbTb'); } },
+  { value: 'FREQUENCY', get label() { return i18n.t('products.frequencyHzKhzMhzGhz'); } },
+  { value: 'ELECTRICAL', get label() { return i18n.t('products.electricalVAWWhMah'); } },
+  { value: 'COUNT', get label() { return i18n.t('products.countPcsPairDozen'); } },
+  { value: 'ROTATIONAL_SPEED', get label() { return i18n.t('products.rotationalSpeedRpmRps'); } },
+  { value: 'TORQUE', get label() { return i18n.t('products.torqueNmNcmKgfcmLbft'); } },
 ];
 
 export function variantTypeLabel(
@@ -49,7 +50,7 @@ export function variantTypeLabel(
   measurementType?: unknown,
 ): string {
   const label =
-    VARIANT_TYPES.find(t => t.value === type)?.label ?? 'List (Select)';
+    VARIANT_TYPES.find(t => t.value === type)?.label ?? i18n.t('products.listSelect');
   return type === 'MEASUREMENT' && measurementType
     ? `${label} · ${String(measurementType).toLowerCase()}`
     : label;
@@ -84,18 +85,18 @@ export const SELECTION_MODES: {
 }[] = [
   {
     value: 'SELECTED',
-    label: 'Selected',
-    hint: 'Only the options ticked below.',
+    get label() { return i18n.t('common.selected'); },
+    get hint() { return i18n.t('products.onlyTheOptionsTickedBelow'); },
   },
   {
     value: 'ALL',
-    label: 'All',
-    hint: 'Every active option, including ones added later.',
+    get label() { return i18n.t('common.all'); },
+    get hint() { return i18n.t('products.everyActiveOptionIncludingOnesAdded'); },
   },
   {
     value: 'ALL_EXCEPT',
-    label: 'All except',
-    hint: 'Every active option except the ones ticked below.',
+    get label() { return i18n.t('products.allExcept'); },
+    get hint() { return i18n.t('products.everyActiveOptionExceptTheOnes'); },
   },
 ];
 
@@ -166,8 +167,8 @@ export function offeredValues<T extends VariantValueRow>(
 
 export function selectionSummary(mode: SelectionMode, count: number): string {
   return mode === 'ALL'
-    ? 'All options'
+    ? i18n.t('products.allOptions')
     : mode === 'SELECTED'
-    ? `${count} selected`
-    : `All except ${count}`;
+    ? i18n.t('products.countSelected', { count })
+    : i18n.t('products.allExceptCount', { count });
 }

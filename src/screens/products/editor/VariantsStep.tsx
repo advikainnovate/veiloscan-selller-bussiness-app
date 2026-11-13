@@ -16,6 +16,7 @@ import { Choices, Field, Input, Section } from '../../../components/form/Fields'
 import { CheckIcon, CloseIcon, ImageIcon } from '../../../components/icons';
 import { VariantPhotosSheet } from './VariantPhotosSheet';
 import type { BusinessVariantRow, MediaItem } from './types';
+import { useTranslation } from 'react-i18next';
 
 export interface StepHandle {
   save: () => Promise<void>;
@@ -94,6 +95,7 @@ export function VariantsStep({
   media: MediaItem[];
   onSkusChange: (rows: BusinessVariantRow[]) => void;
 }) {
+  const { t: tr } = useTranslation();
   const [config, setConfig] = useState<ProductConfiguration | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -183,7 +185,7 @@ export function VariantsStep({
       onSkusChange(next.map(toSkuRow));
     }
     const failed = Object.keys(errors).length;
-    if (failed) throw new Error(`${failed} SKU${failed === 1 ? '' : 's'} couldn't be saved — see the highlighted SKUs.`);
+    if (failed) throw new Error(tr('products.skusCouldntBeSaved', { count: failed }));
   }
 
   useImperativeHandle(ref, () => ({ save: saveDrafts }));
@@ -214,10 +216,11 @@ export function VariantsStep({
       }
       setNotice(
         result.created
-          ? `${result.created} SKU${result.created === 1 ? '' : 's'} added${result.skipped ? ` · ${result.skipped} already existed` : ''}.${
-              defaults.sellingPrice ? '' : ' Set their prices below — SKUs without a price stay off sale.'
-            }`
-          : 'All these combinations already exist.',
+          ? [
+              `${tr('products.skusAdded', { count: result.created })}${result.skipped ? ` · ${tr('products.alreadyExisted', { count: result.skipped })}` : ''}.`,
+              defaults.sellingPrice ? '' : tr('products.setPricesBelow'),
+            ].filter(Boolean).join(' ')
+          : tr('products.allTheseCombinationsAlreadyExist'),
       );
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -228,10 +231,10 @@ export function VariantsStep({
 
   function removeVariant(v: ProductVariant) {
     if (!productId) return;
-    NativeAlert.alert(`Remove SKU ${v.sku}?`, v.label, [
-      { text: 'Cancel', style: 'cancel' },
+    NativeAlert.alert(tr('products.removeSkuSku', { sku: v.sku }), v.label, [
+      { text: tr('common.cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: tr('common.remove'),
         style: 'destructive',
         onPress: async () => {
           setBusy(v.id);
@@ -257,7 +260,7 @@ export function VariantsStep({
     let match: { id: string } | undefined;
     if (attribute.type === 'MEASUREMENT' || attribute.type === 'NUMERIC') {
       const number = Number(text);
-      if (!Number.isFinite(number) || number <= 0) return setError(`${attribute.title} must be a number above 0`);
+      if (!Number.isFinite(number) || number <= 0) return setError(tr('products.titleMustBeANumberAbove', { title: attribute.title }));
       if (attribute.type === 'MEASUREMENT') {
         const unit = newUnit[attribute.id] || attribute.openUnits[0];
         if (!unit) return;
@@ -303,21 +306,21 @@ export function VariantsStep({
       });
       return next;
     });
-    setNotice(`Prices filled in for ${bulk.target === 'all' ? 'all SKUs' : `${groupTitle}: ${bulk.target}`} — they're saved when you continue.`);
+    setNotice(tr('products.pricesFilledIn', { target: bulk.target === 'all' ? tr('products.allSkus') : `${groupTitle}: ${bulk.target}` }));
   }
 
-  if (!productId) return <Section title="Variants" subtitle="Save the basic information first." children={null} />;
+  if (!productId) return <Section title={tr('products.variants')} subtitle={tr('products.saveTheBasicInformationFirst')} children={null} />;
   if (loadError) return <Alert message={loadError} />;
-  if (!config) return <Section title="Variants" subtitle="Loading the category's variant attributes…" children={null} />;
+  if (!config) return <Section title={tr('products.variants')} subtitle={tr('products.loadingTheCategorysVariantAttributes')} children={null} />;
 
   return (
     <View style={styles.wrap}>
       <Section
-        title="Variant attributes"
-        subtitle={`Tick the options this product comes in (from ${config.category.path.map(c => c.title).join(' › ')}). Generating again only adds new combinations.`}
+        title={tr('products.variantAttributes')}
+        subtitle={tr('products.tickTheOptionsThisProductComes', { join: config.category.path.map(c => c.title).join(' › ') })}
       >
         {!attributes.length ? (
-          <Text style={styles.muted}>This category has no variant attributes, so the product is sold as a single SKU.</Text>
+          <Text style={styles.muted}>{tr('products.thisCategoryHasNoVariantAttributes')}</Text>
         ) : (
           attributes.map(attribute => {
             const ids = selected[attribute.id] ?? [];
@@ -330,11 +333,11 @@ export function VariantsStep({
                   <Text style={styles.attrTitle}>
                     {attribute.title}
                     {attribute.required ? <Text style={styles.required}> *</Text> : null}
-                    {attribute.type === 'MEASUREMENT' ? <Text style={styles.muted}> · in {attribute.units.join(' / ')}</Text> : null}
+                    {attribute.type === 'MEASUREMENT' ? <Text style={styles.muted}> {tr('products.inJoin', { join: attribute.units.join(' / ') })}</Text> : null}
                   </Text>
                   {attribute.options.length ? (
                     <Pressable onPress={() => setSelected(prev => ({ ...prev, [attribute.id]: allOn ? [] : attribute.options.map(o => o.id) }))} hitSlop={6}>
-                      <Text style={styles.link}>{allOn ? 'Clear' : 'Select all'}</Text>
+                      <Text style={styles.link}>{allOn ? tr('common.clear') : tr('common.selectAll')}</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -358,11 +361,11 @@ export function VariantsStep({
                   {typedHere.map(t => (
                     <Pressable
                       key={t.key}
-                      accessibilityLabel={`Remove ${t.label}`}
+                      accessibilityLabel={tr('common.removeLabel', { label: t.label })}
                       onPress={() => setTyped(prev => ({ ...prev, [attribute.id]: (prev[attribute.id] ?? []).filter(x => x.key !== t.key) }))}
                       style={[styles.option, styles.optionNew]}
                     >
-                      <Text style={styles.optionTextNew}>{t.label} · new</Text>
+                      <Text style={styles.optionTextNew}>{tr('products.labelNew', { label: t.label })}</Text>
                       <CloseIcon size={11} color="#4f46e5" />
                     </Pressable>
                   ))}
@@ -373,12 +376,12 @@ export function VariantsStep({
                       value={newValue[attribute.id] ?? ''}
                       onChangeText={v => setNewValue(prev => ({ ...prev, [attribute.id]: v }))}
                       keyboardType={attribute.type === 'MEASUREMENT' || attribute.type === 'NUMERIC' ? 'decimal-pad' : 'default'}
-                      placeholder={attribute.type === 'MEASUREMENT' ? 'e.g. 20' : attribute.type === 'NUMERIC' ? 'e.g. 6' : `Add a ${attribute.title.toLowerCase()}…`}
+                      placeholder={attribute.type === 'MEASUREMENT' ? 'e.g. 20' : attribute.type === 'NUMERIC' ? 'e.g. 6' : tr('products.addALowercase', { lowerCase: attribute.title.toLowerCase() })}
                       onSubmitEditing={() => addTyped(attribute)}
                       style={styles.flex}
                     />
                     <Pressable onPress={() => addTyped(attribute)} style={styles.addBtn}>
-                      <Text style={styles.addBtnText}>Add</Text>
+                      <Text style={styles.addBtnText}>{tr('common.add')}</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -396,18 +399,18 @@ export function VariantsStep({
 
         {attributes.length ? (
           <>
-            <Text style={styles.subhead}>Prices for new SKUs (optional)</Text>
+            <Text style={styles.subhead}>{tr('products.pricesForNewSkusOptional')}</Text>
             <View style={styles.priceRow}>
               {(['sellingPrice', 'mrp', 'costPrice'] as const).map(f => (
                 <View key={f} style={styles.flex}>
-                  <Text style={styles.priceLabel}>{f === 'sellingPrice' ? 'Price' : f === 'mrp' ? 'MRP' : 'Cost'}</Text>
+                  <Text style={styles.priceLabel}>{f === 'sellingPrice' ? tr('common.price') : f === 'mrp' ? 'MRP' : tr('common.cost')}</Text>
                   <Input value={defaults[f]} onChangeText={v => setDefaults(d => ({ ...d, [f]: money(v) }))} keyboardType="decimal-pad" placeholder="₹" />
                 </View>
               ))}
             </View>
-            {missingRequired.length ? <Text style={styles.warn}>Choose at least one {missingRequired.map(a => a.title).join(', ')}.</Text> : null}
+            {missingRequired.length ? <Text style={styles.warn}>{tr('products.chooseAtLeastOneJoin', { join: missingRequired.map(a => a.title).join(', ') })}</Text> : null}
             <Button
-              title={busy === 'generate' ? 'Generating…' : `Generate ${comboCount} combination${comboCount === 1 ? '' : 's'}`}
+              title={busy === 'generate' ? tr('products.generating') : tr('products.generateCombinations', { count: comboCount })}
               disabled={busy === 'generate' || !comboCount || missingRequired.length > 0}
               onPress={() => generate()}
             />
@@ -419,37 +422,37 @@ export function VariantsStep({
           </>
         ) : null}
         {!chosen.length && !variants.length && !attributes.some(a => a.required) ? (
-          <Button title="No variants — create a single SKU" variant="ghost" disabled={busy === 'generate'} onPress={() => generate(true)} />
+          <Button title={tr('products.noVariantsCreateASingleSku')} variant="ghost" disabled={busy === 'generate'} onPress={() => generate(true)} />
         ) : null}
         {notice ? <Alert variant="success" message={notice} /> : null}
         {error ? <Alert message={error} /> : null}
       </Section>
 
       {variants.length > 1 ? (
-        <Section title="Fill prices" subtitle="Set the same prices for many SKUs at once.">
+        <Section title={tr('products.fillPrices')} subtitle={tr('products.setTheSamePricesForMany')}>
           <View style={styles.priceRow}>
             {(['sellingPrice', 'mrp', 'costPrice'] as const).map(f => (
               <View key={f} style={styles.flex}>
-                <Text style={styles.priceLabel}>{f === 'sellingPrice' ? 'Price' : f === 'mrp' ? 'MRP' : 'Cost'}</Text>
+                <Text style={styles.priceLabel}>{f === 'sellingPrice' ? tr('common.price') : f === 'mrp' ? 'MRP' : tr('common.cost')}</Text>
                 <Input value={bulk[f]} onChangeText={v => setBulk(b => ({ ...b, [f]: money(v) }))} keyboardType="decimal-pad" placeholder="₹" />
               </View>
             ))}
           </View>
           {groupNames.length > 1 ? (
-            <Field label="For">
+            <Field label={tr('products.for')}>
               <Choices
-                options={[{ value: 'all', label: 'All SKUs' }, ...groupNames.map(g => ({ value: g, label: `${groupTitle}: ${g}` }))]}
+                options={[{ value: 'all', label: tr('common.allSkus') }, ...groupNames.map(g => ({ value: g, label: `${groupTitle}: ${g}` }))]}
                 value={bulk.target}
                 onChange={target => setBulk(b => ({ ...b, target }))}
               />
             </Field>
           ) : null}
-          <Button title="Fill in" variant="ghost" disabled={!bulk.sellingPrice && !bulk.mrp && !bulk.costPrice} onPress={applyBulk} />
+          <Button title={tr('products.fillIn')} variant="ghost" disabled={!bulk.sellingPrice && !bulk.mrp && !bulk.costPrice} onPress={applyBulk} />
         </Section>
       ) : null}
 
       <Text style={styles.listTitle}>
-        SKUs ({variants.length}){dirty.length ? ` · ${dirty.length} unsaved` : ''}
+        {tr('products.skusWithCount', { count: variants.length })}{dirty.length ? tr('products.dirtycountUnsaved', { dirtyCount: dirty.length }) : ''}
       </Text>
       {variants.map(v => {
         const d = drafts[v.id] ?? draftOf(v);
@@ -460,47 +463,47 @@ export function VariantsStep({
               <View style={styles.flex}>
                 <Text style={styles.skuLabel}>{v.label}</Text>
                 <Text style={styles.muted}>
-                  {v.imageCount ? `${v.imageCount} photo${v.imageCount === 1 ? '' : 's'}` : 'No own photos'} · stock {v.stock}
+                  {`${v.imageCount ? tr('common.photoCount', { count: v.imageCount }) : tr('products.noOwnPhotos')} · ${tr('products.stockValue', { stock: v.stock })}`}
                 </Text>
               </View>
-              <Text style={styles.onSale}>{d.status === 1 ? 'On sale' : 'Hidden'}</Text>
+              <Text style={styles.onSale}>{d.status === 1 ? tr('products.onSale') : tr('products.hidden')}</Text>
               <Switch
                 value={d.status === 1}
                 onValueChange={on => setDraft(v.id, { status: on ? 1 : 0 })}
                 trackColor={{ true: colors.secondary, false: colors.border }}
                 thumbColor={colors.white}
-                accessibilityLabel={`${v.label} on sale`}
+                accessibilityLabel={tr('products.labelOnSale', { label: v.label })}
               />
             </View>
             <View style={styles.priceRow}>
               <View style={styles.flex}>
-                <Text style={styles.priceLabel}>SKU code</Text>
+                <Text style={styles.priceLabel}>{tr('products.skuCode')}</Text>
                 <Input value={d.sku} onChangeText={sku => setDraft(v.id, { sku: sku.toUpperCase() })} autoCapitalize="characters" autoCorrect={false} />
               </View>
               <View style={styles.flex}>
-                <Text style={styles.priceLabel}>Barcode</Text>
-                <Input value={d.barcode} onChangeText={barcode => setDraft(v.id, { barcode })} keyboardType="number-pad" placeholder="Optional" />
+                <Text style={styles.priceLabel}>{tr('common.barcode')}</Text>
+                <Input value={d.barcode} onChangeText={barcode => setDraft(v.id, { barcode })} keyboardType="number-pad" placeholder={tr('common.optional2')} />
               </View>
             </View>
             <View style={styles.priceRow}>
               {(['sellingPrice', 'mrp', 'costPrice'] as const).map(f => (
                 <View key={f} style={styles.flex}>
-                  <Text style={styles.priceLabel}>{f === 'sellingPrice' ? 'Price *' : f === 'mrp' ? 'MRP' : 'Cost'}</Text>
+                  <Text style={styles.priceLabel}>{f === 'sellingPrice' ? tr('products.price') : f === 'mrp' ? 'MRP' : tr('common.cost')}</Text>
                   <Input value={d[f]} onChangeText={val => setDraft(v.id, { [f]: money(val) })} keyboardType="decimal-pad" placeholder="₹" accessibilityLabel={`${v.label} ${f}`} />
                 </View>
               ))}
             </View>
             {media.length ? (
               <View style={styles.imageRow}>
-                <Text style={styles.priceLabel}>Product photo for this SKU</Text>
+                <Text style={styles.priceLabel}>{tr('products.productPhotoForThisSku')}</Text>
                 <View style={styles.thumbs}>
                   <Pressable onPress={() => setDraft(v.id, { imageFileId: '' })} style={[styles.thumb, styles.thumbNone, !d.imageFileId && styles.thumbOn]}>
-                    <Text style={styles.thumbNoneText}>None</Text>
+                    <Text style={styles.thumbNoneText}>{tr('common.none')}</Text>
                   </Pressable>
                   {media.map(m => (
                     <Pressable
                       key={String(m.fileId)}
-                      accessibilityLabel="Use this photo"
+                      accessibilityLabel={tr('products.useThisPhoto')}
                       onPress={() => setDraft(v.id, { imageFileId: String(m.fileId) })}
                       style={[styles.thumb, picked?.fileId === m.fileId && styles.thumbOn]}
                     >
@@ -513,10 +516,10 @@ export function VariantsStep({
             <View style={styles.skuActions}>
               <Pressable onPress={() => setPhotosFor(v)} style={styles.skuAction}>
                 <ImageIcon size={15} color={colors.secondary} />
-                <Text style={styles.link}>Photos</Text>
+                <Text style={styles.link}>{tr('products.photos')}</Text>
               </Pressable>
               <Pressable onPress={() => removeVariant(v)} disabled={busy === v.id} style={styles.skuAction}>
-                <Text style={styles.danger}>{busy === v.id ? 'Removing…' : 'Remove'}</Text>
+                <Text style={styles.danger}>{busy === v.id ? tr('products.removing') : tr('common.remove')}</Text>
               </Pressable>
             </View>
             {rowErrors[v.id] ? <Text style={styles.rowError}>{rowErrors[v.id]}</Text> : null}

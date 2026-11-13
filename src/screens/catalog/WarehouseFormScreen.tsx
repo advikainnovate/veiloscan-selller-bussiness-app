@@ -28,44 +28,47 @@ import { opsStyles, ReasonSheet } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, MapPinIcon, SettingsIcon, WarehouseIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 type TextKey = Exclude<keyof WarehouseForm, 'isActive' | 'inboundEnabled' | 'outboundEnabled' | 'returnEnabled' | 'isDefault'>;
 type FieldSpec = { key: TextKey; label: string; placeholder?: string; required?: boolean; hint?: string; keyboard?: 'email-address' | 'phone-pad' | 'numbers-and-punctuation' };
 
 const BASIC: FieldSpec[] = [
-  { key: 'facilityTitle', label: 'Warehouse Name', required: true, placeholder: 'Enter warehouse name', hint: 'This name will be used internally.' },
-  { key: 'facilityCode', label: 'Warehouse Code', required: true, placeholder: 'Enter unique warehouse code', hint: 'Unique code for this warehouse.' },
-  { key: 'contactPerson', label: 'Contact Person', placeholder: 'Person responsible for this warehouse' },
+  { key: 'facilityTitle', get label() { return i18n.t('catalog.warehouseName'); }, required: true, get placeholder() { return i18n.t('catalog.enterWarehouseName'); }, get hint() { return i18n.t('catalog.thisNameWillBeUsedInternally'); } },
+  { key: 'facilityCode', get label() { return i18n.t('catalog.warehouseCode'); }, required: true, get placeholder() { return i18n.t('catalog.enterUniqueWarehouseCode'); }, get hint() { return i18n.t('catalog.uniqueCodeForThisWarehouse'); } },
+  { key: 'contactPerson', get label() { return i18n.t('catalog.contactPerson'); }, get placeholder() { return i18n.t('catalog.personResponsibleForThisWarehouse'); } },
 ];
 const LOCATION: FieldSpec[] = [
-  { key: 'addressLine1', label: 'Address Line 1', placeholder: 'Enter address line 1' },
-  { key: 'addressLine2', label: 'Address Line 2', placeholder: 'Enter address line 2 (optional)' },
-  { key: 'landmark', label: 'Landmark', placeholder: 'Nearby landmark' },
-  { key: 'area', label: 'Area', placeholder: 'Locality / area' },
-  { key: 'city', label: 'City', placeholder: 'Enter city' },
-  { key: 'state', label: 'State / Province', placeholder: 'Enter state' },
-  { key: 'pincode', label: 'Postal / ZIP Code', placeholder: 'Enter postal code', keyboard: 'numbers-and-punctuation' },
-  { key: 'country', label: 'Country', placeholder: 'Enter country' },
-  { key: 'region', label: 'Region', placeholder: 'e.g. South' },
-  { key: 'phone', label: 'Phone', placeholder: 'Enter phone number', keyboard: 'phone-pad' },
-  { key: 'email', label: 'Email', placeholder: 'Enter email address', keyboard: 'email-address' },
-  { key: 'latitude', label: 'Latitude (Optional)', placeholder: 'Enter latitude', keyboard: 'numbers-and-punctuation' },
-  { key: 'longitude', label: 'Longitude (Optional)', placeholder: 'Enter longitude', keyboard: 'numbers-and-punctuation' },
+  { key: 'addressLine1', get label() { return i18n.t('common.addressLine1'); }, get placeholder() { return i18n.t('catalog.enterAddressLine1'); } },
+  { key: 'addressLine2', get label() { return i18n.t('common.addressLine2'); }, get placeholder() { return i18n.t('catalog.enterAddressLine2Optional'); } },
+  { key: 'landmark', get label() { return i18n.t('common.landmark'); }, get placeholder() { return i18n.t('catalog.nearbyLandmark'); } },
+  { key: 'area', get label() { return i18n.t('common.area'); }, get placeholder() { return i18n.t('catalog.localityArea'); } },
+  { key: 'city', get label() { return i18n.t('common.city'); }, get placeholder() { return i18n.t('catalog.enterCity'); } },
+  { key: 'state', get label() { return i18n.t('catalog.stateProvince'); }, get placeholder() { return i18n.t('catalog.enterState'); } },
+  { key: 'pincode', get label() { return i18n.t('catalog.postalZipCode'); }, get placeholder() { return i18n.t('catalog.enterPostalCode'); }, keyboard: 'numbers-and-punctuation' },
+  { key: 'country', get label() { return i18n.t('common.country'); }, get placeholder() { return i18n.t('catalog.enterCountry'); } },
+  { key: 'region', get label() { return i18n.t('catalog.region'); }, placeholder: 'e.g. South' },
+  { key: 'phone', get label() { return i18n.t('common.phone'); }, get placeholder() { return i18n.t('catalog.enterPhoneNumber'); }, keyboard: 'phone-pad' },
+  { key: 'email', get label() { return i18n.t('common.email'); }, get placeholder() { return i18n.t('catalog.enterEmailAddress'); }, keyboard: 'email-address' },
+  { key: 'latitude', get label() { return i18n.t('catalog.latitudeOptional'); }, get placeholder() { return i18n.t('catalog.enterLatitude'); }, keyboard: 'numbers-and-punctuation' },
+  { key: 'longitude', get label() { return i18n.t('catalog.longitudeOptional'); }, get placeholder() { return i18n.t('catalog.enterLongitude'); }, keyboard: 'numbers-and-punctuation' },
 ];
 const ADDITIONAL: FieldSpec[] = [
-  { key: 'timezone', label: 'Timezone', placeholder: 'Asia/Kolkata' },
-  { key: 'customField1', label: 'Custom Field 1', placeholder: 'e.g. zone-a' },
-  { key: 'customField2', label: 'Custom Field 2', placeholder: 'e.g. rack-1' },
+  { key: 'timezone', get label() { return i18n.t('common.timezone'); }, placeholder: 'Asia/Kolkata' },
+  { key: 'customField1', get label() { return i18n.t('catalog.customField1'); }, placeholder: 'e.g. zone-a' },
+  { key: 'customField2', get label() { return i18n.t('catalog.customField2'); }, placeholder: 'e.g. rack-1' },
 ];
 const SWITCHES: { key: 'inboundEnabled' | 'outboundEnabled' | 'returnEnabled' | 'isDefault'; label: string; hint: string }[] = [
-  { key: 'inboundEnabled', label: 'Inbound Enabled', hint: 'Allow stock-in transactions.' },
-  { key: 'outboundEnabled', label: 'Outbound Enabled', hint: 'Allow stock-out transactions.' },
-  { key: 'returnEnabled', label: 'Return Enabled', hint: 'Allow return transactions.' },
-  { key: 'isDefault', label: 'Is Default Warehouse', hint: 'Set as default for new transactions.' },
+  { key: 'inboundEnabled', get label() { return i18n.t('catalog.inboundEnabled'); }, get hint() { return i18n.t('catalog.allowStockInTransactions'); } },
+  { key: 'outboundEnabled', get label() { return i18n.t('catalog.outboundEnabled'); }, get hint() { return i18n.t('catalog.allowStockOutTransactions'); } },
+  { key: 'returnEnabled', get label() { return i18n.t('catalog.returnEnabled'); }, get hint() { return i18n.t('catalog.allowReturnTransactions'); } },
+  { key: 'isDefault', get label() { return i18n.t('catalog.isDefaultWarehouse'); }, get hint() { return i18n.t('catalog.setAsDefaultForNewTransactions'); } },
 ];
 
 /** Add or edit a warehouse, as the panel's form; new ones (and address changes) go to VeiloScan for approval. */
 export function WarehouseFormScreen({ navigation, route }: ScreenProps<'WarehouseForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -115,12 +118,12 @@ export function WarehouseFormScreen({ navigation, route }: ScreenProps<'Warehous
       const status = form.isActive ? 1 : 0;
       if (id) {
         const saved = await warehouseMasterService.update(id, { ...payload, status });
-        toast(approval?.status === 'ACTIVE' && warehouseLifecycle(saved) === 'PENDING_APPROVAL' ? "Saved. The new address needs VeiloScan's approval before you can use this warehouse again." : 'Warehouse updated');
+        toast(approval?.status === 'ACTIVE' && warehouseLifecycle(saved) === 'PENDING_APPROVAL' ? t('catalog.savedTheNewAddressNeedsVeiloscans') : t('catalog.warehouseUpdated'));
       } else {
         let created = await warehouseMasterService.create(payload);
         if (status !== 1) created = await warehouseMasterService.update(created.id, { status });
         const after = warehouseLifecycle(created);
-        toast(after === 'ACTIVE' ? "Warehouse added and approved — it's ready to use" : after === 'INACTIVE' ? 'Warehouse added (switched off)' : 'Warehouse submitted. You can stock it once VeiloScan approves it.');
+        toast(after === 'ACTIVE' ? t('catalog.warehouseAddedAndApprovedItsReady') : after === 'INACTIVE' ? t('catalog.warehouseAddedSwitchedOff') : t('catalog.warehouseSubmittedYouCanStockIt'));
       }
       navigation.goBack();
     } catch (err) {
@@ -130,12 +133,12 @@ export function WarehouseFormScreen({ navigation, route }: ScreenProps<'Warehous
     }
   }
 
-  const title = id ? 'Edit Warehouse' : 'Add New Warehouse';
+  const title = id ? t('catalog.editWarehouse') : t('catalog.addNewWarehouse');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Warehouses" icon={WarehouseIcon} allowed={false} />
+        <ComingSoon label={t('catalog.warehouses')} icon={WarehouseIcon} allowed={false} />
       </View>
     );
   }
@@ -165,39 +168,38 @@ export function WarehouseFormScreen({ navigation, route }: ScreenProps<'Warehous
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Warehouses" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={t('catalog.warehouses')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>Enter warehouse details and configure basic settings.</Text>
+        <Text style={opsStyles.meta}>{t('catalog.enterWarehouseDetailsAndConfigureBasic')}</Text>
         {approval && approval.status !== 'ACTIVE' ? (
           <View style={styles.notice}>
             <Text style={styles.noticeTitle}>{`${WAREHOUSE_STATUS[approval.status].label} — ${WAREHOUSE_STATUS[approval.status].hint}`}</Text>
-            {approval.note ? <Text style={opsStyles.meta}>{`VeiloScan: “${approval.note}”`}</Text> : null}
-            {canResubmit(approval.status) ? <Button title="Resubmit for review" variant="ghost" onPress={() => setResubmitting(true)} style={styles.ghost} /> : null}
+            {approval.note ? <Text style={opsStyles.meta}>{t('catalog.veiloscanNote', { note: approval.note })}</Text> : null}
+            {canResubmit(approval.status) ? <Button title={t('catalog.resubmitForReview')} variant="ghost" onPress={() => setResubmitting(true)} style={styles.ghost} /> : null}
           </View>
         ) : null}
         {!id ? (
           <View style={[styles.notice, styles.info]}>
             <Text style={styles.infoText}>
-              VeiloScan checks new warehouses before they can hold stock. Your first warehouse is always reviewed by our team; later ones with a complete, verifiable address are usually approved straight away.
-            </Text>
+              {t('catalog.veiloscanChecksNewWarehousesBeforeThey')}</Text>
           </View>
         ) : null}
 
-        <SectionCard icon={WarehouseIcon} title="Basic Information">
+        <SectionCard icon={WarehouseIcon} title={t('common.basicInformation')}>
           {fields(BASIC.slice(0, 2))}
-          <SelectField label="Warehouse Type" required hint="Primary, Secondary, Regional, etc." value={form.facilityType} options={WAREHOUSE_TYPES} onChange={v => set('facilityType', v)} />
+          <SelectField label={t('catalog.warehouseType')} required hint={t('catalog.primarySecondaryRegionalEtc')} value={form.facilityType} options={WAREHOUSE_TYPES} onChange={v => set('facilityType', v)} />
           {fields(BASIC.slice(2))}
         </SectionCard>
-        <SectionCard icon={MapPinIcon} title="Location Details" subtitle="Adding coordinates helps with distance calculation and location mapping.">
+        <SectionCard icon={MapPinIcon} title={t('catalog.locationDetails')} subtitle={t('catalog.addingCoordinatesHelpsWithDistanceCalculation')}>
           {fields(LOCATION)}
         </SectionCard>
-        <SectionCard icon={SettingsIcon} title="Additional Information">
+        <SectionCard icon={SettingsIcon} title={t('catalog.additionalInformation')}>
           {fields(ADDITIONAL)}
         </SectionCard>
-        <SectionCard icon={SettingsIcon} title="Warehouse Settings">
+        <SectionCard icon={SettingsIcon} title={t('catalog.warehouseSettings')}>
           <SwitchRow
-            label="Active Warehouse"
-            hint={approval && !canToggle(approval.status) ? 'Available once the warehouse is approved.' : 'Switch off to stop new stock operations here.'}
+            label={t('catalog.activeWarehouse')}
+            hint={approval && !canToggle(approval.status) ? t('catalog.availableOnceTheWarehouseIsApproved') : t('catalog.switchOffToStopNewStock')}
             value={form.isActive}
             disabled={!!approval && !canToggle(approval.status)}
             onChange={v => set('isActive', v)}
@@ -205,7 +207,7 @@ export function WarehouseFormScreen({ navigation, route }: ScreenProps<'Warehous
           {SWITCHES.map(s => (
             <SwitchRow key={s.key} label={s.label} hint={s.hint} value={form[s.key]} onChange={v => set(s.key, v)} />
           ))}
-          <Text style={opsStyles.muted}>Tip: assign stock to this warehouse from Inventory once it's created.</Text>
+          <Text style={opsStyles.muted}>{t('catalog.tipAssignStockToThisWarehouse')}</Text>
         </SectionCard>
 
         {error ? (
@@ -215,21 +217,21 @@ export function WarehouseFormScreen({ navigation, route }: ScreenProps<'Warehous
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : 'Save Warehouse'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? t('common.saveChanges') : t('catalog.saveWarehouse')} loading={saving} onSave={save} onCancel={navigation.goBack} />
 
       <ReasonSheet
         visible={resubmitting}
-        title="Resubmit for review?"
-        message="Save your changes first, then resubmit so VeiloScan reviews the latest details."
-        label="Note for the reviewer (optional)"
-        confirmLabel="Resubmit"
+        title={t('catalog.resubmitForReview2')}
+        message={t('catalog.saveYourChangesFirstThenResubmit')}
+        label={t('catalog.noteForTheReviewerOptional')}
+        confirmLabel={t('catalog.resubmit')}
         required={false}
         maxLength={1000}
         onClose={() => setResubmitting(false)}
         onConfirm={async note => {
           try {
             await warehouseMasterService.resubmit(id!, note);
-            toast('Warehouse resubmitted for review');
+            toast(t('catalog.warehouseResubmittedForReview'));
             setResubmitting(false);
             navigation.goBack();
           } catch (err) {

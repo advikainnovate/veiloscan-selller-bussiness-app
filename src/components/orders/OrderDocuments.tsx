@@ -10,12 +10,14 @@ import { formatRupees } from '../../lib/format';
 import { orderService, type OrderInvoice, type OrderReceipt } from '../../services/order-service';
 import { Card } from '../ui/Card';
 import { FileTextIcon, WalletIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The order's documents: each seller's tax invoice (issued on delivery) and a
  * payment receipt for every payment. Tapping one opens its PDF.
  */
 export function OrderDocuments({ orderId, delivered }: { orderId: string; delivered: boolean }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [opening, setOpening] = useState<string | null>(null);
   const invoices = useFetch(() => (delivered ? orderService.invoices(orderId) : Promise.resolve([])), [orderId, delivered]);
@@ -36,15 +38,15 @@ export function OrderDocuments({ orderId, delivered }: { orderId: string; delive
   const receiptRows = receipts.data ?? [];
 
   return (
-    <Card title="Invoices & receipts" icon={FileTextIcon} padded={false}>
+    <Card title={t('orders.invoicesAndReceipts')} icon={FileTextIcon} padded={false}>
       {!delivered ? (
-        <Text style={styles.note}>The tax invoice is issued once the order is delivered or picked up.</Text>
+        <Text style={styles.note}>{t('orders.theTaxInvoiceIsIssuedOnce')}</Text>
       ) : invoices.loading ? (
-        <Text style={styles.note}>Loading invoices…</Text>
+        <Text style={styles.note}>{t('orders.loadingInvoices')}</Text>
       ) : invoices.error ? (
         <Text style={styles.note}>{invoices.error}</Text>
       ) : !invoiceRows.length ? (
-        <Text style={styles.note}>No invoice yet.</Text>
+        <Text style={styles.note}>{t('orders.noInvoiceYet')}</Text>
       ) : null}
       {invoiceRows.map((invoice: OrderInvoice) => (
         <DocRow
@@ -63,7 +65,7 @@ export function OrderDocuments({ orderId, delivered }: { orderId: string; delive
             key={receipt.id}
             kind="receipt"
             title={receipt.receiptNumber}
-            subtitle={`${receipt.receiptType === 'CREDIT_PAYMENT' ? 'Credit payment' : 'Paid at order'} ${formatRupees(Number(receipt.amount) || 0)} · ${formatDay(receipt.paymentDate)}${balance > 0 ? ` · ${formatRupees(balance)} due` : ' · settled'}`}
+            subtitle={[t(receipt.receiptType === 'CREDIT_PAYMENT' ? 'orders.creditPaymentAmount' : 'orders.paidAtOrderAmount', { amount: formatRupees(Number(receipt.amount) || 0) }), formatDay(receipt.paymentDate), balance > 0 ? t('orders.amountDue', { amount: formatRupees(balance) }) : t('orders.settled')].join(' · ')}
             busy={opening === receipt.id}
             onPress={() => open(receipt.id, `/orders/${orderId}/receipts/${receipt.id}/pdf`, `receipt-${receipt.receiptNumber}.pdf`)}
           />
@@ -86,11 +88,12 @@ function DocRow({
   busy: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const Icon = kind === 'invoice' ? FileTextIcon : WalletIcon;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${kind} ${title}`}
+      accessibilityLabel={t('orders.openKindTitle', { kind, title })}
       onPress={onPress}
       disabled={busy}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -106,7 +109,7 @@ function DocRow({
           {subtitle}
         </Text>
       </View>
-      {busy ? <ActivityIndicator color={colors.secondary} /> : <Text style={styles.pdf}>PDF</Text>}
+      {busy ? <ActivityIndicator color={colors.secondary} /> : <Text style={styles.pdf}>{t('orders.pdf')}</Text>}
     </Pressable>
   );
 }

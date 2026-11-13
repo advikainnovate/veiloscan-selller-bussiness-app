@@ -76,6 +76,8 @@ export type RootStackParamList = {
   StockOrderForm: { variantIds?: string[] } | undefined;
   /** Settings › Subscription: the plan, usage, payments; change plan. */
   Subscription: undefined;
+  /** Settings › Language & Region: the interface language (saved on the account) and regional formats. */
+  LanguageSettings: undefined;
   /** The header bell: every notification. */
   Notifications: undefined;
   /** My Profile (the header avatar and the menu's account card). */

@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from 'react-native';
 import { useRevealFocused } from '../layout/KeyboardScroll';
 import { colors, radius, fonts } from '../../theme';
+import { useTranslation } from 'react-i18next';
 
 const LENGTH = 6;
 
@@ -22,12 +23,13 @@ export function OtpInput({
   autoFocus?: boolean;
   dark?: boolean;
 }) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInputInstance>(null);
   const [focused, setFocused] = useState(false);
   const reveal = useRevealFocused();
 
   return (
-    <Pressable onPress={() => inputRef.current?.focus()} accessibilityLabel="Sign-in code" style={styles.row}>
+    <Pressable onPress={() => inputRef.current?.focus()} accessibilityLabel={t('ui.signInCode')} style={styles.row}>
       {Array.from({ length: LENGTH }, (_, i) => {
         const active = focused && (i === value.length || (i === LENGTH - 1 && value.length === LENGTH));
         return (

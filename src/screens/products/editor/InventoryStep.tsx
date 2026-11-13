@@ -28,6 +28,8 @@ import { SwitchRow } from '../../../components/products/ProductEditors';
 import type { StepHandle } from './VariantsStep';
 import type { ProductScope } from './BasicStep';
 import type { BusinessVariantRow } from './types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 interface Draft {
   quantity: string;
@@ -78,6 +80,7 @@ export function InventoryStep({
   warehouseId: string;
   setWarehouseId: (id: string) => void;
 }) {
+  const { t: tr } = useTranslation();
   const warehouses = useFetch(() => warehouseService.list(), []);
   const uoms = useFetch(() => inventoryService.uoms(), []);
   const [configs, setConfigs] = useState<StockConfig[]>([]);
@@ -157,7 +160,7 @@ export function InventoryStep({
         return d && (d.quantity.trim() !== '' || d.minimum.trim() !== '' || d.reorder.trim() !== '');
       });
       if (!entered.length) return;
-      if (!warehouseId) throw new Error('Choose the warehouse the stock is kept in.');
+      if (!warehouseId) throw new Error(tr('products.chooseTheWarehouseTheStockIs'));
       const errors: Record<string, string> = {};
       for (const sku of entered) {
         const id = String(sku.id);
@@ -203,44 +206,44 @@ export function InventoryStep({
       setRowErrors(errors);
       await load();
       const failed = Object.keys(errors).length;
-      if (failed) throw new Error(`${failed} SKU${failed === 1 ? '' : 's'} couldn't be stocked — see the highlighted SKUs.`);
+      if (failed) throw new Error(tr('products.skusCouldntBeStocked', { count: failed }));
     },
   }));
 
-  if (!productId) return <Section title="Inventory" subtitle="Save the basic information first." children={null} />;
+  if (!productId) return <Section title={tr('common.inventory')} subtitle={tr('products.saveTheBasicInformationFirst')} children={null} />;
 
   const product = configs.find(c => c.productVariantId === null);
-  const typeLabel = STOCK_TYPES.find(t => t.value === (product?.stockType ?? 'PIECE'))?.label ?? 'Pieces';
+  const typeLabel = STOCK_TYPES.find(t => t.value === (product?.stockType ?? 'PIECE'))?.label ?? tr('products.pieces');
   const tracking = product ? [product.trackLot && 'lot', product.trackBatch && 'batch', product.trackExpiry && 'expiry'].filter(Boolean).join(' · ') : '';
   const warehouseList = warehouses.data ?? [];
 
   return (
     <View style={styles.wrap}>
       {loadError ? <Alert message={loadError} /> : null}
-      <Section title="Stock settings" subtitle="How this product's stock is counted." action={<Edit onPress={() => setSettingsOpen(true)} />}>
+      <Section title={tr('products.stockSettings')} subtitle={tr('products.howThisProductsStockIsCounted')} action={<Edit onPress={() => setSettingsOpen(true)} />}>
         <View style={styles.summary}>
-          <Fact label="Stock type" value={typeLabel} />
-          <Fact label="Stored in" value={product?.baseUom ?? 'PCS'} />
-          <Fact label="Tracks" value={tracking || 'nothing'} />
-          <Fact label="Goes out" value={product?.consumptionRule === 'FEFO' ? 'earliest expiry first' : 'oldest first'} />
+          <Fact label={tr('products.stockType')} value={typeLabel} />
+          <Fact label={tr('products.storedIn')} value={product?.baseUom ?? 'PCS'} />
+          <Fact label={tr('products.tracks')} value={tracking || 'nothing'} />
+          <Fact label={tr('products.goesOut')} value={product?.consumptionRule === 'FEFO' ? 'earliest expiry first' : 'oldest first'} />
         </View>
       </Section>
 
-      <Section title="Opening stock" subtitle="Received into the warehouse when you continue. Leave a SKU blank to skip it.">
+      <Section title={tr('common.openingStock')} subtitle={tr('products.receivedIntoTheWarehouseWhenYou')}>
         <SelectField
-          label="Warehouse"
+          label={tr('common.warehouse')}
           required
           value={warehouseId}
-          placeholder="Select warehouse"
-          options={warehouseList.map(w => ({ value: w.id, label: String(w.facilityTitle ?? w.title ?? 'Warehouse') }))}
-          emptyText="You don't have a warehouse yet — add stock later from Inventory once one is set up."
+          placeholder={tr('common.selectWarehouse')}
+          options={warehouseList.map(w => ({ value: w.id, label: String(w.facilityTitle ?? w.title ?? tr('common.warehouse')) }))}
+          emptyText={tr('products.youDonTHaveAWarehouse')}
           onChange={setWarehouseId}
         />
-        <Field label="Cost / unit starts at">
+        <Field label={tr('products.costUnitStartsAt')}>
           <Choices
             options={[
-              { value: 'auto', label: 'SKU cost price' },
-              { value: 'manual', label: 'Enter manually' },
+              { value: 'auto', label: tr('products.skuCostPrice') },
+              { value: 'manual', label: tr('products.enterManually') },
             ]}
             value={autoCost ? 'auto' : 'manual'}
             onChange={v => setAutoCost(v === 'auto')}
@@ -248,14 +251,14 @@ export function InventoryStep({
         </Field>
       </Section>
 
-      {!saved.length ? <Alert message="Generate the SKUs in the Variants step first." /> : null}
+      {!saved.length ? <Alert message={tr('products.generateTheSkusInTheVariants')} /> : null}
       {saved.map(sku => {
         const id = String(sku.id);
         const s = settingsFor(configs, id);
         const d = draft(id, s.baseUom);
         const bal = balanceOf(id);
         const tracked = s.trackLot || s.trackBatch || s.trackExpiry;
-        const label = Object.values(sku.combo).map(c => c.variantDataValue).join(' / ') || 'Default';
+        const label = Object.values(sku.combo).map(c => c.variantDataValue).join(' / ') || tr('common.default');
         return (
           <View key={id} style={[styles.sku, rowErrors[id] ? styles.skuError : null]}>
             <View style={styles.skuHead}>
@@ -263,15 +266,15 @@ export function InventoryStep({
                 <Text style={styles.skuLabel}>{label}</Text>
                 <Text style={styles.muted}>{sku.skuItemNumber}</Text>
               </View>
-              <Text style={styles.onHand}>{bal ? `On hand ${formatQty(bal.onHand, bal)}${bal.reserved ? ` · reserved ${formatQty(bal.reserved, bal)}` : ''}` : 'No stock yet'}</Text>
+              <Text style={styles.onHand}>{bal ? [tr('products.onHandQuantity', { quantity: formatQty(bal.onHand, bal) }), bal.reserved ? tr('common.reservedQuantity', { quantity: formatQty(bal.reserved, bal) }) : null].filter(Boolean).join(' · ') : tr('products.noStockYet')}</Text>
             </View>
             <View style={styles.row}>
               <View style={styles.flex}>
-                <Text style={styles.small}>Add quantity</Text>
-                <Input value={d.quantity} onChangeText={v => setDraft(id, s.baseUom, { quantity: num(v) })} keyboardType="decimal-pad" placeholder="0" accessibilityLabel={`${label} quantity`} />
+                <Text style={styles.small}>{tr('products.addQuantity')}</Text>
+                <Input value={d.quantity} onChangeText={v => setDraft(id, s.baseUom, { quantity: num(v) })} keyboardType="decimal-pad" placeholder="0" accessibilityLabel={tr('products.labelQuantity', { label })} />
               </View>
               <View style={styles.flex}>
-                <Text style={styles.small}>Cost / unit (₹)</Text>
+                <Text style={styles.small}>{tr('products.costUnitRs')}</Text>
                 <Input value={costOf(id, d)} onChangeText={v => setDraft(id, s.baseUom, { unitCost: num(v) })} keyboardType="decimal-pad" placeholder="—" />
               </View>
             </View>
@@ -282,26 +285,26 @@ export function InventoryStep({
               <View style={styles.row}>
                 {s.trackLot ? (
                   <View style={styles.flex}>
-                    <Text style={styles.small}>Lot no.</Text>
+                    <Text style={styles.small}>{tr('products.lotNo')}</Text>
                     <Input value={d.lotNumber} onChangeText={v => setDraft(id, s.baseUom, { lotNumber: v })} autoCapitalize="characters" />
                   </View>
                 ) : null}
                 {s.trackBatch ? (
                   <View style={styles.flex}>
-                    <Text style={styles.small}>Batch no.</Text>
+                    <Text style={styles.small}>{tr('products.batchNo')}</Text>
                     <Input value={d.batchNumber} onChangeText={v => setDraft(id, s.baseUom, { batchNumber: v })} autoCapitalize="characters" />
                   </View>
                 ) : null}
               </View>
             ) : null}
-            {s.trackExpiry ? <DateField label="Expiry date" value={d.expiryDate} onChange={v => setDraft(id, s.baseUom, { expiryDate: v })} minimumDate={new Date()} /> : null}
+            {s.trackExpiry ? <DateField label={tr('products.expiryDate')} value={d.expiryDate} onChange={v => setDraft(id, s.baseUom, { expiryDate: v })} minimumDate={new Date()} /> : null}
             <View style={styles.row}>
               <View style={styles.flex}>
-                <Text style={styles.small}>Low-stock level</Text>
+                <Text style={styles.small}>{tr('products.lowStockLevel')}</Text>
                 <Input value={d.minimum} onChangeText={v => setDraft(id, s.baseUom, { minimum: num(v) })} keyboardType="decimal-pad" placeholder={bal?.minimum ? String(bal.minimum) : '—'} />
               </View>
               <View style={styles.flex}>
-                <Text style={styles.small}>Reorder quantity</Text>
+                <Text style={styles.small}>{tr('common.reorderQuantity')}</Text>
                 <Input value={d.reorder} onChangeText={v => setDraft(id, s.baseUom, { reorder: num(v) })} keyboardType="decimal-pad" placeholder="—" />
               </View>
             </View>
@@ -357,6 +360,7 @@ export function StockSettingsSheet({
   onClose: () => void;
   onSaved: (view: { configs: StockConfig[] }) => void;
 }) {
+  const { t: tr } = useTranslation();
   const [configs, setConfigs] = useState<StockConfig[] | null>(null);
   const [scope, setScope] = useState(initialScope);
   const [draft, setDraft] = useState<SettingsDraft>(PIECES);
@@ -414,22 +418,22 @@ export function StockSettingsSheet({
   }
 
   return (
-    <Sheet visible title="Stock settings" subtitle="How stock is counted. How customers buy it is set in the Selling step." onClose={onClose} footer={<Button title="Save settings" loading={saving} onPress={save} />}>
+    <Sheet visible title={tr('products.stockSettings')} subtitle={tr('products.howStockIsCountedHowCustomers')} onClose={onClose} footer={<Button title={tr('products.saveSettings')} loading={saving} onPress={save} />}>
       {error ? <Alert message={error} /> : null}
       {skus.length > 1 ? (
         <SelectField
-          label="For"
+          label={tr('products.for')}
           value={scope}
-          allowClear="The whole product"
-          options={skus.map(s => ({ value: s.id, label: `Only ${s.label}` }))}
+          allowClear={tr('products.theWholeProduct')}
+          options={skus.map(s => ({ value: s.id, label: tr('products.onlyLabel', { label: s.label }) }))}
           onChange={v => {
             setScope(v);
             if (configs) loadScope(configs, v);
           }}
         />
       ) : null}
-      {scope && ownConfig ? <Button title="Use the product's settings for this SKU" variant="ghost" onPress={removeOwn} /> : null}
-      <Field label="Stock type">
+      {scope && ownConfig ? <Button title={tr('products.useTheProductsSettingsForThis')} variant="ghost" onPress={removeOwn} /> : null}
+      <Field label={tr('products.stockType')}>
         <Choices
           options={STOCK_TYPES.map(t => ({ value: t.value, label: t.label }))}
           value={draft.stockType}
@@ -439,11 +443,11 @@ export function StockSettingsSheet({
           }}
         />
       </Field>
-      <Field label="Stored in" hint="Stock is counted in this unit.">
+      <Field label={tr('products.storedIn')} hint={tr('products.stockIsCountedInThisUnit')}>
         <Choices options={ofType.filter(u => u.factorToBase !== null).map(u => ({ value: u.code, label: u.code }))} value={draft.baseUom} onChange={baseUom => setDraft(d => ({ ...d, baseUom }))} />
       </Field>
       {packUnits.length ? (
-        <Field label="Pack sizes" hint={`${draft.baseUom} in one of each pack.`}>
+        <Field label={tr('products.packSizes')} hint={tr('products.baseuomInOneOfEachPack', { baseUom: draft.baseUom })}>
           {packUnits.map(u => (
             <View key={u.code} style={styles.packRow}>
               <Text style={styles.packLabel}>{u.code}</Text>
@@ -452,20 +456,20 @@ export function StockSettingsSheet({
           ))}
         </Field>
       ) : null}
-      <SwitchRow label="Track lot numbers" value={draft.trackLot} onChange={trackLot => setDraft(d => ({ ...d, trackLot }))} />
-      <SwitchRow label="Track batch numbers" value={draft.trackBatch} onChange={trackBatch => setDraft(d => ({ ...d, trackBatch }))} />
-      <SwitchRow label="Track expiry dates" value={draft.trackExpiry} onChange={trackExpiry => setDraft(d => ({ ...d, trackExpiry }))} />
-      <Field label="Stock goes out">
+      <SwitchRow label={tr('products.trackLotNumbers')} value={draft.trackLot} onChange={trackLot => setDraft(d => ({ ...d, trackLot }))} />
+      <SwitchRow label={tr('products.trackBatchNumbers')} value={draft.trackBatch} onChange={trackBatch => setDraft(d => ({ ...d, trackBatch }))} />
+      <SwitchRow label={tr('products.trackExpiryDates')} value={draft.trackExpiry} onChange={trackExpiry => setDraft(d => ({ ...d, trackExpiry }))} />
+      <Field label={tr('products.stockGoesOut')}>
         <Choices
           options={[
-            { value: 'FIFO', label: 'Oldest first (FIFO)' },
-            { value: 'FEFO', label: 'Earliest expiry first (FEFO)' },
+            { value: 'FIFO', label: tr('products.oldestFirstFifo') },
+            { value: 'FEFO', label: tr('products.earliestExpiryFirstFefo') },
           ]}
           value={draft.consumptionRule}
           onChange={v => setDraft(d => ({ ...d, consumptionRule: v as 'FIFO' | 'FEFO' }))}
         />
       </Field>
-      <SwitchRow label="Allow selling below zero" value={draft.allowNegativeStock} onChange={allowNegativeStock => setDraft(d => ({ ...d, allowNegativeStock }))} />
+      <SwitchRow label={tr('products.allowSellingBelowZero')} value={draft.allowNegativeStock} onChange={allowNegativeStock => setDraft(d => ({ ...d, allowNegativeStock }))} />
     </Sheet>
   );
 }
@@ -480,13 +484,13 @@ const daysUntil = (date: string) => Math.round((new Date(`${date}T00:00:00`).get
 
 /** Where a batch stands today, from its dates. */
 function expiryState(batch: Row): { label: string; tone: BadgeTone } {
-  if (batch.status === 'DISPOSED') return { label: 'Disposed', tone: 'slate' };
-  if (batch.status === 'INACTIVE') return { label: 'Inactive', tone: 'slate' };
+  if (batch.status === 'DISPOSED') return { label: i18n.t('products.disposed'), tone: 'slate' };
+  if (batch.status === 'INACTIVE') return { label: i18n.t('common.inactive'), tone: 'slate' };
   const days = daysUntil(String(batch.expiryDate));
-  if (days < 0) return { label: 'Expired', tone: 'red' };
+  if (days < 0) return { label: i18n.t('common.expired'), tone: 'red' };
   const window = batch.reminderEnabled ? Number(batch.reminderDays ?? 30) : -1;
-  if (days <= window) return { label: days === 0 ? 'Expires today' : `Expires in ${days}d`, tone: 'amber' };
-  return { label: 'Active', tone: 'green' };
+  if (days <= window) return { label: days === 0 ? i18n.t('products.expiresToday') : i18n.t('products.expiresInDaysD', { days }), tone: 'amber' };
+  return { label: i18n.t('common.active'), tone: 'green' };
 }
 
 const EMPTY_BATCH = { storeId: '', skuId: '', batchNumber: '', manufacturingDate: '', expiryDate: '', reminderEnabled: true, reminderDays: '30' };
@@ -496,6 +500,7 @@ const EMPTY_BATCH = { storeId: '', skuId: '', batchNumber: '', manufacturingDate
  * optionally per SKU). Required when the product "has an expiry date".
  */
 export function ExpiryBatches({ productId, scope, skus, required }: { productId: string | null; scope: ProductScope; skus: BusinessVariantRow[]; required: boolean }) {
+  const { t } = useTranslation();
   const stores = useFetch(() => productsService.stores(), []);
   const batches = useFetch(() => (productId ? productExpiryService.list({ productId }) : Promise.resolve([])), [productId]);
   const [draft, setDraft] = useState(EMPTY_BATCH);
@@ -507,9 +512,9 @@ export function ExpiryBatches({ productId, scope, skus, required }: { productId:
 
   async function add() {
     if (!productId) return;
-    if (!storeId) return setError('Choose the store for this batch.');
-    if (!draft.expiryDate) return setError('Enter the expiry date.');
-    if (draft.manufacturingDate && draft.manufacturingDate > draft.expiryDate) return setError('Expiry date must be on or after the manufacturing date.');
+    if (!storeId) return setError(t('products.chooseTheStoreForThisBatch'));
+    if (!draft.expiryDate) return setError(t('products.enterTheExpiryDate'));
+    if (draft.manufacturingDate && draft.manufacturingDate > draft.expiryDate) return setError(t('products.expiryDateMustBeOnOr'));
     setError(null);
     setSaving(true);
     try {
@@ -533,11 +538,11 @@ export function ExpiryBatches({ productId, scope, skus, required }: { productId:
   }
 
   function act(batch: Row, kind: 'dispose' | 'remove') {
-    const label = `${String(batch.batchNumber || 'without number')} (expires ${formatDay(batch.expiryDate)})`;
-    NativeAlert.alert(kind === 'dispose' ? `Mark batch ${label} disposed?` : `Remove batch ${label}?`, undefined, [
-      { text: 'Cancel', style: 'cancel' },
+    const label = t('products.batchExpires', { batch: String(batch.batchNumber || t('products.withoutNumber')), date: formatDay(batch.expiryDate) });
+    NativeAlert.alert(kind === 'dispose' ? t('products.markBatchLabelDisposed', { label }) : t('products.removeBatchLabel', { label }), undefined, [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: kind === 'dispose' ? 'Disposed' : 'Remove',
+        text: kind === 'dispose' ? t('products.disposed') : t('common.remove'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -554,17 +559,17 @@ export function ExpiryBatches({ productId, scope, skus, required }: { productId:
 
   if (!productId) return null;
   return (
-    <Section title={`Expiry batches${required ? ' *' : ''}`} subtitle={required ? 'This product has an expiry date: add at least one batch.' : 'Optional: track batches and get reminded before they expire.'}>
+    <Section title={t('products.expiryBatchesValue', { value: required ? ' *' : '' })} subtitle={required ? t('products.thisProductHasAnExpiryDate') : t('products.optionalTrackBatchesAndGetReminded')}>
       {list.map(batch => {
         const state = expiryState(batch);
         const sku = skus.find(s => s.id === batch.skuId);
         return (
           <View key={batch.id} style={styles.batch}>
             <View style={styles.flex}>
-              <Text style={styles.batchTitle}>{String(batch.batchNumber || 'No batch number')}</Text>
+              <Text style={styles.batchTitle}>{String(batch.batchNumber || t('products.noBatchNumber'))}</Text>
               <Text style={styles.muted}>
-                Expires {formatDay(batch.expiryDate)}
-                {batch.manufacturingDate ? ` · made ${formatDay(batch.manufacturingDate)}` : ''}
+                {t('products.expiresOn', { date: formatDay(batch.expiryDate) })}
+                {batch.manufacturingDate ? t('products.madeManufacturingdate', { manufacturingDate: formatDay(batch.manufacturingDate) }) : ''}
                 {sku ? ` · ${sku.skuItemNumber}` : ''}
               </Text>
             </View>
@@ -572,41 +577,41 @@ export function ExpiryBatches({ productId, scope, skus, required }: { productId:
             <View style={styles.batchActions}>
               {batch.status !== 'DISPOSED' ? (
                 <Pressable onPress={() => act(batch, 'dispose')} hitSlop={6}>
-                  <Text style={styles.link}>Dispose</Text>
+                  <Text style={styles.link}>{t('products.dispose')}</Text>
                 </Pressable>
               ) : null}
               <Pressable onPress={() => act(batch, 'remove')} hitSlop={6}>
-                <Text style={styles.remove}>Remove</Text>
+                <Text style={styles.remove}>{t('common.remove')}</Text>
               </Pressable>
             </View>
           </View>
         );
       })}
       {storeOptions.length > 1 ? (
-        <SelectField label="Store" required value={draft.storeId} options={storeOptions.map(s => ({ value: s.id, label: s.name }))} onChange={v => setDraft(d => ({ ...d, storeId: v }))} />
+        <SelectField label={t('common.store')} required value={draft.storeId} options={storeOptions.map(s => ({ value: s.id, label: s.name }))} onChange={v => setDraft(d => ({ ...d, storeId: v }))} />
       ) : null}
       {skus.length > 1 ? (
         <SelectField
           label="SKU"
           value={draft.skuId}
-          allowClear="All SKUs"
+          allowClear={t('common.allSkus')}
           options={skus.filter(s => s.id).map(s => ({ value: String(s.id), label: s.skuItemNumber }))}
           onChange={v => setDraft(d => ({ ...d, skuId: v }))}
         />
       ) : null}
-      <Field label="Batch number">
-        <Input value={draft.batchNumber} onChangeText={v => setDraft(d => ({ ...d, batchNumber: v }))} autoCapitalize="characters" placeholder="Optional" />
+      <Field label={t('common.batchNumber')}>
+        <Input value={draft.batchNumber} onChangeText={v => setDraft(d => ({ ...d, batchNumber: v }))} autoCapitalize="characters" placeholder={t('common.optional2')} />
       </Field>
-      <DateField label="Manufacturing date" value={draft.manufacturingDate} onChange={v => setDraft(d => ({ ...d, manufacturingDate: v }))} />
-      <DateField label="Expiry date" required value={draft.expiryDate} onChange={v => setDraft(d => ({ ...d, expiryDate: v }))} />
-      <SwitchRow label="Remind me before it expires" value={draft.reminderEnabled} onChange={reminderEnabled => setDraft(d => ({ ...d, reminderEnabled }))} />
+      <DateField label={t('products.manufacturingDate')} value={draft.manufacturingDate} onChange={v => setDraft(d => ({ ...d, manufacturingDate: v }))} />
+      <DateField label={t('products.expiryDate')} required value={draft.expiryDate} onChange={v => setDraft(d => ({ ...d, expiryDate: v }))} />
+      <SwitchRow label={t('products.remindMeBeforeItExpires')} value={draft.reminderEnabled} onChange={reminderEnabled => setDraft(d => ({ ...d, reminderEnabled }))} />
       {draft.reminderEnabled ? (
-        <Field label="Days before">
+        <Field label={t('products.daysBefore')}>
           <Input value={draft.reminderDays} onChangeText={v => setDraft(d => ({ ...d, reminderDays: v.replace(/\D/g, '') }))} keyboardType="number-pad" />
         </Field>
       ) : null}
       {error ? <Alert message={error} /> : null}
-      <Button title="Add batch" variant="ghost" loading={saving} onPress={add} />
+      <Button title={t('products.addBatch')} variant="ghost" loading={saving} onPress={add} />
     </Section>
   );
 }
@@ -621,9 +626,10 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 function Edit({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}>
-      <Text style={styles.link}>Change</Text>
+      <Text style={styles.link}>{t('common.change')}</Text>
     </Pressable>
   );
 }

@@ -20,6 +20,7 @@ import { Button } from '../ui/Button';
 import { SearchBar } from '../list/ListParts';
 import { confirmAction, opsStyles, StatCard, StatGrid } from '../operations/OpsParts';
 import { AlertCircleIcon, ArrowLeftIcon, CheckIcon, ChevronRightIcon, ClockIcon, FolderIcon, LayersIcon, RefreshIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The store page's Categories tab, as the panel's StoreCategoriesManager:
@@ -29,6 +30,7 @@ import { AlertCircleIcon, ArrowLeftIcon, CheckIcon, ChevronRightIcon, ClockIcon,
  * approval. Each mapped category can be switched off for this store.
  */
 export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; storeName: string }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const master = useFetch(() => categoryService.list(), []);
   const tree = useMemo(() => buildTree((master.data ?? []) as Rec[]), [master.data]);
@@ -57,21 +59,21 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
   const pending = assigned.filter(a => approvalOf(a) === 'pending').length;
   const inactive = assigned.filter(a => a.status === 'inactive').length;
   const rejected = assigned.filter(a => approvalOf(a) === 'rejected');
-  const title = (id: string) => String(tree.byId.get(id)?.categoryTitle ?? 'Category');
+  const title = (id: string) => String(tree.byId.get(id)?.categoryTitle ?? t('common.category'));
 
   const check = (ids: string[], on: boolean) => setDraft(setChecked(tree, selected, ids, on));
 
   async function save() {
-    if (!dirty) return toast('No changes to save');
+    if (!dirty) return toast(t('store.noChangesToSave'));
     if (removed.length) {
       const names = removed.slice(0, 5).map(title).join(', ');
-      const more = removed.length > 5 ? ` and ${removed.length - 5} more` : '';
-      if (!(await confirmAction(`Remove ${removed.length} categor${removed.length === 1 ? 'y' : 'ies'} from ${storeName}?`, `${names}${more}`, 'Remove', true))) return;
+      const more = removed.length > 5 ? ` ${t('common.andCountMore', { count: removed.length - 5 })}` : '';
+      if (!(await confirmAction(t('store.removeCategoriesFromStore', { count: removed.length, storeName }), `${names}${more}`, t('common.remove'), true))) return;
     }
     setSaving(true);
     try {
       await storeManageService.syncCategories(storeId, [...selected]);
-      toast(added.length ? 'Saved. New categories were sent for approval.' : 'Store categories saved');
+      toast(added.length ? t('store.savedNewCategoriesWereSentFor') : t('store.storeCategoriesSaved'));
       setDraft(null);
       setPicking(false);
       mapped.reload();
@@ -83,7 +85,7 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
   }
 
   async function closePicker() {
-    if (dirty && !(await confirmAction('Discard your unsaved category changes?', undefined, 'Discard', true))) return;
+    if (dirty && !(await confirmAction(t('store.discardYourUnsavedCategoryChanges'), undefined, t('common.discard'), true))) return;
     setDraft(null);
     setPicking(false);
   }
@@ -101,13 +103,13 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
     }
   }
   const toggle = (mapping: Rec, active: boolean) => busy(mapping, () => storeManageService.setCategoryStatus(storeId, String(mapping.id), active ? 'active' : 'inactive'));
-  const resubmit = (mapping: Rec) => busy(mapping, () => storeManageService.resubmitCategory(storeId, String(mapping.id)), 'Category sent for approval again');
+  const resubmit = (mapping: Rec) => busy(mapping, () => storeManageService.resubmitCategory(storeId, String(mapping.id)), t('store.categorySentForApprovalAgain'));
 
-  if (master.loading || mapped.loading) return <Text style={styles.loading}>Loading categories…</Text>;
+  if (master.loading || mapped.loading) return <Text style={styles.loading}>{t('store.loadingCategories')}</Text>;
   if (mapped.error && !mapped.data) {
     return (
       <Pressable onPress={() => mapped.reload()}>
-        <Text style={[opsStyles.meta, opsStyles.danger]}>{`${mapped.error} · Tap to try again`}</Text>
+        <Text style={[opsStyles.meta, opsStyles.danger]}>{t('store.errorTapToTryAgain', { error: mapped.error })}</Text>
       </Pressable>
     );
   }
@@ -115,28 +117,28 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
   return (
     <View style={styles.wrap}>
       <StatGrid>
-        <StatCard icon={FolderIcon} tone="orange" label="Main Categories" value={String(sel.main)} sub="Selected" />
-        <StatCard icon={LayersIcon} tone="blue" label="Sub Categories" value={String(sel.sub)} sub="Selected" />
-        <StatCard icon={LayersIcon} tone="emerald" label="Child Categories" value={String(sel.child)} sub="Selected" />
-        <StatCard icon={ClockIcon} tone="red" label="Awaiting Approval" value={String(pending)} sub={`${inactive} inactive`} />
+        <StatCard icon={FolderIcon} tone="orange" label={t('store.mainCategories')} value={String(sel.main)} sub={t('common.selected')} />
+        <StatCard icon={LayersIcon} tone="blue" label={t('store.subCategories')} value={String(sel.sub)} sub={t('common.selected')} />
+        <StatCard icon={LayersIcon} tone="emerald" label={t('store.childCategories')} value={String(sel.child)} sub={t('common.selected')} />
+        <StatCard icon={ClockIcon} tone="red" label={t('store.awaitingApproval')} value={String(pending)} sub={t('store.inactiveInactive', { inactive })} />
       </StatGrid>
 
       {pending || rejected.length ? (
         <View style={styles.notice}>
           {pending ? (
             <Text style={styles.noticeText}>
-              {`${pending} categor${pending === 1 ? 'y is' : 'ies are'} awaiting approval. You can list products in them and they show on your storefront once the platform approves them.`}
+              {t('store.categoriesAwaitingApproval', { count: pending })}
             </Text>
           ) : null}
           {rejected.map(m => (
             <View key={String(m.id)} style={styles.rejected}>
               <AlertCircleIcon size={15} color={colors.error} />
               <Text style={[opsStyles.meta, styles.flex]}>
-                <Text style={styles.rejectedName}>{`${String((m.category as Rec | undefined)?.categoryTitle ?? title(String(m.categoryId)))} was rejected.`}</Text>
-                {m.approvalRemarks ? ` Reason: ${String(m.approvalRemarks)}` : ''}
+                <Text style={styles.rejectedName}>{t('store.valueWasRejected', { value: String((m.category as Rec | undefined)?.categoryTitle ?? title(String(m.categoryId))) })}</Text>
+                {m.approvalRemarks ? t('store.reasonApprovalremarks', { approvalRemarks: String(m.approvalRemarks) }) : ''}
               </Text>
               <Pressable accessibilityRole="button" disabled={busyId === m.id} onPress={() => resubmit(m)} style={opsStyles.smallBtn}>
-                <Text style={opsStyles.smallBtnText}>{busyId === m.id ? '…' : 'Request again'}</Text>
+                <Text style={opsStyles.smallBtnText}>{busyId === m.id ? '…' : t('common.requestAgain')}</Text>
               </Pressable>
             </View>
           ))}
@@ -147,7 +149,7 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
         <Associated tree={tree} savedIds={savedIds} mappingOf={mappingOf} counts={counts} busyId={busyId} storeName={storeName} onToggle={toggle} onMap={() => setPicking(true)} />
       ) : (
         <View style={styles.picker}>
-          <SearchBar value={search} onChange={setSearch} placeholder="Search categories by name, tag or description..." />
+          <SearchBar value={search} onChange={setSearch} placeholder={t('store.searchCategoriesByNameTagOr')} />
           {search.trim() ? (
             <SearchResults tree={tree} search={search} selected={selected} mappingOf={mappingOf} counts={counts} onCheck={check} />
           ) : (
@@ -159,18 +161,18 @@ export function StoreCategoriesPanel({ storeId, storeName }: { storeId: string; 
                 <CheckIcon size={13} color={colors.white} strokeWidth={3} />
               </View>
               <View style={styles.flex}>
-                <Text style={opsStyles.title}>{`${sel.main} Main • ${sel.sub} Sub • ${sel.child} Child Categories Selected`}</Text>
-                <Text style={opsStyles.meta}>Newly added categories are sent to the platform for approval.</Text>
+                <Text style={opsStyles.title}>{t('store.mainMainSubSubChildChild', { main: sel.main, sub: sel.sub, child: sel.child })}</Text>
+                <Text style={opsStyles.meta}>{t('store.newlyAddedCategoriesAreSentTo')}</Text>
               </View>
             </View>
-            <Button title={added.length ? 'Save & Request Approval' : 'Save Categories'} loading={saving} onPress={save} />
+            <Button title={added.length ? t('store.saveAndRequestApproval') : t('store.saveCategories')} loading={saving} onPress={save} />
             <View style={opsStyles.row}>
               <Pressable accessibilityRole="button" disabled={saving} onPress={closePicker} style={[opsStyles.smallBtn, styles.grow]}>
-                <Text style={opsStyles.smallBtnText}>Cancel</Text>
+                <Text style={opsStyles.smallBtnText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" disabled={saving} onPress={() => setDraft(null)} style={[opsStyles.smallBtn, styles.grow]}>
                 <RefreshIcon size={14} color={colors.text} />
-                <Text style={opsStyles.smallBtnText}>Reset</Text>
+                <Text style={opsStyles.smallBtnText}>{t('common.reset')}</Text>
               </Pressable>
             </View>
           </View>
@@ -192,27 +194,29 @@ function CategoryIcon({ category, small }: { category: Rec | undefined; small?: 
 }
 
 function ApprovalTag({ mapping }: { mapping: Rec | undefined }) {
+  const { t } = useTranslation();
   const status = approvalOf(mapping);
   if (!mapping || status === 'approved') return null;
   return status === 'pending' ? (
     <View style={[styles.tag, styles.tagPending]}>
       <ClockIcon size={11} color={colors.warningDark} />
-      <Text style={[styles.tagText, styles.pendingText]}>Awaiting approval</Text>
+      <Text style={[styles.tagText, styles.pendingText]}>{t('common.awaitingApproval')}</Text>
     </View>
   ) : (
     <View style={[styles.tag, styles.tagRejected]}>
       <AlertCircleIcon size={11} color={colors.error} />
-      <Text style={[styles.tagText, opsStyles.danger]}>Rejected</Text>
+      <Text style={[styles.tagText, opsStyles.danger]}>{t('common.rejected')}</Text>
     </View>
   );
 }
 
 function StatusSwitch({ mapping, busyId, onToggle }: { mapping: Rec | undefined; busyId: string | null; onToggle: (m: Rec, active: boolean) => void }) {
+  const { t } = useTranslation();
   if (!mapping) return null;
   const on = mapping.status !== 'inactive';
   return (
     <Switch
-      accessibilityLabel={`${String((mapping.category as Rec | undefined)?.categoryTitle ?? 'Category')} active in this store`}
+      accessibilityLabel={t('store.categoryActiveInStore', { category: String((mapping.category as Rec | undefined)?.categoryTitle ?? t('common.category')) })}
       value={on}
       disabled={busyId === mapping.id}
       onValueChange={v => onToggle(mapping, v)}
@@ -242,6 +246,7 @@ function Associated({
   onToggle: (m: Rec, active: boolean) => void;
   onMap: () => void;
 }) {
+  const { t } = useTranslation();
   const mains = tree.mains.filter(m => savedIds.has(String(m.id)));
   const under = (id: string) => (tree.childrenOf.get(id) ?? []).filter(c => savedIds.has(String(c.id)));
   const row = (c: Rec, small?: boolean) => {
@@ -256,21 +261,21 @@ function Associated({
           <Text style={[small ? styles.subName : styles.mainName, off && styles.off]} numberOfLines={1}>
             {String(c.categoryTitle)}
           </Text>
-          {off ? <Text style={styles.offText}>Inactive in this store</Text> : null}
+          {off ? <Text style={styles.offText}>{t('store.inactiveInThisStore')}</Text> : null}
         </View>
         <ApprovalTag mapping={m} />
-        <Text style={styles.count}>{`${n} product${n === 1 ? '' : 's'}`}</Text>
+        <Text style={styles.count}>{t('common.productCount', { count: n })}</Text>
         <StatusSwitch mapping={m} busyId={busyId} onToggle={onToggle} />
       </View>
     );
   };
   return (
     <View style={styles.card}>
-      <Text style={opsStyles.title}>Associated Categories</Text>
-      <Text style={opsStyles.meta}>{savedIds.size ? `Categories ${storeName} sells in — its products and storefront tabs follow these.` : `${storeName} isn't mapped to any category yet.`}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="Map Categories" onPress={onMap} style={[opsStyles.primaryBtn, styles.selfStart]}>
+      <Text style={opsStyles.title}>{t('store.associatedCategories')}</Text>
+      <Text style={opsStyles.meta}>{savedIds.size ? t('store.categoriesStorenameSellsInItsProducts', { storeName }) : t('store.storenameIsnTMappedToAny', { storeName })}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('store.mapCategories')} onPress={onMap} style={[opsStyles.primaryBtn, styles.selfStart]}>
         <FolderIcon size={15} color={colors.white} />
-        <Text style={opsStyles.primaryBtnText}>Map Categories</Text>
+        <Text style={opsStyles.primaryBtnText}>{t('store.mapCategories')}</Text>
       </Pressable>
       {mains.length ? (
         mains.map(main => (
@@ -302,8 +307,8 @@ function Associated({
       ) : (
         <View style={styles.empty}>
           <FolderIcon size={28} color={colors.border} />
-          <Text style={opsStyles.title}>No categories mapped</Text>
-          <Text style={[opsStyles.meta, styles.center]}>Map the main, sub and child categories this store sells in. Its storefront shows products under these.</Text>
+          <Text style={opsStyles.title}>{t('store.noCategoriesMapped')}</Text>
+          <Text style={[opsStyles.meta, styles.center]}>{t('store.mapTheMainSubAndChild')}</Text>
         </View>
       )}
     </View>
@@ -318,8 +323,8 @@ function CheckBox({ checked, label, onPress }: { checked: boolean; label: string
   );
 }
 
-const STEP_TITLES = ['Select Main Categories', 'Select Sub Categories', 'Select Child Categories'];
-const STEP_HINTS = ['Choose main categories relevant for this store.', 'Choose sub categories from the selected main category.', 'Choose child categories from the selected sub category.'];
+const STEP_TITLE_KEYS = ['store.selectMainCategories', 'store.selectSubCategories', 'store.selectChildCategories'] as const;
+const STEP_HINT_KEYS = ['store.chooseMainCategoriesHint', 'store.chooseSubCategoriesHint', 'store.chooseChildCategoriesHint'] as const;
 
 /** One level of the picker: tick a row, or open it to see what's under it. */
 function Level({
@@ -343,6 +348,7 @@ function Level({
   onCheck: (ids: string[], on: boolean) => void;
   onToggle: (m: Rec, active: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const level = trail.length;
   const items = level ? tree.childrenOf.get(trail[level - 1]) ?? [] : tree.mains;
   const ids = items.map(c => String(c.id));
@@ -354,12 +360,12 @@ function Level({
           <Text style={styles.stepText}>{level + 1}</Text>
         </View>
         <View style={styles.flex}>
-          <Text style={opsStyles.title}>{STEP_TITLES[level]}</Text>
-          <Text style={opsStyles.meta}>{STEP_HINTS[level]}</Text>
+          <Text style={opsStyles.title}>{t(STEP_TITLE_KEYS[level])}</Text>
+          <Text style={opsStyles.meta}>{t(STEP_HINT_KEYS[level])}</Text>
         </View>
       </View>
       {level ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => setTrail(trail.slice(0, -1))} style={styles.trail}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={() => setTrail(trail.slice(0, -1))} style={styles.trail}>
           <ArrowLeftIcon size={15} color={colors.textSecondary} />
           <Text style={styles.trailText} numberOfLines={1}>
             {trail.map(id => String(tree.byId.get(id)?.categoryTitle ?? '')).join(' › ')}
@@ -368,8 +374,8 @@ function Level({
       ) : null}
       {level && ids.length ? (
         <Pressable accessibilityRole="button" onPress={() => onCheck(ids, !all)} style={opsStyles.row}>
-          <CheckBox checked={all} label="Select all" onPress={() => onCheck(ids, !all)} />
-          <Text style={opsStyles.meta}>Select All</Text>
+          <CheckBox checked={all} label={t('common.selectAll')} onPress={() => onCheck(ids, !all)} />
+          <Text style={opsStyles.meta}>{t('store.selectAll')}</Text>
         </Pressable>
       ) : null}
       {items.length ? (
@@ -382,17 +388,17 @@ function Level({
             <Pressable
               key={id}
               accessibilityRole="button"
-              accessibilityLabel={hasChildren ? `Open ${String(c.categoryTitle)}` : `Select ${String(c.categoryTitle)}`}
+              accessibilityLabel={hasChildren ? t('store.openCategorytitle', { categoryTitle: String(c.categoryTitle) }) : t('store.selectCategorytitle', { categoryTitle: String(c.categoryTitle) })}
               onPress={() => (hasChildren ? setTrail([...trail, id]) : onCheck([id], !checked))}
               style={[styles.pickRow, checked && styles.pickRowOn]}
             >
-              <CheckBox checked={checked} label={`Select ${String(c.categoryTitle)}`} onPress={() => onCheck([id], !checked)} />
+              <CheckBox checked={checked} label={t('store.selectCategorytitle', { categoryTitle: String(c.categoryTitle) })} onPress={() => onCheck([id], !checked)} />
               <CategoryIcon category={c} />
               <View style={styles.flex}>
                 <Text style={[styles.subName, m?.status === 'inactive' && styles.off]} numberOfLines={1}>
                   {String(c.categoryTitle)}
                 </Text>
-                {m?.status === 'inactive' ? <Text style={styles.offText}>Inactive in this store</Text> : null}
+                {m?.status === 'inactive' ? <Text style={styles.offText}>{t('store.inactiveInThisStore')}</Text> : null}
               </View>
               <ApprovalTag mapping={m} />
               <StatusSwitch mapping={m} busyId={busyId} onToggle={onToggle} />
@@ -403,7 +409,7 @@ function Level({
         })
       ) : (
         <Text style={[opsStyles.muted, styles.center]}>
-          {level ? `${String(tree.byId.get(trail[level - 1])?.categoryTitle ?? '')} has no ${level === 1 ? 'sub' : 'child'} categories.` : 'No main categories in the master list.'}
+          {level ? t(level === 1 ? 'store.categoryHasNoSubCategories' : 'store.categoryHasNoChildCategories', { category: String(tree.byId.get(trail[level - 1])?.categoryTitle ?? '') }) : t('store.noMainCategoriesInTheMaster')}
         </Text>
       )}
     </View>
@@ -425,6 +431,7 @@ function SearchResults({
   counts: Counts;
   onCheck: (ids: string[], on: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const found = searchCategories(tree, search);
   return (
     <View style={styles.card}>
@@ -433,8 +440,8 @@ function SearchResults({
           const id = String(c.id);
           const checked = selected.has(id);
           return (
-            <Pressable key={id} accessibilityRole="button" accessibilityLabel={`Select ${String(c.categoryTitle)}`} onPress={() => onCheck([id], !checked)} style={[styles.pickRow, checked && styles.pickRowOn]}>
-              <CheckBox checked={checked} label={`Select ${String(c.categoryTitle)}`} onPress={() => onCheck([id], !checked)} />
+            <Pressable key={id} accessibilityRole="button" accessibilityLabel={t('store.selectCategorytitle', { categoryTitle: String(c.categoryTitle) })} onPress={() => onCheck([id], !checked)} style={[styles.pickRow, checked && styles.pickRowOn]}>
+              <CheckBox checked={checked} label={t('store.selectCategorytitle', { categoryTitle: String(c.categoryTitle) })} onPress={() => onCheck([id], !checked)} />
               <View style={styles.flex}>
                 <Text style={styles.subName} numberOfLines={1}>
                   {String(c.categoryTitle)}
@@ -449,7 +456,7 @@ function SearchResults({
           );
         })
       ) : (
-        <Text style={[opsStyles.muted, styles.center]}>No categories match your search.</Text>
+        <Text style={[opsStyles.muted, styles.center]}>{t('store.noCategoriesMatchYourSearch')}</Text>
       )}
     </View>
   );

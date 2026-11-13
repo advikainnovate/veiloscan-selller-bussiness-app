@@ -18,6 +18,7 @@ import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, PlusIcon, SettingsIcon, SlidersIcon, TrashIcon } from '../../components/icons';
 import { useSpecLookups } from './ProductSpecsScreen';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Assign a specification and its values to a product, as the panel's form.
@@ -25,6 +26,7 @@ import type { ScreenProps } from '../../navigation/types';
  * offered — the API rejects any other.
  */
 export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'ProductSpecForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -72,12 +74,12 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
   const isSelect = spec?.type === 'SELECT';
   const valueOptions = useMemo(() => look.options.filter(o => o.specificationId === specificationId).map(o => ({ value: o.id, label: String(o.optionTitle ?? o.id) })), [look.options, specificationId]);
   const hint = !productId
-    ? 'Select a product first.'
+    ? t('catalog.selectAProductFirst')
     : config.loading
-      ? "Loading the specifications of this product's category…"
+      ? t('catalog.loadingTheSpecificationsOfThisProducts')
       : !mapped.size
-        ? `No specifications are mapped to ${config.data?.category.title ?? "this product's category"}.`
-        : "Specifications of this product's category not yet assigned to it.";
+        ? t('catalog.noSpecificationsMappedTo', { category: config.data?.category.title ?? t('catalog.thisProductsCategory') })
+        : t('catalog.specificationsOfThisProductsCategoryNot');
   const setRow = (i: number, patch: Partial<SpecValueRow>) => setRows(rs => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   async function save() {
@@ -86,10 +88,10 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
       setError(m);
       scroll.current?.scrollToEnd({ animated: true });
     };
-    const missing = [!productId && 'Product', !specificationId && 'Specification'].filter(Boolean);
-    if (missing.length) return fail(`Please fill in: ${missing.join(', ')}`);
+    const missing = [!productId && t('common.product'), !specificationId && t('catalog.specification')].filter(Boolean);
+    if (missing.length) return fail(t('common.pleaseFillInJoin', { join: missing.join(', ') }));
     const filled = rows.filter(r => (isSelect ? r.specsDataId : r.specificationValue.trim()));
-    if (!filled.length) return fail('Add at least one value for this specification.');
+    if (!filled.length) return fail(t('catalog.addAtLeastOneValueFor'));
     setSaving(true);
     try {
       let parentId = id ?? '';
@@ -109,7 +111,7 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
         }
       }
       await Promise.all(originalIds.filter(o => !kept.has(o)).map(o => productSpecificationValueService.remove(o)));
-      toast(id ? 'Product specification updated' : 'Product specification added');
+      toast(id ? t('catalog.productSpecificationUpdated') : t('catalog.productSpecificationAdded'));
       navigation.goBack();
     } catch (err) {
       fail(extractErrorMessage(err));
@@ -118,12 +120,12 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
     }
   }
 
-  const title = id ? 'Edit Product Specification' : 'Add Product Specification';
+  const title = id ? t('catalog.editProductSpecification') : t('catalog.addProductSpecification');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Product Specs" icon={SlidersIcon} allowed={false} />
+        <ComingSoon label={t('common.productSpecs')} icon={SlidersIcon} allowed={false} />
       </View>
     );
   }
@@ -138,14 +140,14 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Product Specs" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={t('common.productSpecs')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>Assign a specification and its values to a product.</Text>
-        <SectionCard icon={SettingsIcon} title="Basic Information">
+        <Text style={opsStyles.meta}>{t('catalog.assignASpecificationAndItsValues')}</Text>
+        <SectionCard icon={SettingsIcon} title={t('common.basicInformation')}>
           <SelectField
-            label="Product"
+            label={t('common.product')}
             required
-            hint="Select the product this specification applies to."
+            hint={t('catalog.selectTheProductThisSpecificationApplies')}
             value={productId}
             options={look.products.map(p => ({ value: p.id, label: String(p.productName ?? p.id) }))}
             onChange={v => {
@@ -154,13 +156,13 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
               setProductId(v);
             }}
           />
-          <SelectField label="Specification" required hint={hint} value={specificationId} options={specOptions} onChange={setSpecificationId} disabled={!productId} emptyText={hint} />
+          <SelectField label={t('catalog.specification')} required hint={hint} value={specificationId} options={specOptions} onChange={setSpecificationId} disabled={!productId} emptyText={hint} />
           {id ? (
-            <Field label="Status">
+            <Field label={t('common.status')}>
               <Choices
                 options={[
-                  { value: '1', label: 'Active' },
-                  { value: '0', label: 'Inactive' },
+                  { value: '1', label: t('common.active') },
+                  { value: '0', label: t('common.inactive') },
                 ]}
                 value={status}
                 onChange={setStatus}
@@ -169,34 +171,34 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
           ) : null}
           {spec ? (
             <View style={styles.preview}>
-              <Detail label="Type" value={String(spec.type ?? '')} />
-              <Detail label="Required" value={spec.isRequired ? 'Yes' : 'No'} />
+              <Detail label={t('common.type')} value={String(spec.type ?? '')} />
+              <Detail label={t('common.required')} value={spec.isRequired ? 'Yes' : 'No'} />
             </View>
           ) : null}
         </SectionCard>
 
-        <SectionCard icon={SlidersIcon} title="Values" subtitle="Most specifications need just one — add more for multiselect specs (e.g. Available Colors: Red, Blue, Green).">
+        <SectionCard icon={SlidersIcon} title={t('catalog.values')} subtitle={t('catalog.mostSpecificationsNeedJustOneAdd')}>
           {rows.map((r, i) => (
             <View key={i} style={styles.row}>
               <Text style={styles.num}>{i + 1}</Text>
               <View style={styles.flex}>
                 {isSelect ? (
-                  <SelectField label={`Value ${i + 1}`} value={r.specsDataId} options={valueOptions} onChange={v => setRow(i, { specsDataId: v })} placeholder="Select value" />
+                  <SelectField label={t('catalog.valueI', { i: i + 1 })} value={r.specsDataId} options={valueOptions} onChange={v => setRow(i, { specsDataId: v })} placeholder={t('catalog.selectValue')} />
                 ) : (
-                  <Input value={r.specificationValue} onChangeText={v => setRow(i, { specificationValue: v })} placeholder="e.g. 128GB" editable={!!specificationId} maxLength={500} accessibilityLabel={`Value ${i + 1}`} />
+                  <Input value={r.specificationValue} onChangeText={v => setRow(i, { specificationValue: v })} placeholder="e.g. 128GB" editable={!!specificationId} maxLength={500} accessibilityLabel={t('catalog.valueI', { i: i + 1 })} />
                 )}
               </View>
               <View style={styles.seq}>
-                <Input value={r.sequence} onChangeText={v => setRow(i, { sequence: v.replace(/\D/g, '') })} placeholder={String(i + 1)} keyboardType="number-pad" maxLength={4} accessibilityLabel={`Value ${i + 1} sequence`} />
+                <Input value={r.sequence} onChangeText={v => setRow(i, { sequence: v.replace(/\D/g, '') })} placeholder={String(i + 1)} keyboardType="number-pad" maxLength={4} accessibilityLabel={t('catalog.valueISequence', { i: i + 1 })} />
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Remove value ${i + 1}`} disabled={rows.length === 1} hitSlop={6} onPress={() => setRows(rs => rs.filter((_, j) => j !== i))} style={rows.length === 1 ? styles.disabled : null}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.removeValueI', { i: i + 1 })} disabled={rows.length === 1} hitSlop={6} onPress={() => setRows(rs => rs.filter((_, j) => j !== i))} style={rows.length === 1 ? styles.disabled : null}>
                 <TrashIcon size={17} color={colors.textMuted} />
               </Pressable>
             </View>
           ))}
           <Pressable accessibilityRole="button" onPress={() => setRows(rs => [...rs, { ...EMPTY_SPEC_VALUE }])} style={styles.add}>
             <PlusIcon size={15} color={colors.secondary} />
-            <Text style={styles.addText}>Add Value</Text>
+            <Text style={styles.addText}>{t('catalog.addValue')}</Text>
           </Pressable>
         </SectionCard>
 
@@ -207,7 +209,7 @@ export function ProductSpecFormScreen({ navigation, route }: ScreenProps<'Produc
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : 'Add Specification'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? t('common.saveChanges') : t('catalog.addSpecification')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

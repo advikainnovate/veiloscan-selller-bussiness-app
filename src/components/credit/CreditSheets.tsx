@@ -12,6 +12,7 @@ import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { Choices, DateField, Field, Input } from '../form/Fields';
 import { AlertCircleIcon, CheckCircleIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 const fromISO = (s: string) => new Date(`${s}T00:00:00`);
 
@@ -37,6 +38,7 @@ export function ReceivePaymentSheet({
   onClose: () => void;
   onReceived: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState({ amount: '', method: 'CASH' as PaymentMethod, date: todayISO(), reference: '', notes: '' });
   const [confirming, setConfirming] = useState(false);
@@ -54,7 +56,7 @@ export function ReceivePaymentSheet({
   if (!credit) return null;
   const amountPaise = paise(form.amount);
   const amountError = paymentAmountProblem(form.amount, credit.outstandingAmount, formatRupees);
-  const decimalsError = /\.\d{3,}$/.test(form.amount.trim()) ? 'Use at most 2 decimal places' : '';
+  const decimalsError = /\.\d{3,}$/.test(form.amount.trim()) ? t('credit.useAtMost2DecimalPlaces') : '';
   const remaining = Math.max(0, paise(credit.outstandingAmount) - amountPaise) / 100;
   const valid = amountPaise > 0 && !amountError && !decimalsError && !!form.date && form.date <= todayISO();
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }));
@@ -70,7 +72,7 @@ export function ReceivePaymentSheet({
         ...(form.reference.trim() ? { referenceNumber: form.reference.trim() } : {}),
         ...(form.notes.trim() ? { notes: form.notes.trim() } : {}),
       });
-      toast(remaining === 0 ? `Payment received · ${credit!.idd} is fully paid` : `Payment of ${formatRupees(amountPaise / 100)} received`);
+      toast(remaining === 0 ? t('credit.paymentReceivedIddIsFullyPaid', { idd: credit!.idd }) : t('credit.paymentOfAmountReceived', { amount: formatRupees(amountPaise / 100) }));
       onReceived();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -83,73 +85,73 @@ export function ReceivePaymentSheet({
   return (
     <Sheet
       visible
-      title={confirming ? 'Confirm payment' : 'Receive Payment'}
+      title={confirming ? t('credit.confirmPayment') : t('credit.receivePayment')}
       subtitle={`${credit.customerName} · ${credit.idd}${credit.orderNumber ? ` · ${credit.orderNumber}` : ''}`}
       onClose={onClose}
       footer={
         confirming ? (
           <View style={styles.footerRow}>
-            <Button title="Back" variant="ghost" onPress={() => setConfirming(false)} disabled={saving} style={styles.flex} />
-            <Button title={`Confirm ${formatRupees(amountPaise / 100)}`} onPress={submit} loading={saving} style={styles.flex2} />
+            <Button title={t('common.back')} variant="ghost" onPress={() => setConfirming(false)} disabled={saving} style={styles.flex} />
+            <Button title={t('credit.confirmAmount', { amount: formatRupees(amountPaise / 100) })} onPress={submit} loading={saving} style={styles.flex2} />
           </View>
         ) : (
-          <Button title="Continue" onPress={() => setConfirming(true)} disabled={!valid} />
+          <Button title={t('common.continue')} onPress={() => setConfirming(true)} disabled={!valid} />
         )
       }
     >
       <View style={styles.owed}>
-        <Text style={styles.owedLabel}>Outstanding</Text>
+        <Text style={styles.owedLabel}>{t('common.outstanding')}</Text>
         <Text style={styles.owedValue}>{formatRupees(credit.outstandingAmount)}</Text>
-        {credit.dueDate ? <Text style={styles.owedHint}>Due {formatDay(credit.dueDate)}</Text> : null}
+        {credit.dueDate ? <Text style={styles.owedHint}>{t('credit.dueDuedate', { dueDate: formatDay(credit.dueDate) })}</Text> : null}
       </View>
 
       {confirming ? (
         <View style={styles.confirm}>
-          <Text style={styles.note}>Record this payment? It can't be edited afterwards.</Text>
+          <Text style={styles.note}>{t('credit.recordThisPaymentItCanT')}</Text>
           <View style={styles.box}>
-            <Line label="Amount" value={formatRupees(amountPaise / 100)} strong />
-            <Line label="Method" value={methodLabel(form.method)} />
-            <Line label="Date" value={formatDay(form.date)} />
-            {form.reference.trim() ? <Line label="Reference" value={form.reference.trim()} /> : null}
-            <Line label="Outstanding after" value={formatRupees(remaining)} strong tone={remaining === 0 ? colors.success : undefined} />
+            <Line label={t('common.amount')} value={formatRupees(amountPaise / 100)} strong />
+            <Line label={t('credit.method')} value={methodLabel(form.method)} />
+            <Line label={t('common.date')} value={formatDay(form.date)} />
+            {form.reference.trim() ? <Line label={t('common.reference')} value={form.reference.trim()} /> : null}
+            <Line label={t('credit.outstandingAfter')} value={formatRupees(remaining)} strong tone={remaining === 0 ? colors.success : undefined} />
           </View>
           {remaining === 0 ? (
             <View style={styles.inline}>
               <CheckCircleIcon size={15} color={colors.successDark} />
-              <Text style={styles.settles}>This settles the credit — it will be marked Paid.</Text>
+              <Text style={styles.settles}>{t('credit.thisSettlesTheCreditItWill')}</Text>
             </View>
           ) : null}
         </View>
       ) : (
         <>
-          <Field label="Payment Amount" required error={amountError || decimalsError || null}>
+          <Field label={t('credit.paymentAmount')} required error={amountError || decimalsError || null}>
             <Input
               value={form.amount}
               onChangeText={amount => set({ amount: amount.replace(/[^\d.]/g, '') })}
               keyboardType="decimal-pad"
-              accessibilityLabel="Payment amount"
+              accessibilityLabel={t('common.paymentAmount')}
             />
             <View style={styles.quick}>
-              <QuickChip label={`Pay full ${formatRupees(credit.outstandingAmount)}`} onPress={() => set({ amount: String(credit.outstandingAmount) })} />
+              <QuickChip label={t('credit.payFullOutstandingamount', { outstandingAmount: formatRupees(credit.outstandingAmount) })} onPress={() => set({ amount: String(credit.outstandingAmount) })} />
               {credit.outstandingAmount >= 2 ? (
-                <QuickChip label="Half" onPress={() => set({ amount: String(Math.round(credit.outstandingAmount * 50) / 100) })} />
+                <QuickChip label={t('credit.half')} onPress={() => set({ amount: String(Math.round(credit.outstandingAmount * 50) / 100) })} />
               ) : null}
             </View>
           </Field>
-          <Field label="Payment Method" required>
+          <Field label={t('common.paymentMethod')} required>
             <Choices options={PAYMENT_METHODS.map(m => ({ value: m.value, label: m.label }))} value={form.method} onChange={v => set({ method: v as PaymentMethod })} />
           </Field>
-          <DateField label="Payment Date" required value={form.date} onChange={date => set({ date })} maximumDate={new Date()} />
-          <Field label="Reference Number">
+          <DateField label={t('common.paymentDate')} required value={form.date} onChange={date => set({ date })} maximumDate={new Date()} />
+          <Field label={t('credit.referenceNumber')}>
             <Input
               value={form.reference}
               onChangeText={reference => set({ reference })}
-              placeholder={form.method === 'CASH' ? 'Optional' : 'UPI / card / bank ref'}
+              placeholder={form.method === 'CASH' ? t('common.optional2') : t('credit.upiCardBankRef')}
               maxLength={100}
             />
           </Field>
-          <Field label="Notes">
-            <Input value={form.notes} onChangeText={notes => set({ notes })} placeholder="Optional" maxLength={1000} multiline />
+          <Field label={t('common.notes')}>
+            <Input value={form.notes} onChangeText={notes => set({ notes })} placeholder={t('common.optional2')} maxLength={1000} multiline />
           </Field>
         </>
       )}
@@ -160,6 +162,7 @@ export function ReceivePaymentSheet({
 
 /** Due date, reminder and notes; amounts change only through payments. */
 export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDetail | null; onClose: () => void; onSaved: () => void }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState({ dueDate: '', reminderEnabled: false, reminderDays: '1', channels: [] as ReminderType[], notes: '' });
   const [saving, setSaving] = useState(false);
@@ -180,14 +183,14 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
   if (!credit) return null;
   const set = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }));
   const days = Number(form.reminderDays);
-  const daysError = form.reminderEnabled && (!/^\d+$/.test(form.reminderDays) || days > 365) ? 'Enter 0 to 365 days' : '';
+  const daysError = form.reminderEnabled && (!/^\d+$/.test(form.reminderDays) || days > 365) ? tr('credit.enter0To365Days') : '';
   const reminderOn = form.dueDate && !daysError ? formatDay(shiftISO(form.dueDate, -days)) : null;
 
   async function save() {
-    if (!form.dueDate) return setError('Choose a due date.');
-    if (form.dueDate < todayISO()) return setError("The due date can't be in the past.");
+    if (!form.dueDate) return setError(tr('credit.chooseADueDate'));
+    if (form.dueDate < todayISO()) return setError(tr('credit.theDueDateCanTBe'));
     if (daysError) return setError(daysError);
-    if (form.reminderEnabled && !form.channels.length) return setError('Choose at least one reminder channel.');
+    if (form.reminderEnabled && !form.channels.length) return setError(tr('credit.chooseAtLeastOneReminderChannel'));
     setSaving(true);
     setError('');
     try {
@@ -198,7 +201,7 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
         reminderChannels: form.channels,
         notes: form.notes,
       });
-      toast('Credit updated');
+      toast(tr('credit.creditUpdated'));
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -208,17 +211,17 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
   }
 
   return (
-    <Sheet visible title="Edit credit" subtitle={credit.idd} onClose={onClose} footer={<Button title="Save" onPress={save} loading={saving} />}>
-      <DateField label="Due Date" required value={form.dueDate} onChange={dueDate => set({ dueDate })} minimumDate={fromISO(todayISO())} />
+    <Sheet visible title={tr('credit.editCredit')} subtitle={credit.idd} onClose={onClose} footer={<Button title={tr('common.save')} onPress={save} loading={saving} />}>
+      <DateField label={tr('credit.dueDate')} required value={form.dueDate} onChange={dueDate => set({ dueDate })} minimumDate={fromISO(todayISO())} />
 
       <View style={styles.reminder}>
         <View style={styles.switchRow}>
           <View style={styles.flex}>
-            <Text style={styles.reminderTitle}>Payment reminder</Text>
-            <Text style={styles.reminderHint}>Remind the customer before the due date.</Text>
+            <Text style={styles.reminderTitle}>{tr('credit.paymentReminder')}</Text>
+            <Text style={styles.reminderHint}>{tr('credit.remindTheCustomerBeforeTheDue')}</Text>
           </View>
           <Switch
-            accessibilityLabel="Payment reminder"
+            accessibilityLabel={tr('credit.paymentReminder')}
             value={form.reminderEnabled}
             onValueChange={reminderEnabled => set({ reminderEnabled })}
             trackColor={{ true: colors.secondary, false: colors.border }}
@@ -233,10 +236,10 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
                 onChangeText={reminderDays => set({ reminderDays: reminderDays.replace(/\D/g, '') })}
                 keyboardType="number-pad"
                 maxLength={3}
-                accessibilityLabel="Days before due date"
+                accessibilityLabel={tr('credit.daysBeforeDueDate')}
                 style={styles.daysInput}
               />
-              <Text style={styles.daysText}>day(s) before the due date{reminderOn ? ` · on ${reminderOn}` : ''}</Text>
+              <Text style={styles.daysText}>{reminderOn ? tr('credit.daysBeforeDueDateOn', { date: reminderOn }) : tr('credit.daySBeforeTheDueDate')}</Text>
             </View>
             {daysError ? <Text style={styles.fieldError}>{daysError}</Text> : null}
             <View style={styles.quick}>
@@ -257,13 +260,13 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
               })}
             </View>
             {form.channels.some(c => c === 'SMS' || c === 'PUSH') ? (
-              <Text style={styles.warn}>SMS and Push aren't connected to a provider yet — those reminders will show as Failed.</Text>
+              <Text style={styles.warn}>{tr('credit.smsAndPushArenTConnected')}</Text>
             ) : null}
           </>
         ) : null}
       </View>
 
-      <Field label="Notes">
+      <Field label={tr('common.notes')}>
         <Input value={form.notes} onChangeText={notes => set({ notes })} maxLength={1000} multiline />
       </Field>
       {error ? <ErrorLine message={error} /> : null}
@@ -273,6 +276,7 @@ export function EditCreditSheet({ credit, onClose, onSaved }: { credit: CreditDe
 
 /** Cancel a credit with no payments (one created by mistake). */
 export function CancelCreditSheet({ credit, onClose, onCancelled }: { credit: CreditDetail | null; onClose: () => void; onCancelled: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
@@ -288,7 +292,7 @@ export function CancelCreditSheet({ credit, onClose, onCancelled }: { credit: Cr
     setError('');
     try {
       await customerCreditService.cancel(credit!.id, reason.trim() || undefined);
-      toast(`Credit ${credit!.idd} cancelled`);
+      toast(t('credit.creditIddCancelled', { idd: credit!.idd }));
       onCancelled();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -300,24 +304,24 @@ export function CancelCreditSheet({ credit, onClose, onCancelled }: { credit: Cr
   return (
     <Sheet
       visible
-      title="Cancel this credit?"
-      subtitle={`${formatRupees(credit.outstandingAmount)} will no longer be owed on order ${credit.order.orderNumber}, and its reminders stop. Use this for a credit created by mistake — the order goes back to unpaid so you can record its payment again.`}
+      title={t('credit.cancelThisCredit')}
+      subtitle={t('credit.outstandingamountWillNoLongerBeOwed', { outstandingAmount: formatRupees(credit.outstandingAmount), orderNumber: credit.order.orderNumber })}
       onClose={onClose}
       footer={
         <View style={styles.footerRow}>
-          <Button title="Keep credit" variant="ghost" onPress={onClose} style={styles.flex} />
+          <Button title={t('credit.keepCredit')} variant="ghost" onPress={onClose} style={styles.flex} />
           <Pressable
             accessibilityRole="button"
             disabled={saving}
             onPress={confirm}
             style={({ pressed }) => [styles.danger, (pressed || saving) && styles.dangerPressed, styles.flex2]}
           >
-            <Text style={styles.dangerText}>{saving ? 'Cancelling…' : 'Cancel credit'}</Text>
+            <Text style={styles.dangerText}>{saving ? t('credit.cancelling') : t('credit.cancelCredit')}</Text>
           </Pressable>
         </View>
       }
     >
-      <Input value={reason} onChangeText={setReason} placeholder="Reason (optional)" maxLength={1000} multiline />
+      <Input value={reason} onChangeText={setReason} placeholder={t('common.reasonOptional')} maxLength={1000} multiline />
       {error ? <ErrorLine message={error} /> : null}
     </Sheet>
   );

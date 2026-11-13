@@ -1,9 +1,10 @@
 // Sales Reports helpers, as on the Seller Panel (src/lib/date-range.ts and
 // store-operations/reports-tab.tsx).
 import type { BadgeTone } from '../components/ui/Badge';
+import { monthShort } from './date';
 import type { DateRange, SalesGroup, TrendInterval } from '../services/store-operations-service';
+import i18n from '../i18n';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function toDay(date: Date) {
@@ -30,22 +31,22 @@ export interface RangePreset {
 }
 
 export const RANGE_PRESETS: RangePreset[] = [
-  { key: 'today', label: 'Today', compareLabel: 'vs yesterday', range: t => lastNDays(1, t) },
-  { key: '7d', label: 'Last 7 Days', compareLabel: 'vs previous 7 days', range: t => lastNDays(7, t) },
-  { key: '30d', label: 'Last 30 Days', compareLabel: 'vs previous 30 days', range: t => lastNDays(30, t) },
+  { key: 'today', get label() { return i18n.t('common.today'); }, get compareLabel() { return i18n.t('common.vsYesterday'); }, range: t => lastNDays(1, t) },
+  { key: '7d', get label() { return i18n.t('reports.last7Days'); }, get compareLabel() { return i18n.t('reports.vsPreviousDays', { count: 7 }); }, range: t => lastNDays(7, t) },
+  { key: '30d', get label() { return i18n.t('reports.last30Days'); }, get compareLabel() { return i18n.t('reports.vsPreviousDays', { count: 30 }); }, range: t => lastNDays(30, t) },
   {
     key: 'this-month',
-    label: 'This Month',
-    compareLabel: 'vs last month',
+    get label() { return i18n.t('common.thisMonth'); },
+    get compareLabel() { return i18n.t('common.vsLastMonth'); },
     range: t => ({ from: toDay(new Date(t.getFullYear(), t.getMonth(), 1)), to: toDay(new Date(t.getFullYear(), t.getMonth() + 1, 0)) }),
   },
   {
     key: 'last-month',
-    label: 'Last Month',
-    compareLabel: 'vs month before',
+    get label() { return i18n.t('common.lastMonth'); },
+    get compareLabel() { return i18n.t('reports.vsMonthBefore'); },
     range: t => ({ from: toDay(new Date(t.getFullYear(), t.getMonth() - 1, 1)), to: toDay(new Date(t.getFullYear(), t.getMonth(), 0)) }),
   },
-  { key: '90d', label: 'Last 90 Days', compareLabel: 'vs previous 90 days', range: t => lastNDays(90, t) },
+  { key: '90d', get label() { return i18n.t('reports.last90Days'); }, get compareLabel() { return i18n.t('reports.vsPreviousDays', { count: 90 }); }, range: t => lastNDays(90, t) },
 ];
 
 export const DEFAULT_PRESET = RANGE_PRESETS[3];
@@ -63,7 +64,7 @@ export function autoInterval(range: DateRange): TrendInterval {
 /** "01 Sep", or "01 Sep 2026". */
 export function formatReportDay(day: string, withYear = true) {
   const date = parseDay(day);
-  const label = `${pad(date.getDate())} ${MONTHS[date.getMonth()]}`;
+  const label = `${pad(date.getDate())} ${monthShort(date.getMonth())}`;
   return withYear ? `${label} ${date.getFullYear()}` : label;
 }
 
@@ -71,11 +72,11 @@ export function formatReportDay(day: string, withYear = true) {
 export function bucketLabels(dates: string[], interval: TrendInterval) {
   const month = (d: string, long = false) => {
     const date = parseDay(d);
-    return long ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}` : `${MONTHS[date.getMonth()]} ${String(date.getFullYear()).slice(2)}`;
+    return long ? `${monthShort(date.getMonth())} ${date.getFullYear()}` : `${monthShort(date.getMonth())} ${String(date.getFullYear()).slice(2)}`;
   };
   return {
     labels: dates.map(d => (interval === 'month' ? month(d) : formatReportDay(d, false))),
-    full: dates.map(d => (interval === 'week' ? `Week of ${formatReportDay(d)}` : interval === 'month' ? month(d, true) : formatReportDay(d))),
+    full: dates.map(d => (interval === 'week' ? i18n.t('reports.weekOfD', { d: formatReportDay(d) }) : interval === 'month' ? month(d, true) : formatReportDay(d))),
   };
 }
 
@@ -96,23 +97,23 @@ export function shortRupees(value: number | null | undefined) {
     const t = Math.floor(x * 100 + 1e-6) / 100;
     return Number.isInteger(t) ? String(t) : t.toFixed(2);
   };
-  if (abs >= 1e7) return `${sign}₹${cut(abs / 1e7)} Cr`;
+  if (abs >= 1e7) return i18n.t('reports.signRsCutCr', { sign, cut: cut(abs / 1e7) });
   if (abs >= 1e5) return `${sign}₹${cut(abs / 1e5)} L`;
   if (abs >= 1e3) return `${sign}₹${cut(abs / 1e3)}K`;
   return `${sign}₹${cut(abs)}`;
 }
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  CASH: 'Cash',
+  get CASH() { return i18n.t('common.cash'); },
   UPI: 'UPI',
-  CARD: 'Card',
-  BANK_TRANSFER: 'Bank Transfer',
-  NET_BANKING: 'Net Banking',
-  WALLET: 'Wallet',
-  COD: 'Cash on Delivery',
-  CREDIT: 'Customer Credit',
-  SPLIT: 'Split Payment',
-  OTHER: 'Other',
+  get CARD() { return i18n.t('common.card'); },
+  get BANK_TRANSFER() { return i18n.t('common.bankTransfer'); },
+  get NET_BANKING() { return i18n.t('reports.netBanking'); },
+  get WALLET() { return i18n.t('reports.wallet'); },
+  get COD() { return i18n.t('common.cashOnDelivery'); },
+  get CREDIT() { return i18n.t('common.customerCredit'); },
+  get SPLIT() { return i18n.t('reports.splitPayment'); },
+  get OTHER() { return i18n.t('common.other'); },
 };
 
 export function paymentLabel(method: string) {
@@ -120,25 +121,25 @@ export function paymentLabel(method: string) {
 }
 
 const SALE_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
-  DELIVERED: { label: 'Completed', tone: 'green' },
-  SHIPPED: { label: 'Shipped', tone: 'blue' },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery', tone: 'blue' },
-  RETURN_REQUESTED: { label: 'Return Requested', tone: 'amber' },
-  REPLACED: { label: 'Replaced', tone: 'violet' },
+  DELIVERED: { get label() { return i18n.t('common.completed'); }, tone: 'green' },
+  SHIPPED: { get label() { return i18n.t('common.shipped'); }, tone: 'blue' },
+  OUT_FOR_DELIVERY: { get label() { return i18n.t('reports.outForDelivery'); }, tone: 'blue' },
+  RETURN_REQUESTED: { get label() { return i18n.t('reports.returnRequested'); }, tone: 'amber' },
+  REPLACED: { get label() { return i18n.t('reports.replaced'); }, tone: 'violet' },
 };
 
 export function saleStatus(status: string) {
-  return SALE_STATUS[status] ?? { label: 'Processing', tone: 'orange' as BadgeTone };
+  return SALE_STATUS[status] ?? { label: i18n.t('common.processing'), tone: 'orange' as BadgeTone };
 }
 
 export const SALES_TABS: { value: SalesGroup; label: string }[] = [
-  { value: 'none', label: 'All' },
-  { value: 'date', label: 'By Date' },
-  { value: 'category', label: 'By Category' },
-  { value: 'product', label: 'By Product' },
-  { value: 'payment', label: 'By Payment Mode' },
-  { value: 'customer', label: 'By Customer' },
-  { value: 'staff', label: 'By Staff' },
+  { value: 'none', get label() { return i18n.t('common.all'); } },
+  { value: 'date', get label() { return i18n.t('reports.byDate'); } },
+  { value: 'category', get label() { return i18n.t('common.byCategory'); } },
+  { value: 'product', get label() { return i18n.t('reports.byProduct'); } },
+  { value: 'payment', get label() { return i18n.t('reports.byPaymentMode'); } },
+  { value: 'customer', get label() { return i18n.t('reports.byCustomer'); } },
+  { value: 'staff', get label() { return i18n.t('reports.byStaff'); } },
 ];
 
 /** A grouped row's label: dates and payment modes are shown readably. */

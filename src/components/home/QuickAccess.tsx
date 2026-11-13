@@ -8,6 +8,7 @@ import { MENU_ITEMS, type MenuItem } from '../../navigation/menu';
 import { openMenuKey } from '../../navigation/navigationRef';
 import { Button } from '../ui/Button';
 import { CheckIcon, PlusIcon, SlidersIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 export const MAX_QUICK_ACCESS = 8;
 
@@ -29,6 +30,7 @@ function toneOf(item: MenuItem) {
 
 /** The quick-access grid with its saved choice; up to eight pages the role can open (not tabs). */
 export function QuickAccess() {
+  const { t } = useTranslation();
   const { user, hasPermission } = useAuth();
   const storageKey = `home.quickAccess.${user?.id ?? user?.email ?? 'me'}`;
   // Pages the user can open that aren't already a bottom tab.
@@ -64,10 +66,9 @@ export function QuickAccess() {
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.flex}>
-          <Text style={styles.title}>Quick Access</Text>
+          <Text style={styles.title}>{t('home.quickAccess')}</Text>
           <Text style={styles.subtitle} numberOfLines={1}>
-            Manage your store faster
-          </Text>
+            {t('home.manageYourStoreFaster')}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -76,7 +77,7 @@ export function QuickAccess() {
           style={({ pressed }) => [styles.customize, pressed && styles.pressedText]}
         >
           <SlidersIcon size={15} color={colors.secondaryDark} />
-          <Text style={styles.customizeText}>Customize</Text>
+          <Text style={styles.customizeText}>{t('home.customize')}</Text>
         </Pressable>
       </View>
 
@@ -102,13 +103,12 @@ export function QuickAccess() {
         })}
         {/* Room for more: a slot that opens Customize. */}
         {shown.length < MAX_QUICK_ACCESS ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Add a shortcut" onPress={() => setCustomizing(true)} style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('home.addAShortcut')} onPress={() => setCustomizing(true)} style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}>
             <View style={[styles.tileIcon, styles.addIcon]}>
               <PlusIcon size={20} color={colors.textMuted} />
             </View>
             <Text style={[styles.tileText, styles.addText]} numberOfLines={2}>
-              Add
-            </Text>
+              {t('common.add')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -138,6 +138,7 @@ function CustomizeSheet({
   /** null resets to the default choice. */
   onSave: (keys: string[] | null) => void;
 }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState(initial);
   const full = selected.length >= MAX_QUICK_ACCESS;
@@ -157,13 +158,12 @@ function CustomizeSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close" />
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t('common.close')} />
       <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
         <View style={styles.handle} />
-        <Text style={styles.sheetTitle}>Customize Quick Access</Text>
+        <Text style={styles.sheetTitle}>{t('home.customizeQuickAccess')}</Text>
         <Text style={styles.sheetText}>
-          Choose up to {MAX_QUICK_ACCESS} shortcuts for your Home screen ({selected.length}/{MAX_QUICK_ACCESS}).
-        </Text>
+          {t('home.chooseUpToMaxQuickAccess', { MAX_QUICK_ACCESS, selectedCount: selected.length, MAX_QUICK_ACCESS2: MAX_QUICK_ACCESS })}</Text>
 
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {available.map(item => {
@@ -194,9 +194,9 @@ function CustomizeSheet({
 
         <View style={styles.actions}>
           <Pressable onPress={() => onSave(null)} hitSlop={8} style={styles.reset}>
-            <Text style={styles.resetText}>Reset to default</Text>
+            <Text style={styles.resetText}>{t('home.resetToDefault')}</Text>
           </Pressable>
-          <Button title="Save" onPress={() => onSave(selected)} style={styles.saveBtn} />
+          <Button title={t('common.save')} onPress={() => onSave(selected)} style={styles.saveBtn} />
         </View>
       </View>
     </Modal>

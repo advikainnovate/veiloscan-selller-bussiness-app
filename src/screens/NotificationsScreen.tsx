@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, FilterChips, ListSkeleton } from '../components
 import { opsStyles } from '../components/operations/OpsParts';
 import { BellIcon, CheckIcon } from '../components/icons';
 import type { ScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type Item = NotificationPage['items'][number];
 type Tab = 'all' | 'unread';
@@ -24,6 +25,7 @@ const PAGE = 20;
  * All / Unread, a filter by kind, by day, and more as you scroll.
  */
 export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>) {
+  const { t } = useTranslation();
   const toast = useToast();
   const { refresh: refreshBell } = useNotifications();
   const [tab, setTab] = useState<Tab>('all');
@@ -107,7 +109,7 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
     setUnread(0);
     try {
       await notificationService.markAllRead();
-      toast(`${before} notification${before === 1 ? '' : 's'} marked as read`);
+      toast(t('notifications.notificationsMarkedAsRead', { count: before }));
       refreshBell();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -119,7 +121,7 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Notifications" subtitle={unread ? `${unread} unread` : 'All caught up'} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />
+      <AppHeader title={t('common.notifications')} subtitle={unread ? t('notifications.unreadUnread', { unread }) : t('notifications.allCaughtUp')} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />
 
       <View style={styles.top}>
         {/* Where things stand */}
@@ -131,15 +133,15 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
             {unread ? <View style={styles.summaryDot} /> : null}
           </View>
           <View style={styles.flex}>
-            <Text style={styles.summaryTitle}>{unread ? `${unread} unread` : 'All caught up'}</Text>
+            <Text style={styles.summaryTitle}>{unread ? t('notifications.unreadUnread', { unread }) : t('notifications.allCaughtUp')}</Text>
             <Text style={styles.summaryText} numberOfLines={1}>
-              {unread ? 'Orders, requests and reminders waiting for you' : 'Nothing new right now'}
+              {unread ? t('notifications.ordersRequestsAndRemindersWaitingFor') : t('notifications.nothingNewRightNow')}
             </Text>
           </View>
           {unread ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Mark all as read" hitSlop={8} onPress={markAll} style={({ pressed }) => [styles.markAll, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('notifications.markAllAsRead')} hitSlop={8} onPress={markAll} style={({ pressed }) => [styles.markAll, pressed && styles.pressed]}>
               <CheckIcon size={14} color={colors.primary} strokeWidth={2.6} />
-              <Text style={styles.markAllText}>Mark all read</Text>
+              <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -147,8 +149,8 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
         <View accessibilityRole="tablist" style={styles.tabs}>
           {(
             [
-              ['all', 'All'],
-              ['unread', unread ? `Unread · ${unread}` : 'Unread'],
+              ['all', t('common.all')],
+              ['unread', unread ? t('notifications.unreadUnread2', { unread }) : t('notifications.unread')],
             ] as const
           ).map(([key, label]) => {
             const on = tab === key;
@@ -159,7 +161,7 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
             );
           })}
         </View>
-        {groups.length > 1 ? <FilterChips options={[{ value: '', label: 'Everything' }, ...groups.map(g => ({ value: g, label: groupLabel(g), count: items.filter(n => notificationGroup(n) === g).length }))]} value={group} onChange={setGroup} /> : null}
+        {groups.length > 1 ? <FilterChips options={[{ value: '', label: t('notifications.everything') }, ...groups.map(g => ({ value: g, label: groupLabel(g), count: items.filter(n => notificationGroup(n) === g).length }))]} value={group} onChange={setGroup} /> : null}
       </View>
 
       {error && !items.length ? (
@@ -210,7 +212,7 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
                     </Text>
                   ) : null}
                 </View>
-                {isUnread ? <View style={styles.dot} accessibilityLabel="Unread" /> : null}
+                {isUnread ? <View style={styles.dot} accessibilityLabel={t('notifications.unread')} /> : null}
               </Pressable>
             );
           }}
@@ -219,8 +221,8 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
             <View style={styles.empty}>
               <EmptyState
                 icon={BellIcon}
-                title={tab === 'unread' || group ? 'Nothing here' : "You're all caught up"}
-                text={tab === 'unread' ? 'No unread notifications.' : 'New orders, order requests and note reminders show here.'}
+                title={tab === 'unread' || group ? t('notifications.nothingHere') : t('notifications.youReAllCaughtUp')}
+                text={tab === 'unread' ? t('notifications.noUnreadNotifications') : t('notifications.newOrdersOrderRequestsAndNote')}
               />
             </View>
           }
@@ -228,10 +230,10 @@ export function NotificationsScreen({ navigation }: ScreenProps<'Notifications'>
             items.length ? (
               <View style={styles.footer}>
                 {loadingMore ? <ActivityIndicator color={colors.secondary} /> : null}
-                {!hasMore && items.length > PAGE ? <Text style={opsStyles.muted}>That's everything.</Text> : null}
+                {!hasMore && items.length > PAGE ? <Text style={opsStyles.muted}>{t('notifications.thatsEverything')}</Text> : null}
                 <View style={styles.tip}>
                   <BellIcon size={14} color={colors.textSecondary} />
-                  <Text style={[opsStyles.muted, styles.flex]}>New orders and order requests vibrate and show a banner while the app is open.</Text>
+                  <Text style={[opsStyles.muted, styles.flex]}>{t('notifications.newOrdersAndOrderRequestsVibrate')}</Text>
                 </View>
               </View>
             ) : undefined

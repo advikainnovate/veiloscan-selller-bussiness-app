@@ -5,13 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, fonts } from '../../theme';
 import { BarChartIcon, BoxIcon, HomeIcon, ShoppingBagIcon, UsersIcon, type IconProps } from '../icons';
 import type { TabParamList } from '../../navigation/types';
+import i18n from '../../i18n';
 
 export const TAB_META: Record<keyof TabParamList, { label: string; icon: ComponentType<IconProps> }> = {
-  Home: { label: 'Home', icon: HomeIcon },
-  Orders: { label: 'Orders', icon: ShoppingBagIcon },
-  Products: { label: 'Products', icon: BoxIcon },
-  Customers: { label: 'Customers', icon: UsersIcon },
-  Reports: { label: 'Reports', icon: BarChartIcon },
+  Home: { get label() { return i18n.t('layout.home'); }, icon: HomeIcon },
+  Orders: { get label() { return i18n.t('common.orders'); }, icon: ShoppingBagIcon },
+  Products: { get label() { return i18n.t('common.products'); }, icon: BoxIcon },
+  Customers: { get label() { return i18n.t('common.customers'); }, icon: UsersIcon },
+  Reports: { get label() { return i18n.t('common.reports'); }, icon: BarChartIcon },
 };
 
 /** Five quick pages; the active one's icon sits in an orange pill. */

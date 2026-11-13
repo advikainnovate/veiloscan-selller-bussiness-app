@@ -15,12 +15,14 @@ import { ActionSheet, compactStyles, CountTiles, ListTop, RowCard, Separator, Su
 import { opsStyles } from '../../components/operations/OpsParts';
 import { BoxIcon, EyeIcon, PlusIcon, TruckIcon, WarehouseIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 
 /** Inventory › Stock Health: low, out-of-stock and healthy SKUs of the current store, as the panel's tab. */
 export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealth'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { current } = useStore();
   const listPadding = useListPadding();
@@ -53,8 +55,8 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Stock Health" onBack={navigation.goBack} />
-        <ComingSoon label="Stock Health" icon={BoxIcon} allowed={false} />
+        <AppHeader title={tr('common.stockHealth')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.stockHealth')} icon={BoxIcon} allowed={false} />
       </View>
     );
   }
@@ -63,15 +65,15 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Stock Health" subtitle={current?.name ?? 'Inventory'} onBack={navigation.goBack} />
+      <AppHeader title={tr('common.stockHealth')} subtitle={current?.name ?? tr('common.inventory')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search product or SKU…" />
+        <SearchBar value={searchInput} onChange={setSearchInput} placeholder={tr('inventory.searchProductOrSku')} />
         <CountTiles
           tiles={[
-            { key: 'all', label: 'All SKUs', count: k?.totalSkus ?? '–', ...TILE_COLORS.slate },
-            { key: 'low', label: 'Low', count: k?.lowStock ?? '–', ...TILE_COLORS.amber },
-            { key: 'out', label: 'Out', count: k?.outOfStock ?? '–', ...TILE_COLORS.red },
-            { key: 'healthy', label: 'Healthy', count: k?.healthy ?? '–', ...TILE_COLORS.green },
+            { key: 'all', label: tr('common.allSkus'), count: k?.totalSkus ?? '–', ...TILE_COLORS.slate },
+            { key: 'low', label: tr('inventory.low'), count: k?.lowStock ?? '–', ...TILE_COLORS.amber },
+            { key: 'out', label: tr('inventory.out'), count: k?.outOfStock ?? '–', ...TILE_COLORS.red },
+            { key: 'healthy', label: tr('inventory.healthy'), count: k?.healthy ?? '–', ...TILE_COLORS.green },
           ]}
           value={filter}
           onSelect={key => setFilter((key || 'all') as HealthFilter)}
@@ -80,12 +82,12 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
         <SummaryLine
           hint={
             filter === 'low'
-              ? 'At or below their minimum stock.'
+              ? tr('inventory.atOrBelowTheirMinimumStock')
               : filter === 'out'
-                ? 'Nothing available to sell.'
+                ? tr('inventory.nothingAvailableToSell')
                 : k
-                  ? `${k.totalSkus} SKU${k.totalSkus === 1 ? '' : 's'} across ${k.totalProducts} product${k.totalProducts === 1 ? '' : 's'}.`
-                  : 'Low, out-of-stock and healthy products at a glance.'
+                  ? tr('inventory.skusAcrossProducts', { skus: tr('common.skuCount', { count: k.totalSkus }), products: tr('common.productCount', { count: k.totalProducts }) })
+                  : tr('inventory.lowOutOfStockAndHealthy')
           }
           filtered={filter !== 'all' || !!search}
           shown={list.total}
@@ -97,15 +99,15 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
           }}
         />
         {canPending && needStock.length ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Order ${needStock.length} low / out`} onPress={() => order(needStock.map(r => r.variantId))} style={[opsStyles.primaryBtn, styles.order]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('inventory.orderNeedstockcountLowOut', { needStockCount: needStock.length })} onPress={() => order(needStock.map(r => r.variantId))} style={[opsStyles.primaryBtn, styles.order]}>
             <TruckIcon size={15} color={colors.white} />
-            <Text style={opsStyles.primaryBtnText}>{`Order ${needStock.length} low / out`}</Text>
+            <Text style={opsStyles.primaryBtnText}>{tr('inventory.orderNeedstockcountLowOut', { needStockCount: needStock.length })}</Text>
           </Pressable>
         ) : null}
       </ListTop>
 
       {!storeId ? (
-        <EmptyState icon={BoxIcon} title="No store yet" text="Stock health shows once you have a store." />
+        <EmptyState icon={BoxIcon} title={tr('common.noStoreYet')} text={tr('inventory.stockHealthShowsOnceYouHave')} />
       ) : list.error && !list.items.length ? (
         <ErrorState message={list.error} onRetry={list.retry} />
       ) : (
@@ -124,8 +126,8 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={BoxIcon}
-                  title={search ? 'Nothing matches' : filter === 'all' ? "No stock records for this store's products" : `No ${HEALTH_FILTERS.find(f => f.value === filter)?.label.toLowerCase()} SKUs`}
-                  text={filter === 'all' && !search ? 'Stock appears here once products sold in this store have inventory.' : undefined}
+                  title={search ? tr('inventory.nothingMatches') : filter === 'all' ? tr('inventory.noStockRecordsForThisStores') : tr('inventory.noLowercaseSkus', { lowerCase: HEALTH_FILTERS.find(f => f.value === filter)?.label.toLowerCase() })}
+                  text={filter === 'all' && !search ? tr('inventory.stockAppearsHereOnceProductsSold') : undefined}
                 />
               </View>
             )
@@ -143,10 +145,10 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
         actions={
           actionsFor
             ? [
-                { label: 'View Product', icon: EyeIcon, onPress: () => navigation.navigate('ProductDetail', { id: actionsFor.productId }) },
-                { label: 'View Inventory', icon: WarehouseIcon, hidden: !canInventory || !actionsFor.inventoryId, onPress: () => navigation.navigate('StockDetail', { id: actionsFor.inventoryId }) },
-                { label: 'Restock (receive now)', icon: PlusIcon, hidden: !canInventory, onPress: () => navigation.navigate('Inventory', { tab: 'stock' }) },
-                { label: 'Create Stock Request', icon: TruckIcon, hidden: !canPending, onPress: () => order([actionsFor.variantId]) },
+                { label: tr('common.viewProduct'), icon: EyeIcon, onPress: () => navigation.navigate('ProductDetail', { id: actionsFor.productId }) },
+                { label: tr('inventory.viewInventory'), icon: WarehouseIcon, hidden: !canInventory || !actionsFor.inventoryId, onPress: () => navigation.navigate('StockDetail', { id: actionsFor.inventoryId }) },
+                { label: tr('inventory.restockReceiveNow'), icon: PlusIcon, hidden: !canInventory, onPress: () => navigation.navigate('Inventory', { tab: 'stock' }) },
+                { label: tr('inventory.createStockRequest'), icon: TruckIcon, hidden: !canPending, onPress: () => order([actionsFor.variantId]) },
               ]
             : []
         }
@@ -156,6 +158,7 @@ export function StockHealthScreen({ navigation, route }: ScreenProps<'StockHealt
 }
 
 function HealthCard({ row, onMore }: { row: StockHealthRow; onMore: () => void }) {
+  const { t } = useTranslation();
   const h = HEALTH[row.health];
   const variant = variantLabel(row.combination);
   return (
@@ -171,17 +174,17 @@ function HealthCard({ row, onMore }: { row: StockHealthRow; onMore: () => void }
           </Text>
         </View>
         <Badge label={h.label} tone={h.tone} />
-        <Pressable accessibilityRole="button" accessibilityLabel={`More for ${row.productName}`} hitSlop={10} onPress={onMore} style={compactStyles.more}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('inventory.moreForProductname', { productName: row.productName })} hitSlop={10} onPress={onMore} style={compactStyles.more}>
           <Text style={compactStyles.dots}>⋮</Text>
         </Pressable>
       </View>
       <View style={styles.figures}>
-        <Figure label="Current" value={`${qty(row.available)} ${row.uom}`} color={h.color} strong />
-        <Figure label="Minimum" value={qty(row.minimum)} />
-        <Figure label="Reorder" value={row.health === 'healthy' ? '—' : qty(row.suggestedReorder)} />
-        <Figure label="Pending" value={row.pendingQty > 0 ? qty(row.pendingQty) : '—'} color={row.pendingQty > 0 ? '#0369a1' : undefined} />
+        <Figure label={t('common.current')} value={`${qty(row.available)} ${row.uom}`} color={h.color} strong />
+        <Figure label={t('inventory.minimum')} value={qty(row.minimum)} />
+        <Figure label={t('inventory.reorder')} value={row.health === 'healthy' ? '—' : qty(row.suggestedReorder)} />
+        <Figure label={t('common.pending')} value={row.pendingQty > 0 ? qty(row.pendingQty) : '—'} color={row.pendingQty > 0 ? '#0369a1' : undefined} />
       </View>
-      <Text style={compactStyles.meta}>{`Last sold ${row.lastSoldAt ? day(row.lastSoldAt) : 'never'}`}</Text>
+      <Text style={compactStyles.meta}>{row.lastSoldAt ? t('inventory.lastSoldOn', { date: day(row.lastSoldAt) }) : t('inventory.neverSold')}</Text>
     </RowCard>
   );
 }

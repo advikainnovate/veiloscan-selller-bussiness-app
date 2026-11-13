@@ -18,11 +18,13 @@ import { SectionCard } from '../../components/store/StoreSections';
 import { AssignRoleSheet } from './UsersScreen';
 import { BanIcon, CheckCircleIcon, ClockIcon, EditIcon, LockIcon, LogoutIcon, MailIcon, MobileIcon, PhoneIcon, ShieldCheckIcon, TrashIcon, UserIcon, UsersIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type Tab = 'overview' | 'logins' | 'activity' | 'devices';
 
 /** One staff user: their account, role and profile, sign-ins, activity and devices. */
 export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -39,12 +41,12 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
   const [assigning, setAssigning] = useState(false);
   const devices = useMemo(() => deviceGroups(sessions.data ?? []), [sessions.data]);
 
-  const header = <AppHeader title={user.data ? userName(user.data) : 'User'} subtitle="Users" onBack={navigation.goBack} />;
+  const header = <AppHeader title={user.data ? userName(user.data) : t('users.user')} subtitle={t('users.users')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Users" icon={UsersIcon} allowed={false} />
+        <ComingSoon label={t('users.users')} icon={UsersIcon} allowed={false} />
       </View>
     );
   }
@@ -62,7 +64,7 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={user.error || "This user couldn't be loaded. They may have been deleted."} onRetry={() => user.reload()} />
+        <ErrorState message={user.error || t('users.thisUserCouldnTBeLoaded')} onRetry={() => user.reload()} />
       </View>
     );
   }
@@ -96,25 +98,25 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
 
   async function resetPassword() {
     if (!u.email) return;
-    if (!(await confirmAction('Send a password reset link?', `We'll email ${u.email} a link to set a new password.`, 'Send link'))) return;
-    act('reset', () => authService.forgotPassword(u.email!), 'Password reset link sent', () => {});
+    if (!(await confirmAction(t('users.sendAPasswordResetLink'), t('users.weLlEmailEmailALink', { email: u.email }), t('users.sendLink')))) return;
+    act('reset', () => authService.forgotPassword(u.email!), t('users.passwordResetLinkSent'), () => {});
   }
 
   async function toggle() {
-    if (!(await confirmAction(`${isActive ? 'Deactivate' : 'Activate'} ${userName(u)}?`, isActive ? "They can't sign in until you activate them again." : 'They can sign in again straight away.', isActive ? 'Deactivate' : 'Activate', isActive))) return;
-    act('toggle', () => userService.setActive(id, !isActive), isActive ? 'User deactivated' : 'User activated');
+    if (!(await confirmAction(`${isActive ? 'Deactivate' : 'Activate'} ${userName(u)}?`, isActive ? t('users.theyCanTSignInUntil') : t('users.theyCanSignInAgainStraight'), isActive ? t('common.deactivate') : t('common.activate'), isActive))) return;
+    act('toggle', () => userService.setActive(id, !isActive), isActive ? t('users.userDeactivated') : t('users.userActivated'));
   }
 
   async function remove() {
-    if (!(await confirmAction('Delete user?', `${userName(u)} will be removed and can no longer sign in.`, 'Delete', true))) return;
-    act('delete', () => userService.remove(id), 'User deleted', () => navigation.goBack());
+    if (!(await confirmAction(t('users.deleteUser'), t('users.uWillBeRemovedAndCan', { u: userName(u) }), t('common.delete'), true))) return;
+    act('delete', () => userService.remove(id), t('users.userDeleted'), () => navigation.goBack());
   }
 
   const tabs = [
-    { value: 'overview', label: 'Overview' },
-    { value: 'logins', label: 'Login History', count: sessions.data?.length },
-    { value: 'activity', label: 'Activity', count: activity.data?.length },
-    { value: 'devices', label: 'Devices', count: devices.length },
+    { value: 'overview', label: t('common.overview') },
+    { value: 'logins', label: t('users.loginHistory'), count: sessions.data?.length },
+    { value: 'activity', label: t('common.activity'), count: activity.data?.length },
+    { value: 'devices', label: t('users.devices'), count: devices.length },
   ];
 
   return (
@@ -145,19 +147,19 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
           {phone ? (
             <Pressable accessibilityRole="button" onPress={() => Linking.openURL(`tel:${phone.replace(/\s/g, '')}`)} style={[opsStyles.smallBtn, styles.grow]}>
               <PhoneIcon size={14} color={colors.text} />
-              <Text style={opsStyles.smallBtnText}>Call</Text>
+              <Text style={opsStyles.smallBtnText}>{t('common.call')}</Text>
             </Pressable>
           ) : null}
           {u.email ? (
             <Pressable accessibilityRole="button" onPress={() => Linking.openURL(`mailto:${u.email}`)} style={[opsStyles.smallBtn, styles.grow]}>
               <MailIcon size={14} color={colors.text} />
-              <Text style={opsStyles.smallBtnText}>Email</Text>
+              <Text style={opsStyles.smallBtnText}>{t('common.email')}</Text>
             </Pressable>
           ) : null}
           {canEdit ? (
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('UserForm', { id })} style={[opsStyles.smallBtn, styles.grow]}>
               <EditIcon size={14} color={colors.text} />
-              <Text style={opsStyles.smallBtnText}>Edit</Text>
+              <Text style={opsStyles.smallBtnText}>{t('common.edit')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -166,46 +168,46 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
 
         {tab === 'overview' ? (
           <>
-            <SectionCard icon={UsersIcon} title="User details">
-              <Detail label="User type" value="Seller user (staff)" />
-              <Detail label="Role" value={role ?? (roles.loading ? 'Loading…' : 'No role')} />
-              <Detail label="Email" value={u.email} />
-              <Detail label="Phone" value={phone} />
-              <Detail label="Email verified" value={u.isEmailVerification == null ? null : u.isEmailVerification ? 'Yes' : 'No'} />
-              <Detail label="Phone verified" value={u.isPhoneVerification == null ? null : u.isPhoneVerification ? 'Yes' : 'No'} />
-              <Detail label="Last sign-in" value={u.lastLoginAt ? formatWhen(u.lastLoginAt) : null} />
-              <Detail label="Added" value={u.createdAt ? formatDay(u.createdAt) : null} />
-              <Detail label="Updated" value={u.updatedAt ? formatDay(u.updatedAt) : null} />
+            <SectionCard icon={UsersIcon} title={t('users.userDetails')}>
+              <Detail label={t('common.userType')} value="Seller user (staff)" />
+              <Detail label={t('common.role')} value={role ?? (roles.loading ? 'Loading…' : 'No role')} />
+              <Detail label={t('common.email')} value={u.email} />
+              <Detail label={t('common.phone')} value={phone} />
+              <Detail label={t('common.emailVerified')} value={u.isEmailVerification == null ? null : u.isEmailVerification ? 'Yes' : 'No'} />
+              <Detail label={t('common.phoneVerified')} value={u.isPhoneVerification == null ? null : u.isPhoneVerification ? 'Yes' : 'No'} />
+              <Detail label={t('users.lastSignIn')} value={u.lastLoginAt ? formatWhen(u.lastLoginAt) : null} />
+              <Detail label={t('common.added')} value={u.createdAt ? formatDay(u.createdAt) : null} />
+              <Detail label={t('common.updated')} value={u.updatedAt ? formatDay(u.updatedAt) : null} />
             </SectionCard>
 
-            <SectionCard icon={UserIcon} title="Profile">
-              <Detail label="Display name" value={u.userDisplayName} />
-              <Detail label="Gender" value={genderLabel(u.gender)} />
-              <Detail label="Bio" value={profile.data?.shortDescription ?? null} />
+            <SectionCard icon={UserIcon} title={t('users.profile')}>
+              <Detail label={t('common.displayName')} value={u.userDisplayName} />
+              <Detail label={t('common.gender')} value={genderLabel(u.gender)} />
+              <Detail label={t('users.bio')} value={profile.data?.shortDescription ?? null} />
             </SectionCard>
 
             {canEdit || canDelete ? (
-              <SectionCard icon={ShieldCheckIcon} title="Access">
-                {canEdit ? <ActionRow icon={ShieldCheckIcon} label="Assign role" hint="Change what this user can see and do." onPress={() => setAssigning(true)} /> : null}
-                {u.email ? <ActionRow icon={LockIcon} label={busy === 'reset' ? 'Sending…' : 'Send password reset link'} hint={`Emails ${u.email} a reset link.`} disabled={!!busy} onPress={resetPassword} /> : null}
+              <SectionCard icon={ShieldCheckIcon} title={t('users.access')}>
+                {canEdit ? <ActionRow icon={ShieldCheckIcon} label={t('users.assignRole')} hint={t('users.changeWhatThisUserCanSee')} onPress={() => setAssigning(true)} /> : null}
+                {u.email ? <ActionRow icon={LockIcon} label={busy === 'reset' ? t('common.sending') : t('users.sendPasswordResetLink')} hint={t('users.emailsEmailAResetLink', { email: u.email })} disabled={!!busy} onPress={resetPassword} /> : null}
                 {canToggle ? (
                   <ActionRow
                     icon={isActive ? BanIcon : CheckCircleIcon}
-                    label={busy === 'toggle' ? 'Saving…' : isActive ? 'Deactivate user' : 'Activate user'}
-                    hint={isActive ? 'Blocks sign-in without deleting the account.' : 'Lets them sign in again.'}
+                    label={busy === 'toggle' ? t('common.saving') : isActive ? t('users.deactivateUser') : t('users.activateUser')}
+                    hint={isActive ? t('users.blocksSignInWithoutDeletingThe') : t('users.letsThemSignInAgain')}
                     tone={isActive ? 'warn' : 'success'}
                     disabled={!!busy}
                     onPress={toggle}
                   />
                 ) : null}
-                {canDelete ? <ActionRow icon={TrashIcon} label={busy === 'delete' ? 'Deleting…' : 'Delete user'} hint="Removes the account. This can't be undone." tone="danger" disabled={!!busy} onPress={remove} /> : null}
+                {canDelete ? <ActionRow icon={TrashIcon} label={busy === 'delete' ? t('common.deleting') : t('users.deleteUser2')} hint={t('users.removesTheAccountThisCanT')} tone="danger" disabled={!!busy} onPress={remove} /> : null}
               </SectionCard>
             ) : null}
           </>
         ) : null}
 
         {tab === 'logins' ? (
-          <SectionCard icon={ClockIcon} title="Login history">
+          <SectionCard icon={ClockIcon} title={t('users.loginHistory2')}>
             {(sessions.data ?? []).length ? (
               (sessions.data ?? []).map(s => {
                 const live = Boolean(s.isActive) && !s.logoutTime;
@@ -213,20 +215,20 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
                   <View key={s.id} style={styles.item}>
                     <View style={styles.flex}>
                       <Text style={opsStyles.title}>{s.startTime ? formatWhen(s.startTime) : '—'}</Text>
-                      <Text style={opsStyles.muted}>{[s.logoutTime ? `Signed out ${formatWhen(s.logoutTime)}` : null, s.ipAddress ? `IP ${s.ipAddress}` : null].filter(Boolean).join(' · ') || ' '}</Text>
+                      <Text style={opsStyles.muted}>{[s.logoutTime ? t('users.signedOutLogouttime', { logoutTime: formatWhen(s.logoutTime) }) : null, s.ipAddress ? t('users.ipIpaddress', { ipAddress: s.ipAddress }) : null].filter(Boolean).join(' · ') || ' '}</Text>
                     </View>
-                    <Badge label={live ? 'Active' : 'Ended'} tone={live ? 'green' : 'slate'} />
+                    <Badge label={live ? t('common.active') : t('common.ended')} tone={live ? 'green' : 'slate'} />
                   </View>
                 );
               })
             ) : (
-              <Text style={[opsStyles.muted, styles.center]}>{sessions.loading ? 'Loading…' : 'No sign-ins recorded for this user yet.'}</Text>
+              <Text style={[opsStyles.muted, styles.center]}>{sessions.loading ? t('common.loading') : t('users.noSignInsRecordedForThis')}</Text>
             )}
           </SectionCard>
         ) : null}
 
         {tab === 'activity' ? (
-          <SectionCard icon={ClockIcon} title="Activity">
+          <SectionCard icon={ClockIcon} title={t('common.activity')}>
             {(activity.data ?? []).length ? (
               (activity.data ?? []).map(a => {
                 const Icon = a.action === 'LOGOUT' ? LogoutIcon : a.action === 'LOGIN' ? LockIcon : ClockIcon;
@@ -244,13 +246,13 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
                 );
               })
             ) : (
-              <Text style={[opsStyles.muted, styles.center]}>{activity.loading ? 'Loading…' : 'No account activity recorded yet.'}</Text>
+              <Text style={[opsStyles.muted, styles.center]}>{activity.loading ? t('common.loading') : t('users.noAccountActivityRecordedYet')}</Text>
             )}
           </SectionCard>
         ) : null}
 
         {tab === 'devices' ? (
-          <SectionCard icon={MobileIcon} title="Devices">
+          <SectionCard icon={MobileIcon} title={t('users.devices')}>
             {devices.length ? (
               devices.map(d => (
                 <View key={d.key} style={styles.item}>
@@ -262,14 +264,14 @@ export function UserDetailScreen({ navigation, route }: ScreenProps<'UserDetail'
                       {d.name}
                     </Text>
                     <Text style={opsStyles.muted} numberOfLines={1}>
-                      {`${d.detail} · ${d.sessions} session${d.sessions === 1 ? '' : 's'}${d.lastSeen ? ` · last ${formatWhen(d.lastSeen)}` : ''}`}
+                      {[d.detail, t('users.sessionCount', { count: d.sessions }), d.lastSeen ? t('users.lastSeen', { when: formatWhen(d.lastSeen) }) : null].filter(Boolean).join(' · ')}
                     </Text>
                   </View>
-                  {d.active ? <Badge label="Active" tone="green" /> : null}
+                  {d.active ? <Badge label={t('common.active')} tone="green" /> : null}
                 </View>
               ))
             ) : (
-              <Text style={[opsStyles.muted, styles.center]}>{sessions.loading ? 'Loading…' : 'No devices recorded for this user yet.'}</Text>
+              <Text style={[opsStyles.muted, styles.center]}>{sessions.loading ? t('common.loading') : t('users.noDevicesRecordedForThisUser')}</Text>
             )}
           </SectionCard>
         ) : null}

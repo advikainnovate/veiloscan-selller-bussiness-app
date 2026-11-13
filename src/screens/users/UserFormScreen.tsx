@@ -16,9 +16,11 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, CheckCircleIcon, EyeIcon, EyeOffIcon, LockIcon, ShieldCheckIcon, UserIcon, UsersIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** Add a staff user (a seller user under this seller) or edit one. */
 export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const isEdit = !!id;
   const { hasPermission } = useAuth();
@@ -109,7 +111,7 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
         // The profile is an extra: the account is saved even if this fails.
         await userService.upsertProfile(userId, { shortDescription: form.bio.trim() }).catch(() => {});
       }
-      toast(isEdit ? 'User updated' : form.password ? 'User created' : 'User created — their password has been emailed to them');
+      toast(isEdit ? t('users.userUpdated') : form.password ? t('users.userCreated') : t('users.userCreatedTheirPasswordHasBeen'));
       navigation.goBack();
     } catch (err) {
       fail(extractErrorMessage(err));
@@ -118,12 +120,12 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
     }
   }
 
-  const title = isEdit ? 'Edit User' : 'Add New User';
+  const title = isEdit ? t('users.editUser') : t('users.addNewUser');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Users" icon={UsersIcon} allowed={false} />
+        <ComingSoon label={t('users.users')} icon={UsersIcon} allowed={false} />
       </View>
     );
   }
@@ -140,24 +142,24 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Users" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={t('users.users')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <Text style={opsStyles.meta}>{isEdit ? "Update this team member's details and access." : 'Add a team member with their own sign-in. They work under your seller account.'}</Text>
+        <Text style={opsStyles.meta}>{isEdit ? t('users.updateThisTeamMembersDetailsAnd') : t('users.addATeamMemberWithTheir')}</Text>
 
-        <SectionCard icon={UserIcon} title="Account">
+        <SectionCard icon={UserIcon} title={t('common.account')}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <Field label="First name" required>
-                <Input value={form.firstName} onChangeText={v => set('firstName', v)} placeholder="First name" maxLength={100} autoCapitalize="words" accessibilityLabel="First name" />
+              <Field label={t('users.firstName')} required>
+                <Input value={form.firstName} onChangeText={v => set('firstName', v)} placeholder={t('users.firstName')} maxLength={100} autoCapitalize="words" accessibilityLabel={t('users.firstName')} />
               </Field>
             </View>
             <View style={styles.flex}>
-              <Field label="Last name" required>
-                <Input value={form.lastName} onChangeText={v => set('lastName', v)} placeholder="Last name" maxLength={100} autoCapitalize="words" accessibilityLabel="Last name" />
+              <Field label={t('users.lastName')} required>
+                <Input value={form.lastName} onChangeText={v => set('lastName', v)} placeholder={t('users.lastName')} maxLength={100} autoCapitalize="words" accessibilityLabel={t('users.lastName')} />
               </Field>
             </View>
           </View>
-          <Field label="Email" required={!isEdit} hint={isEdit ? "Email can't be changed here." : 'They sign in with this email.'}>
+          <Field label={t('common.email')} required={!isEdit} hint={isEdit ? t('users.emailCanTBeChangedHere') : t('users.theySignInWithThisEmail')}>
             <Input
               value={form.email}
               onChangeText={v => set('email', v)}
@@ -168,15 +170,15 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
               editable={!isEdit}
               style={isEdit ? styles.readOnly : undefined}
               maxLength={255}
-              accessibilityLabel="Email"
+              accessibilityLabel={t('common.email')}
             />
           </Field>
           <View style={styles.row}>
             <View style={styles.code}>
-              <SelectField label="Code" value={form.countryCode} options={COUNTRY_CODES} onChange={v => set('countryCode', v)} disabled={isEdit} />
+              <SelectField label={t('users.code')} value={form.countryCode} options={COUNTRY_CODES} onChange={v => set('countryCode', v)} disabled={isEdit} />
             </View>
             <View style={styles.flex}>
-              <Field label="Mobile number" required={!isEdit}>
+              <Field label={t('common.mobileNumber')} required={!isEdit}>
                 <Input
                   value={form.phoneNumber}
                   onChangeText={v => set('phoneNumber', v.replace(/\D/g, ''))}
@@ -185,26 +187,26 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
                   editable={!isEdit}
                   style={isEdit ? styles.readOnly : undefined}
                   maxLength={15}
-                  accessibilityLabel="Mobile number"
+                  accessibilityLabel={t('common.mobileNumber')}
                 />
               </Field>
             </View>
           </View>
           {!isEdit ? (
-            <Field label="Password" hint="Optional — leave blank and we'll email them a generated password.">
+            <Field label={t('common.password')} hint={t('users.optionalLeaveBlankAndWeLl')}>
               <View style={styles.passwordWrap}>
                 <Input
                   value={form.password}
                   onChangeText={v => set('password', v)}
-                  placeholder="Set a password"
+                  placeholder={t('users.setAPassword')}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   maxLength={255}
                   style={styles.passwordInput}
-                  accessibilityLabel="Password"
+                  accessibilityLabel={t('common.password')}
                 />
-                <Pressable accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} hitSlop={8} onPress={() => setShowPassword(s => !s)} style={styles.eye}>
+                <Pressable accessibilityRole="button" accessibilityLabel={showPassword ? t('common.hidePassword') : t('common.showPassword')} hitSlop={8} onPress={() => setShowPassword(s => !s)} style={styles.eye}>
                   {showPassword ? <EyeOffIcon size={18} color={colors.textSecondary} /> : <EyeIcon size={18} color={colors.textSecondary} />}
                 </Pressable>
               </View>
@@ -225,35 +227,35 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
           ) : null}
         </SectionCard>
 
-        <SectionCard icon={ShieldCheckIcon} title="Access" subtitle="The role decides what they can see and do in the app and the Seller Panel.">
+        <SectionCard icon={ShieldCheckIcon} title={t('users.access')} subtitle={t('users.theRoleDecidesWhatTheyCan')}>
           <SelectField
-            label="Role"
+            label={t('common.role')}
             required
             value={form.roleId}
             options={roleOptions}
             onChange={v => set('roleId', v)}
-            placeholder={roles.loading ? 'Loading roles…' : 'Select role'}
-            emptyText={roles.error ? "Roles couldn't be loaded" : 'No roles you can assign'}
+            placeholder={roles.loading ? t('users.loadingRoles') : t('users.selectRole')}
+            emptyText={roles.error ? t('users.rolesCouldnTBeLoaded') : t('users.noRolesYouCanAssign')}
           />
-          <Field label="Designation title" hint="Optional — e.g. Cashier, Store Manager">
-            <Input value={form.designationTitle} onChangeText={v => set('designationTitle', v)} placeholder="e.g. Cashier" maxLength={100} accessibilityLabel="Designation title" />
+          <Field label={t('users.designationTitle')} hint={t('users.optionalEGCashierStoreManager')}>
+            <Input value={form.designationTitle} onChangeText={v => set('designationTitle', v)} placeholder="e.g. Cashier" maxLength={100} accessibilityLabel={t('users.designationTitle')} />
           </Field>
           {isEdit ? (
-            <Field label="Status">
+            <Field label={t('common.status')}>
               <Choices options={STATUS_OPTIONS} value={form.status} onChange={v => set('status', v)} />
             </Field>
           ) : null}
         </SectionCard>
 
-        <SectionCard icon={LockIcon} title="Profile" subtitle="Optional details that help your team recognise them.">
-          <Field label="Display name">
-            <Input value={form.displayName} onChangeText={v => set('displayName', v)} placeholder="e.g. ravi.k" autoCapitalize="none" maxLength={100} accessibilityLabel="Display name" />
+        <SectionCard icon={LockIcon} title={t('users.profile')} subtitle={t('users.optionalDetailsThatHelpYourTeam')}>
+          <Field label={t('common.displayName')}>
+            <Input value={form.displayName} onChangeText={v => set('displayName', v)} placeholder="e.g. ravi.k" autoCapitalize="none" maxLength={100} accessibilityLabel={t('common.displayName')} />
           </Field>
-          <Field label="Gender">
+          <Field label={t('common.gender')}>
             <Choices options={GENDER_OPTIONS} value={form.gender} onChange={v => set('gender', v === form.gender ? '' : v)} />
           </Field>
-          <Field label="Bio" hint={`${form.bio.length}/500`}>
-            <Input value={form.bio} onChangeText={v => set('bio', v)} placeholder="A short note about this team member" multiline maxLength={500} accessibilityLabel="Bio" />
+          <Field label={t('users.bio')} hint={`${form.bio.length}/500`}>
+            <Input value={form.bio} onChangeText={v => set('bio', v)} placeholder={t('users.aShortNoteAboutThisTeam')} multiline maxLength={500} accessibilityLabel={t('users.bio')} />
           </Field>
         </SectionCard>
 
@@ -264,7 +266,7 @@ export function UserFormScreen({ navigation, route }: ScreenProps<'UserForm'>) {
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={isEdit ? 'Save Changes' : 'Create User'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={isEdit ? t('common.saveChanges') : t('users.createUser')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

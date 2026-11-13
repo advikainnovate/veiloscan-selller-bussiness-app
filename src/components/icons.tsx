@@ -33,6 +33,12 @@ function makeIcon(shapes: Shape[], defaultStroke = 1.7) {
   };
 }
 
+export const GlobeIcon = makeIcon([
+  { circle: { cx: 12, cy: 12, r: 8.5 } },
+  { d: 'M3.5 12h17' },
+  { d: 'M12 3.5a13 13 0 0 1 3.4 8.5 13 13 0 0 1-3.4 8.5 13 13 0 0 1-3.4-8.5A13 13 0 0 1 12 3.5z' },
+]);
+
 export const MailIcon = makeIcon([
   { rect: { x: 3.5, y: 5.5, width: 17, height: 13, rx: 2 } },
   { d: 'M4.5 7 12 13l7.5-6' },

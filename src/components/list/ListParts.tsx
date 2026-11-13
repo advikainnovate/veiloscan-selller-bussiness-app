@@ -2,9 +2,11 @@ import React, { useEffect, useRef, type ComponentType } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, fonts, radius, shadow } from '../../theme';
 import { AlertCircleIcon, CloseIcon, SearchIcon, type IconProps } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /** The search box at the top of a list. */
 export function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (text: string) => void; placeholder: string }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.search}>
       <SearchIcon size={18} color={colors.textMuted} />
@@ -21,7 +23,7 @@ export function SearchBar({ value, onChange, placeholder }: { value: string; onC
         style={styles.searchInput}
       />
       {value ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} onPress={() => onChange('')}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('ui.clearSearch')} hitSlop={10} onPress={() => onChange('')}>
           <CloseIcon size={16} color={colors.textMuted} />
         </Pressable>
       ) : null}
@@ -77,15 +79,16 @@ export function EmptyState({ icon: Icon, title, text }: { icon: ComponentType<Ic
 
 /** A load failed; tap to try again. */
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.state}>
       <View style={[styles.stateIcon, styles.stateIconError]}>
         <AlertCircleIcon size={28} color={colors.error} />
       </View>
-      <Text style={styles.stateTitle}>Couldn't load this</Text>
+      <Text style={styles.stateTitle}>{t('ui.couldnTLoadThis')}</Text>
       <Text style={styles.stateText}>{message}</Text>
       <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}>
-        <Text style={styles.retryText}>Try again</Text>
+        <Text style={styles.retryText}>{t('ui.tryAgain')}</Text>
       </Pressable>
     </View>
   );
@@ -93,6 +96,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
 
 /** Placeholder cards while a list loads. */
 export function ListSkeleton({ rows = 5, height = 92 }: { rows?: number; height?: number }) {
+  const { t } = useTranslation();
   const opacity = useRef(new Animated.Value(0.5)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -105,7 +109,7 @@ export function ListSkeleton({ rows = 5, height = 92 }: { rows?: number; height?
     return () => loop.stop();
   }, [opacity]);
   return (
-    <View style={styles.skeletons} accessibilityLabel="Loading">
+    <View style={styles.skeletons} accessibilityLabel={t('ui.loading')}>
       {Array.from({ length: rows }, (_, i) => (
         <Animated.View key={i} style={[styles.skeleton, { height, opacity }]} />
       ))}

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // This app is for sellers only: SELLER accounts and their staff (SELLER_USER).
 // The API enforces this at login; the app also checks any saved session.
 export const SELLER_APP_TYPES = ['SELLER', 'SELLER_USER'];
@@ -6,20 +7,19 @@ export function canUseSellerApp(userType: unknown): boolean {
   return SELLER_APP_TYPES.includes(userType as string);
 }
 
-export const NOT_SELLER_MESSAGE =
-  "This account can't use VeiloScan Business. Sign in with a seller account.";
+export const notSellerMessage = () => i18n.t('auth.notSellerAccount');
 
 // A seller the Sales Portal onboarded can't sign in until their plan is
 // active; the API names the pending step in the login error's `errorCode`.
 export const ONBOARDING_STEPS = ['Account verified', 'Store registered', 'Store approved', 'Subscription active'] as const;
 
 const PENDING_STEP: Record<string, { index: number; label: string }> = {
-  SELLER_STEP_STORE_REGISTRATION: { index: 1, label: 'Store registration pending' },
-  SELLER_STEP_STORE_CHANGES: { index: 1, label: 'Store changes requested' },
-  SELLER_STEP_STORE_REVIEW: { index: 2, label: 'Awaiting store approval' },
-  SELLER_STEP_SUBSCRIPTION: { index: 3, label: 'Subscription not assigned' },
-  SELLER_STEP_PAYMENT: { index: 3, label: 'Subscription payment pending' },
-  SELLER_STEP_CASH_VERIFICATION: { index: 3, label: 'Cash payment being verified' },
+  SELLER_STEP_STORE_REGISTRATION: { index: 1, get label() { return i18n.t('auth.storeRegistrationPending'); } },
+  SELLER_STEP_STORE_CHANGES: { index: 1, get label() { return i18n.t('common.storeChangesRequested'); } },
+  SELLER_STEP_STORE_REVIEW: { index: 2, get label() { return i18n.t('auth.awaitingStoreApproval'); } },
+  SELLER_STEP_SUBSCRIPTION: { index: 3, get label() { return i18n.t('auth.subscriptionNotAssigned'); } },
+  SELLER_STEP_PAYMENT: { index: 3, get label() { return i18n.t('auth.subscriptionPaymentPending'); } },
+  SELLER_STEP_CASH_VERIFICATION: { index: 3, get label() { return i18n.t('auth.cashPaymentBeingVerified'); } },
 };
 
 export type PendingStep = { index: number; label: string };

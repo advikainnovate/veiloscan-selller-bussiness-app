@@ -18,9 +18,11 @@ import { ActionSheet, compactStyles, CountTiles, Fab, ListTop, RowCard, Separato
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { BanIcon, CheckCircleIcon, EditIcon, EyeIcon, MapPinIcon, TrashIcon, TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** Sales › Shipping: delivery zones and their shipping methods & rates, as the panel's list. */
 export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const listPadding = useListPadding();
@@ -60,18 +62,18 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Shipping" onBack={navigation.goBack} />
-        <ComingSoon label="Shipping" icon={TruckIcon} allowed={false} />
+        <AppHeader title={t('shipping.shipping')} onBack={navigation.goBack} />
+        <ComingSoon label={t('shipping.shipping')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
 
   async function toggle(z: Row) {
     const on = isActiveRow(z);
-    if (!(await confirmAction(`${on ? 'Deactivate' : 'Activate'} "${String(z.zoneTitle)}"?`, undefined, on ? 'Deactivate' : 'Activate', on))) return;
+    if (!(await confirmAction(`${on ? 'Deactivate' : 'Activate'} "${String(z.zoneTitle)}"?`, undefined, on ? t('common.deactivate') : t('common.activate'), on))) return;
     try {
       await shippingZoneService.update(z.id, { status: on ? 0 : 1 });
-      toast(`Zone ${on ? 'deactivated' : 'activated'}`);
+      toast(on ? t('shipping.zoneDeactivated') : t('shipping.zoneActivated'));
       refresh();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -79,10 +81,10 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
   }
 
   async function remove(z: Row) {
-    if (!(await confirmAction('Delete zone?', `"${String(z.zoneTitle)}" will be removed from this list. Deactivate it instead if you only want to take it out of use.`, 'Delete', true))) return;
+    if (!(await confirmAction(t('shipping.deleteZone'), t('shipping.zonetitleWillBeRemovedFromThis', { zoneTitle: String(z.zoneTitle) }), t('common.delete'), true))) return;
     try {
       await shippingZoneService.remove(z.id);
-      toast('Zone deleted');
+      toast(t('shipping.zoneDeleted'));
       refresh();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -91,22 +93,22 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Shipping" subtitle="Sales" onBack={navigation.goBack} />
+      <AppHeader title={t('shipping.shipping')} subtitle={t('common.sales')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={search} onChange={setSearch} placeholder="Search by zone title…" />
+        <SearchBar value={search} onChange={setSearch} placeholder={t('shipping.searchByZoneTitle')} />
         <CountTiles
           tiles={[
-            { key: 'zones', label: 'Zones', count: zones.length, info: true, ...TILE_COLORS.orange },
-            { key: '1', label: 'Active', count: active, ...TILE_COLORS.green },
-            { key: '0', label: 'Inactive', count: zones.length - active, ...TILE_COLORS.red },
-            { key: 'methods', label: 'Methods', count: (methods.data ?? []).length, info: true, ...TILE_COLORS.amber },
+            { key: 'zones', label: t('shipping.zones'), count: zones.length, info: true, ...TILE_COLORS.orange },
+            { key: '1', label: t('common.active'), count: active, ...TILE_COLORS.green },
+            { key: '0', label: t('common.inactive'), count: zones.length - active, ...TILE_COLORS.red },
+            { key: 'methods', label: t('shipping.methods'), count: (methods.data ?? []).length, info: true, ...TILE_COLORS.amber },
           ]}
           value={status}
           onSelect={setStatus}
           loading={loading && !data}
         />
         <SummaryLine
-          hint="Delivery zones and their shipping methods & rates."
+          hint={t('shipping.deliveryZonesAndTheirShippingMethods')}
           filtered={isFiltered}
           shown={rows.length}
           total={zones.length}
@@ -134,8 +136,8 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={TruckIcon}
-                  title={isFiltered ? 'No zones match' : 'No shipping zones found'}
-                  text={isFiltered ? 'Try another filter or search term.' : 'Create a zone for the states you deliver to, then add its shipping methods.'}
+                  title={isFiltered ? t('shipping.noZonesMatch') : t('shipping.noShippingZonesFound')}
+                  text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('shipping.createAZoneForTheStates')}
                 />
               </View>
             )
@@ -144,7 +146,7 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
             const on = isActiveRow(z);
             const n = countByZone.get(z.id) ?? 0;
             return (
-              <RowCard label={`Open ${String(z.zoneTitle)}`} onPress={() => navigation.navigate('ShippingZone', { id: z.id })}>
+              <RowCard label={t('shipping.openZonetitle', { zoneTitle: String(z.zoneTitle) })} onPress={() => navigation.navigate('ShippingZone', { id: z.id })}>
                 <View style={compactStyles.head}>
                   <View style={[compactStyles.thumb, styles.icon]}>
                     <TruckIcon size={16} color={colors.secondary} />
@@ -153,10 +155,10 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
                     <Text style={compactStyles.name} numberOfLines={1}>
                       {String(z.zoneTitle)}
                     </Text>
-                    <Text style={compactStyles.meta} numberOfLines={1}>{`${String(z.zoneSlug ?? '')} · ${n} method${n === 1 ? '' : 's'}`}</Text>
+                    <Text style={compactStyles.meta} numberOfLines={1}>{`${String(z.zoneSlug ?? '')} · ${t('shipping.methodCount', { count: n })}`}</Text>
                   </View>
-                  <Badge label={on ? 'Active' : 'Inactive'} tone={on ? 'green' : 'slate'} />
-                  <Pressable accessibilityRole="button" accessibilityLabel={`More for ${String(z.zoneTitle)}`} hitSlop={10} onPress={() => setActionsFor(z)} style={compactStyles.more}>
+                  <Badge label={on ? t('common.active') : t('common.inactive')} tone={on ? 'green' : 'slate'} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('shipping.moreForZonetitle', { zoneTitle: String(z.zoneTitle) })} hitSlop={10} onPress={() => setActionsFor(z)} style={compactStyles.more}>
                     <Text style={compactStyles.dots}>⋮</Text>
                   </Pressable>
                 </View>
@@ -172,7 +174,7 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
         />
       )}
 
-      <Fab label="Create Zone" onPress={() => navigation.navigate('ShippingZoneForm')} />
+      <Fab label={t('shipping.createZone')} onPress={() => navigation.navigate('ShippingZoneForm')} />
 
       <ActionSheet
         visible={!!actionsFor}
@@ -181,10 +183,10 @@ export function ShippingScreen({ navigation }: ScreenProps<'Shipping'>) {
         actions={
           actionsFor
             ? [
-                { label: 'View', icon: EyeIcon, onPress: () => navigation.navigate('ShippingZone', { id: actionsFor.id }) },
-                { label: 'Edit', icon: EditIcon, onPress: () => navigation.navigate('ShippingZoneForm', { id: actionsFor.id }) },
-                { label: isActiveRow(actionsFor) ? 'Deactivate' : 'Activate', icon: isActiveRow(actionsFor) ? BanIcon : CheckCircleIcon, onPress: () => toggle(actionsFor) },
-                { label: 'Delete', icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
+                { label: t('common.view'), icon: EyeIcon, onPress: () => navigation.navigate('ShippingZone', { id: actionsFor.id }) },
+                { label: t('common.edit'), icon: EditIcon, onPress: () => navigation.navigate('ShippingZoneForm', { id: actionsFor.id }) },
+                { label: isActiveRow(actionsFor) ? t('common.deactivate') : t('common.activate'), icon: isActiveRow(actionsFor) ? BanIcon : CheckCircleIcon, onPress: () => toggle(actionsFor) },
+                { label: t('common.delete'), icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
               ]
             : []
         }

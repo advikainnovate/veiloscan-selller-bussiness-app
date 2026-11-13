@@ -63,6 +63,7 @@ import { confirmAction, Detail, opsStyles } from '../../components/operations/Op
 import { ContactFields, ErrorLine, GstFields, HoursEditor, ImagePickRow, SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, CheckCircleIcon, ClockIcon, EditIcon, FileTextIcon, ImageIcon, PlusIcon, RefreshIcon, SettingsIcon, StoreIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type Busy = 'next' | 'draft' | 'review' | null;
 interface Img {
@@ -94,6 +95,7 @@ const NOTES = [
  * resumes it. stores:create to start, stores:edit to continue.
  */
 export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStore'>) {
+  const { t } = useTranslation();
   const { hasPermission, user } = useAuth();
   const { refresh } = useStore();
   const toast = useToast();
@@ -146,7 +148,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
     setStep(wizardStepFor(Number(s.onboardingStep) || 1));
   }, [loaded.data]);
 
-  const title = 'Add New Store';
+  const title = t('common.addNewStore');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
@@ -167,7 +169,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ErrorState message={loaded.error || 'Store not found'} onRetry={loaded.reload} />
+        <ErrorState message={loaded.error || t('store.storeNotFound')} onRetry={loaded.reload} />
       </View>
     );
   }
@@ -181,13 +183,13 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
           <View style={[styles.doneIcon, { backgroundColor: approved ? colors.success : colors.warning }]}>
             {approved ? <CheckCircleIcon size={24} color={colors.white} /> : <ClockIcon size={24} color={colors.white} />}
           </View>
-          <Text style={styles.doneTitle}>{approved ? 'This store has been approved and is live.' : 'Submitted — waiting for approval'}</Text>
+          <Text style={styles.doneTitle}>{approved ? t('store.thisStoreHasBeenApprovedAnd') : t('store.submittedWaitingForApproval')}</Text>
           {!approved ? (
             <Text style={styles.doneText}>
-              {`Our team is reviewing the details${store.submittedAt ? ` submitted on ${formatDay(store.submittedAt)}` : ''}. The owner will get an email once it's approved, or if anything needs to be changed.`}
+              {store.submittedAt ? t('store.reviewingDetailsSubmittedOn', { date: formatDay(store.submittedAt) }) : t('store.reviewingDetails')}
             </Text>
           ) : null}
-          <Button title="Open Store" onPress={() => navigation.replace('StoreSettings', { storeId: store.id })} />
+          <Button title={t('store.openStore')} onPress={() => navigation.replace('StoreSettings', { storeId: store.id })} />
         </View>
       </View>
     );
@@ -247,7 +249,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
       const id = started.store.id;
       setSaved(await storeManageService.saveStoreDetails(id, details));
       seededDescription.current = { text: business.description, html: details.description };
-      toast('Draft store created');
+      toast(t('store.draftStoreCreated'));
       // The switcher lists it from now on.
       refresh();
       return id;
@@ -260,7 +262,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
   async function saveSetup(id: string) {
     fail(contactProblem(contact));
     fail(hoursProblem(hours));
-    if (!!contact.latitude.trim() !== !!contact.longitude.trim()) fail('Enter both latitude and longitude, or neither');
+    if (!!contact.latitude.trim() !== !!contact.longitude.trim()) fail(t('store.enterBothLatitudeAndLongitudeOr'));
     // Hours, config and branding aren't onboarding steps; the address goes last so its progress counts them all.
     await Promise.all([
       storeManageService.updateBusinessHours(
@@ -283,22 +285,22 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
       const id = store!.id;
       if (step === 2) {
         await saveSetup(id);
-        if (missingImages.length) fail(`Add the ${missingImages.join(' and ')} — ${gstChoice === null ? 'every store needs them' : `required for stores ${gstChoice ? 'with' : 'without'} GST`}`);
+        if (missingImages.length) fail(t(gstChoice === null ? 'store.addImagesEveryStore' : gstChoice ? 'store.addImagesWithGst' : 'store.addImagesWithoutGst', { images: missingImages.join(t('store.andJoiner')) }));
         return goTo(3);
       }
       if (step === 3) {
         const missing = missingDocuments(gst.gstRegistered, documents, documentRules);
-        if (missing.length) fail(`Upload the required documents: ${missing.join(', ')}`);
+        if (missing.length) fail(t('store.uploadTheRequiredDocumentsJoin', { join: missing.join(', ') }));
         fail(gstProblem(gst));
         await storeManageService.saveGstDetails(id, gstPayload(gst));
         setSaved(await storeManageService.setOnboardingStep(id, BACKEND_REVIEW_STEP));
-        if (missingImages.length) fail(`Stores ${gst.gstRegistered ? 'with' : 'without'} GST need a ${missingImages.join(' and ').toLowerCase()} — add them in Store Setup`);
+        if (missingImages.length) fail(t(gst.gstRegistered ? 'store.gstStoresNeedImages' : 'store.nonGstStoresNeedImages', { images: missingImages.join(t('store.andJoiner')).toLowerCase() }));
         return goTo(4);
       }
-      if (!terms) fail('Please accept the terms and conditions');
+      if (!terms) fail(t('store.pleaseAcceptTheTermsAndConditions'));
       // Submitted stores stay drafts until approved.
       await storeManageService.completeOnboarding(id);
-      toast(resubmission ? 'Store resubmitted for approval' : 'Store submitted for approval');
+      toast(resubmission ? t('store.storeResubmittedForApproval') : t('store.storeSubmittedForApproval'));
       await refresh();
       navigation.replace('StoreSettings', { storeId: id });
     });
@@ -307,7 +309,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
   function saveDraft() {
     return run('draft', async () => {
       if (step === 1) await saveBusiness();
-      toast('Draft saved');
+      toast(t('store.draftSaved'));
       navigation.goBack();
     });
   }
@@ -321,31 +323,31 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
   }
 
   async function cancel() {
-    if (!store && (business.name || business.description) && !(await confirmAction('Discard this store?', 'Nothing has been saved yet.', 'Discard', true))) return;
+    if (!store && (business.name || business.description) && !(await confirmAction(t('store.discardThisStore'), t('store.nothingHasBeenSavedYet'), t('common.discard'), true))) return;
     navigation.goBack();
   }
 
   const completed = (s: number) => (s === 1 ? !!store : s === 2 ? hasSettings : s === 3 ? backendStep >= BACKEND_REVIEW_STEP || gstTouched : false);
   const reachable = (s: number) => s === 1 || (!!store && s <= furthest && (s < 3 || hasSettings));
-  const nextLabel = step === 4 ? (resubmission ? 'Resubmit for Approval' : 'Submit for Approval') : `Next: ${WIZARD_STEPS[step].label}`;
+  const nextLabel = step === 4 ? (resubmission ? t('store.resubmitForApproval') : t('store.submitForApproval')) : t('common.nextLabel', { label: WIZARD_STEPS[step].label });
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title={title} subtitle={store?.name || 'Stores'} onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={store?.name || t('common.stores')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={opsStyles.content} keyboardShouldPersistTaps="handled">
         <Text style={opsStyles.meta}>
           {step === 4
-            ? 'Review your information before submitting. You can go back and edit any section if needed.'
-            : 'Register a new store on the E-Shop platform. Complete the onboarding details below.'}
+            ? t('store.reviewYourInformationBeforeSubmittingYou')
+            : t('store.registerANewStoreOnThe')}
         </Text>
 
         {resubmission ? (
           <View style={styles.rejected}>
             <AlertCircleIcon size={18} color={colors.error} />
             <View style={styles.flex}>
-              <Text style={styles.rejectedTitle}>{`Changes requested${store?.reviewedAt ? ` on ${formatDay(store.reviewedAt)}` : ''}`}</Text>
+              <Text style={styles.rejectedTitle}>{store?.reviewedAt ? t('store.changesRequestedOn', { date: formatDay(store.reviewedAt) }) : t('store.changesRequested')}</Text>
               <Text style={styles.rejectedText}>{store?.rejectionReason}</Text>
-              <Text style={styles.rejectedHint}>Update the sections below, then resubmit from Review & Submit.</Text>
+              <Text style={styles.rejectedHint}>{t('store.updateTheSectionsBelowThenResubmit')}</Text>
             </View>
           </View>
         ) : null}
@@ -360,7 +362,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
                 key={s.step}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on, disabled: !can }}
-                accessibilityLabel={`Step ${s.step}: ${s.label}`}
+                accessibilityLabel={t('store.stepStepLabel', { step: s.step, label: s.label })}
                 disabled={!can || busy !== null}
                 onPress={() => goTo(s.step)}
                 style={styles.stepItem}
@@ -380,7 +382,7 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
           <Pressable accessibilityRole="button" onPress={() => goTo(2)} style={styles.notice}>
             <AlertCircleIcon size={16} color={colors.warningDark} />
             <Text style={styles.noticeText}>
-              {`Stores ${liveGst ? 'with' : 'without'} GST need a ${(step === 4 ? progress?.missingBranding ?? missingImages : missingImages).join(' and ').toLowerCase()}. Tap to add them in Store Setup.`}
+              {t(liveGst ? 'store.gstStoresNeedImagesTap' : 'store.nonGstStoresNeedImagesTap', { images: (step === 4 ? progress?.missingBranding ?? missingImages : missingImages).join(t('store.andJoiner')).toLowerCase() })}
             </Text>
           </Pressable>
         ) : null}
@@ -420,13 +422,13 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
 
         {step === 1 ? (
           <View style={styles.actions}>
-            <Button title="Save as Draft" variant="ghost" onPress={saveDraft} loading={busy === 'draft'} disabled={busy !== null} style={styles.ghost} />
-            {hasSettings ? <Button title="Review & Submit" variant="ghost" onPress={jumpToReview} loading={busy === 'review'} disabled={busy !== null} style={styles.ghost} /> : null}
+            <Button title={t('store.saveAsDraft')} variant="ghost" onPress={saveDraft} loading={busy === 'draft'} disabled={busy !== null} style={styles.ghost} />
+            {hasSettings ? <Button title={t('store.reviewAndSubmit')} variant="ghost" onPress={jumpToReview} loading={busy === 'review'} disabled={busy !== null} style={styles.ghost} /> : null}
           </View>
         ) : null}
-        {step === 4 ? <Button title="Save as Draft" variant="ghost" onPress={saveDraft} loading={busy === 'draft'} disabled={busy !== null} style={styles.ghost} /> : null}
+        {step === 4 ? <Button title={t('store.saveAsDraft')} variant="ghost" onPress={saveDraft} loading={busy === 'draft'} disabled={busy !== null} style={styles.ghost} /> : null}
         <Button title={nextLabel} onPress={next} loading={busy === 'next'} disabled={busy !== null || (step === 4 && (!terms || !progress?.canComplete))} />
-        <Button title={step === 1 ? 'Cancel' : 'Previous'} variant="ghost" onPress={step === 1 ? cancel : () => goTo(step - 1)} disabled={busy !== null} style={styles.ghost} />
+        <Button title={step === 1 ? t('common.cancel') : t('store.previous')} variant="ghost" onPress={step === 1 ? cancel : () => goTo(step - 1)} disabled={busy !== null} style={styles.ghost} />
       </ScrollView>
     </View>
   );
@@ -435,36 +437,37 @@ export function CreateStoreScreen({ navigation, route }: ScreenProps<'CreateStor
 // ── 1 · Business details ─────────────────────────────────────────────────
 
 function BusinessStep({ value, onChange, owner }: { value: NewStoreForm; onChange: (v: NewStoreForm) => void; owner: { name: string; email: string; phone: string } }) {
+  const { t } = useTranslation();
   const set = <K extends keyof NewStoreForm>(k: K, v: NewStoreForm[K]) => onChange({ ...value, [k]: v });
   const words = countWords(value.description);
   const chars = plainText(value.description).length;
   return (
-    <SectionCard icon={StoreIcon} title="Business Details" subtitle="Enter the basic information about the store.">
-      <Field label="Store Name" required hint="This will be visible to customers.">
-        <Input value={value.name} onChangeText={v => set('name', v)} placeholder="Fresh Basket" maxLength={150} accessibilityLabel="Store Name" />
+    <SectionCard icon={StoreIcon} title={t('store.businessDetails')} subtitle={t('store.enterTheBasicInformationAboutThe')}>
+      <Field label={t('store.storeName')} required hint={t('store.thisWillBeVisibleToCustomers')}>
+        <Input value={value.name} onChangeText={v => set('name', v)} placeholder={t('store.freshBasket')} maxLength={150} accessibilityLabel={t('store.storeName')} />
       </Field>
-      <SelectField label="Business Type" required value={value.businessType} options={BUSINESS_TYPES} onChange={v => set('businessType', v)} placeholder="Select business type" />
-      <SelectField label="Business Category" required value={value.businessCategory} options={CATEGORY_OPTIONS} onChange={v => set('businessCategory', v)} placeholder="Select category" />
-      <Field label="Description" required hint="What you sell, what makes the store special, and how customers can shop — at least 100 words.">
+      <SelectField label={t('store.businessType')} required value={value.businessType} options={BUSINESS_TYPES} onChange={v => set('businessType', v)} placeholder={t('store.selectBusinessType')} />
+      <SelectField label={t('store.businessCategory')} required value={value.businessCategory} options={CATEGORY_OPTIONS} onChange={v => set('businessCategory', v)} placeholder={t('store.selectCategory')} />
+      <Field label={t('common.description')} required hint={t('store.whatYouSellWhatMakesThe')}>
         <Input
           value={value.description}
           onChangeText={v => set('description', v)}
-          placeholder="Tell us about the store..."
+          placeholder={t('store.tellUsAboutTheStore')}
           multiline
           maxLength={DESCRIPTION_MAX + 200}
           style={styles.textArea}
-          accessibilityLabel="Description"
+          accessibilityLabel={t('common.description')}
         />
       </Field>
       <Text style={[styles.counter, words >= DESCRIPTION_MIN_WORDS ? opsStyles.success : null, chars > DESCRIPTION_MAX ? opsStyles.danger : null]}>
-        {`${words} / ${DESCRIPTION_MIN_WORDS} words · ${chars} / ${DESCRIPTION_MAX} characters`}
+        {t('store.wordsDescriptionMinWordsWordsChars', { words, DESCRIPTION_MIN_WORDS, chars, DESCRIPTION_MAX })}
       </Text>
-      <Detail label="Owner Name" value={owner.name} />
-      <Detail label="Owner Email" value={owner.email} />
-      <Detail label="Owner Phone" value={owner.phone} />
-      <Text style={opsStyles.muted}>Filled from the owner account.</Text>
-      <SelectField label="Timezone" required value={value.timezone} options={TIMEZONES} onChange={v => set('timezone', v)} />
-      <SelectField label="Currency" required value={value.currency} options={CURRENCIES} onChange={v => set('currency', v)} />
+      <Detail label={t('store.ownerName')} value={owner.name} />
+      <Detail label={t('store.ownerEmail')} value={owner.email} />
+      <Detail label={t('store.ownerPhone')} value={owner.phone} />
+      <Text style={opsStyles.muted}>{t('store.filledFromTheOwnerAccount')}</Text>
+      <SelectField label={t('common.timezone')} required value={value.timezone} options={TIMEZONES} onChange={v => set('timezone', v)} />
+      <SelectField label={t('store.currency')} required value={value.currency} options={CURRENCIES} onChange={v => set('currency', v)} />
     </SectionCard>
   );
 }
@@ -486,24 +489,25 @@ function SetupStep(p: {
   logoHint?: string;
   bannerHint?: string;
 }) {
+  const { t: tr } = useTranslation();
   const toggles: { key: keyof typeof p.toggles; label: string }[] = [
-    { key: 'acceptOrders', label: 'Accept orders' },
-    { key: 'onlinePaymentEnabled', label: 'Online payments' },
-    { key: 'guestCheckoutEnabled', label: 'Guest checkout' },
+    { key: 'acceptOrders', label: tr('store.acceptOrders') },
+    { key: 'onlinePaymentEnabled', label: tr('store.onlinePayments') },
+    { key: 'guestCheckoutEnabled', label: tr('store.guestCheckout') },
   ];
   return (
     <>
-      <SectionCard icon={SettingsIcon} title="Store Setup" subtitle="Your store address, contact details and operational settings.">
+      <SectionCard icon={SettingsIcon} title={tr('store.storeSetup')} subtitle={tr('store.yourStoreAddressContactDetailsAnd')}>
         <ContactFields form={p.contact} setForm={p.setContact} withTimes={false} />
       </SectionCard>
-      <SectionCard icon={ImageIcon} title="Store Images">
+      <SectionCard icon={ImageIcon} title={tr('store.storeImages')}>
         <ImagePickRow kind="logo" storeId={p.storeId} url={p.logo?.url ?? null} hint={p.logoHint} onUploaded={(id, url) => p.setLogo({ id, url })} onRemove={() => p.setLogo(null)} />
         <ImagePickRow kind="banner" storeId={p.storeId} url={p.banner?.url ?? null} hint={p.bannerHint} onUploaded={(id, url) => p.setBanner({ id, url })} onRemove={() => p.setBanner(null)} />
       </SectionCard>
-      <SectionCard icon={ClockIcon} title="Business Hours" subtitle="Opening and closing time per day">
+      <SectionCard icon={ClockIcon} title={tr('store.businessHours')} subtitle={tr('store.openingAndClosingTimePerDay')}>
         <HoursEditor rows={p.hours} setRows={p.setHours} />
       </SectionCard>
-      <SectionCard icon={SettingsIcon} title="Store Settings">
+      <SectionCard icon={SettingsIcon} title={tr('common.storeSettings')}>
         {toggles.map(t => (
           <View key={t.key} style={opsStyles.rowBetween}>
             <Text style={opsStyles.title}>{t.label}</Text>
@@ -540,6 +544,7 @@ function GstStep({
   onProgress: (p: OnboardingProgress) => void;
   reload: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [uploading, setUploading] = useState<string | null>(null);
   const [otherType, setOtherType] = useState('OTHER');
@@ -559,10 +564,10 @@ function GstStep({
       if (replacing) {
         await storeManageService.reuploadDocument(storeId, String(replacing.id), payload);
         await reload();
-        toast('New file uploaded — sent back for review');
+        toast(t('store.newFileUploadedSentBackFor'));
       } else {
         onProgress(await storeManageService.addOnboardingDocument(storeId, { documentType, ...payload }));
-        toast('Document uploaded');
+        toast(t('store.documentUploaded'));
       }
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -572,10 +577,10 @@ function GstStep({
   }
 
   async function remove(doc: Rec) {
-    if (!(await confirmAction('Remove this document?', undefined, 'Remove', true))) return;
+    if (!(await confirmAction(t('common.removeThisDocument'), undefined, t('common.remove'), true))) return;
     try {
       onProgress(await storeManageService.removeOnboardingDocument(storeId, String(doc.id)));
-      toast('Document removed');
+      toast(t('common.documentRemoved'));
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
     }
@@ -589,21 +594,21 @@ function GstStep({
           <FileTextIcon size={15} color={colors.secondaryDark} />
           <Pressable accessibilityRole="link" disabled={!doc.fileUrl} onPress={() => Linking.openURL(String(doc.fileUrl))} style={styles.flex}>
             <Text style={styles.link} numberOfLines={1}>
-              {(doc.fileName as string) || 'View file'}
+              {(doc.fileName as string) || t('store.viewFile')}
             </Text>
           </Pressable>
           <Badge label={st.label} tone={st.tone} />
         </View>
-        {doc.rejectionReason ? <Text style={[opsStyles.meta, opsStyles.danger]}>{`Rejected: ${String(doc.rejectionReason)}`}</Text> : null}
+        {doc.rejectionReason ? <Text style={[opsStyles.meta, opsStyles.danger]}>{t('store.rejectedRejectionreason', { rejectionReason: String(doc.rejectionReason) })}</Text> : null}
         <View style={opsStyles.row}>
           {doc.verificationStatus === 'REJECTED' ? (
             <Pressable accessibilityRole="button" disabled={!!uploading} onPress={() => upload(String(doc.documentType), doc)} style={opsStyles.smallBtn}>
               <RefreshIcon size={14} color={colors.text} />
-              <Text style={opsStyles.smallBtnText}>{uploading === String(doc.id) ? 'Uploading…' : 'Re-upload'}</Text>
+              <Text style={opsStyles.smallBtnText}>{uploading === String(doc.id) ? t('common.uploading') : 'Re-upload'}</Text>
             </Pressable>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${labelFor(DOCUMENT_TYPES, doc.documentType)}`} onPress={() => remove(doc)} style={opsStyles.smallBtn}>
-            <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Remove</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('store.removeLabelfor', { labelFor: labelFor(DOCUMENT_TYPES, doc.documentType) })} onPress={() => remove(doc)} style={opsStyles.smallBtn}>
+            <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{t('common.remove')}</Text>
           </Pressable>
         </View>
       </View>
@@ -612,10 +617,10 @@ function GstStep({
 
   return (
     <>
-      <SectionCard icon={FileTextIcon} title="GST & Documents" subtitle="Choose whether the store registers with or without GST, then upload the required documents.">
+      <SectionCard icon={FileTextIcon} title={t('store.gstAndDocuments')} subtitle={t('store.chooseWhetherTheStoreRegistersWith')}>
         <GstFields form={gst} set={set} />
       </SectionCard>
-      <SectionCard icon={FileTextIcon} title="Business Documents" subtitle="Photos of the documents. Every document is verified before approval.">
+      <SectionCard icon={FileTextIcon} title={t('store.businessDocuments')} subtitle={t('store.photosOfTheDocumentsEveryDocument')}>
         {slots.map(slot => {
           const docs = documents.filter(d => slot.types.includes(String(d.documentType)));
           const isRequired = required.includes(slot);
@@ -624,11 +629,11 @@ function GstStep({
               <View style={opsStyles.rowBetween}>
                 <Text style={opsStyles.title}>
                   {slot.label}
-                  {isRequired ? <Text style={opsStyles.danger}> *</Text> : <Text style={opsStyles.muted}> (optional)</Text>}
+                  {isRequired ? <Text style={opsStyles.danger}> *</Text> : <Text style={opsStyles.muted}>{' '}{t('common.optional')}</Text>}
                 </Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Upload ${slot.label}`} disabled={!!uploading} onPress={() => upload(slot.types[0])} style={opsStyles.smallBtn}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('common.uploadLabel', { label: slot.label })} disabled={!!uploading} onPress={() => upload(slot.types[0])} style={opsStyles.smallBtn}>
                   <PlusIcon size={14} color={colors.text} />
-                  <Text style={opsStyles.smallBtnText}>{uploading === slot.types[0] ? 'Uploading…' : docs.length ? 'Add' : 'Upload'}</Text>
+                  <Text style={opsStyles.smallBtnText}>{uploading === slot.types[0] ? t('common.uploading') : docs.length ? t('common.add') : t('common.upload')}</Text>
                 </Pressable>
               </View>
               {docs.map(docRow)}
@@ -636,9 +641,9 @@ function GstStep({
           );
         })}
         {documents.filter(d => !slotted.has(String(d.documentType))).map(docRow)}
-        <SelectField label="Another document" value={otherType} options={DOCUMENT_TYPES} onChange={setOtherType} />
-        <Button title="Upload Document" variant="ghost" onPress={() => upload(otherType)} disabled={!!uploading} style={styles.ghost} />
-        <Text style={opsStyles.muted}>With GST: GST Certificate, PAN Card and Address Proof. Without GST: PAN Card and Address Proof. Other documents are optional.</Text>
+        <SelectField label={t('store.anotherDocument')} value={otherType} options={DOCUMENT_TYPES} onChange={setOtherType} />
+        <Button title={t('store.uploadDocument')} variant="ghost" onPress={() => upload(otherType)} disabled={!!uploading} style={styles.ghost} />
+        <Text style={opsStyles.muted}>{t('store.withGstGstCertificatePanCard')}</Text>
       </SectionCard>
     </>
   );
@@ -661,12 +666,13 @@ function ReviewStep({
   setTerms: (v: boolean) => void;
   gstTouched: boolean;
 }) {
+  const { t } = useTranslation();
   const store = progress.store;
   const settings = store.settings ?? null;
   const tax = store.taxDetails ?? null;
   const hours = store.businessHours ?? [];
   const edit = (step: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${WIZARD_STEPS[step - 1].label}`} hitSlop={6} onPress={() => onEdit(step)} style={styles.editLink}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('store.editLabel', { label: WIZARD_STEPS[step - 1].label })} hitSlop={6} onPress={() => onEdit(step)} style={styles.editLink}>
       <EditIcon size={15} color={colors.secondary} />
     </Pressable>
   );
@@ -677,38 +683,38 @@ function ReviewStep({
           <AlertCircleIcon size={16} color={colors.warningDark} />
           <Text style={styles.noticeText}>
             {[
-              progress.missingSteps.length ? `Still to complete: ${progress.missingSteps.map(k => k.replace(/_/g, ' ').toLowerCase()).join(', ')}.` : '',
-              progress.missingDocuments?.length ? `Upload: ${progress.missingDocuments.join(', ')}.` : '',
+              progress.missingSteps.length ? t('store.stillToCompleteJoin', { join: progress.missingSteps.map(k => k.replace(/_/g, ' ').toLowerCase()).join(', ') }) : '',
+              progress.missingDocuments?.length ? t('store.uploadJoin', { join: progress.missingDocuments.join(', ') }) : '',
             ]
               .filter(Boolean)
               .join(' ')}
           </Text>
         </View>
       ) : null}
-      <SectionCard icon={StoreIcon} title="Business Details" subtitle="Basic information about your store" action={edit(1)}>
-        <Detail label="Store Name" value={store.name} />
-        <Detail label="Owner" value={[owner.name, owner.email, owner.phone].filter(Boolean).join(' · ')} />
-        <Detail label="Business Type" value={labelFor(BUSINESS_TYPES, store.businessType)} />
-        <Detail label="Business Category" value={store.businessCategory} />
-        <Detail label="Timezone" value={labelFor(TIMEZONES, store.timezone)} />
-        <Detail label="Currency" value={labelFor(CURRENCIES, store.currency)} />
-        <Detail label="Description" value={plainText(store.description)} />
+      <SectionCard icon={StoreIcon} title={t('store.businessDetails')} subtitle={t('store.basicInformationAboutYourStore')} action={edit(1)}>
+        <Detail label={t('store.storeName')} value={store.name} />
+        <Detail label={t('store.owner')} value={[owner.name, owner.email, owner.phone].filter(Boolean).join(' · ')} />
+        <Detail label={t('store.businessType')} value={labelFor(BUSINESS_TYPES, store.businessType)} />
+        <Detail label={t('store.businessCategory')} value={store.businessCategory} />
+        <Detail label={t('common.timezone')} value={labelFor(TIMEZONES, store.timezone)} />
+        <Detail label={t('store.currency')} value={labelFor(CURRENCIES, store.currency)} />
+        <Detail label={t('common.description')} value={plainText(store.description)} />
       </SectionCard>
-      <SectionCard icon={SettingsIcon} title="Store Setup" subtitle="Location, contact details and hours" action={edit(2)}>
+      <SectionCard icon={SettingsIcon} title={t('store.storeSetup')} subtitle={t('store.locationContactDetailsAndHours')} action={edit(2)}>
         {settings ? (
           <>
-            <Detail label="Store Email" value={settings.email as string} />
-            <Detail label="Store Phone" value={settings.phone as string} />
-            {settings.alternatePhone ? <Detail label="Alternate Phone" value={settings.alternatePhone as string} /> : null}
-            <Detail label="Website" value={settings.website as string} />
-            <Detail label="Address" value={addressLines(settings).join('\n')} />
+            <Detail label={t('store.storeEmail')} value={settings.email as string} />
+            <Detail label={t('store.storePhone')} value={settings.phone as string} />
+            {settings.alternatePhone ? <Detail label={t('store.alternatePhone')} value={settings.alternatePhone as string} /> : null}
+            <Detail label={t('common.website')} value={settings.website as string} />
+            <Detail label={t('common.address')} value={addressLines(settings).join('\n')} />
           </>
         ) : (
-          <Text style={opsStyles.muted}>Not added yet</Text>
+          <Text style={opsStyles.muted}>{t('store.notAddedYet')}</Text>
         )}
         {hours.length ? (
           <Detail
-            label="Business Hours"
+            label={t('store.businessHours')}
             value={WEEK_DAYS.map(d => {
               const h = hours.find(x => x.dayOfWeek === d.value);
               return `${d.label.slice(0, 3)}: ${h?.isOpen ? `${String(h.openTime).slice(0, 5)} – ${String(h.closeTime).slice(0, 5)}` : 'Closed'}`;
@@ -716,13 +722,13 @@ function ReviewStep({
           />
         ) : null}
       </SectionCard>
-      <SectionCard icon={FileTextIcon} title="GST & Documents" subtitle="GST details and uploaded business documents" action={edit(3)}>
-        <Detail label="GST Registration" value={tax ? (tax.gstRegistered ? 'Yes' : 'No') : 'Not chosen yet'} />
+      <SectionCard icon={FileTextIcon} title={t('store.gstAndDocuments')} subtitle={t('store.gstDetailsAndUploadedBusinessDocuments')} action={edit(3)}>
+        <Detail label={t('store.gstRegistration')} value={tax ? (tax.gstRegistered ? 'Yes' : 'No') : 'Not chosen yet'} />
         {tax?.gstRegistered ? (
           <>
             <Detail label="GSTIN" value={tax.gstin as string} />
-            <Detail label="Business Name" value={tax.legalBusinessName as string} />
-            <Detail label="Trade Name" value={tax.tradeName as string} />
+            <Detail label={t('store.businessName')} value={tax.legalBusinessName as string} />
+            <Detail label={t('store.tradeName')} value={tax.tradeName as string} />
           </>
         ) : null}
         {(store.documents ?? []).length ? (
@@ -733,25 +739,25 @@ function ReviewStep({
             </View>
           ))
         ) : (
-          <Text style={opsStyles.muted}>No documents uploaded</Text>
+          <Text style={opsStyles.muted}>{t('store.noDocumentsUploaded')}</Text>
         )}
       </SectionCard>
-      <SectionCard icon={CheckCircleIcon} title="Review & Submit">
+      <SectionCard icon={CheckCircleIcon} title={t('store.reviewAndSubmit')}>
         <View style={opsStyles.row}>
           <CheckCircleIcon size={16} color={gstTouched ? colors.success : colors.border} />
-          <Text style={opsStyles.meta}>{gstTouched ? 'GST & Documents completed' : 'GST & Documents required'}</Text>
+          <Text style={opsStyles.meta}>{gstTouched ? t('store.gstAndDocumentsCompleted') : t('store.gstAndDocumentsRequired')}</Text>
         </View>
-        <Text style={opsStyles.title}>What happens next?</Text>
+        <Text style={opsStyles.title}>{t('store.whatHappensNext')}</Text>
         {NEXT_STEPS.map((s, i) => (
           <Text key={s} style={opsStyles.meta}>{`${i + 1}. ${s}`}</Text>
         ))}
-        <Text style={opsStyles.title}>Important Notes</Text>
+        <Text style={opsStyles.title}>{t('store.importantNotes')}</Text>
         {NOTES.map(n => (
           <Text key={n} style={opsStyles.meta}>{`• ${n}`}</Text>
         ))}
         <View style={styles.terms}>
-          <Checkbox label="Terms & Conditions" checked={terms} onChange={setTerms} />
-          <Text style={opsStyles.meta}>I confirm that the information provided is correct and complete, and agree to the E-Shop Terms of Service and Store Policy.</Text>
+          <Checkbox label={t('common.termsAndConditions')} checked={terms} onChange={setTerms} />
+          <Text style={opsStyles.meta}>{t('store.iConfirmThatTheInformationProvided')}</Text>
         </View>
       </SectionCard>
     </>

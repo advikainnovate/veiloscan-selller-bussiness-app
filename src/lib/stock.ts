@@ -3,37 +3,38 @@
 import type { BadgeTone } from '../components/ui/Badge';
 import type { StockBalance, StockStatus } from '../services/stock-service';
 import { formatQuantity } from './inventory';
+import i18n from '../i18n';
 
 export const STOCK_STATUS: Record<StockStatus, { label: string; tone: BadgeTone }> = {
-  ACTIVE: { label: 'In stock', tone: 'green' },
-  LOW_STOCK: { label: 'Low stock', tone: 'amber' },
-  OUT_OF_STOCK: { label: 'Out of stock', tone: 'red' },
-  BLOCKED: { label: 'Blocked', tone: 'violet' },
-  DISCONTINUED: { label: 'Discontinued', tone: 'slate' },
+  ACTIVE: { get label() { return i18n.t('common.inStock'); }, tone: 'green' },
+  LOW_STOCK: { get label() { return i18n.t('common.lowStock2'); }, tone: 'amber' },
+  OUT_OF_STOCK: { get label() { return i18n.t('common.outOfStock2'); }, tone: 'red' },
+  BLOCKED: { get label() { return i18n.t('common.blocked'); }, tone: 'violet' },
+  DISCONTINUED: { get label() { return i18n.t('inventory.discontinued'); }, tone: 'slate' },
 };
 export const stockStatus = (s: string) => STOCK_STATUS[s as StockStatus] ?? STOCK_STATUS.ACTIVE;
 
 const MOVEMENT_LABELS: Record<string, string> = {
-  OPENING_STOCK: 'Opening stock',
-  PURCHASE_RECEIPT: 'Purchase receipt',
-  RESERVATION: 'Reserved',
-  RESERVATION_RELEASE: 'Reservation released',
-  SALE: 'Sale (fulfilled)',
-  CUSTOMER_RETURN: 'Customer return',
-  PURCHASE_RETURN: 'Purchase return',
-  DAMAGE: 'Damaged / blocked',
-  DAMAGE_RECOVERY: 'Unblocked',
-  WRITE_OFF: 'Written off',
-  ADJUSTMENT_IN: 'Adjustment in',
-  ADJUSTMENT_OUT: 'Adjustment out',
-  TRANSFER_IN: 'Transfer in',
-  TRANSFER_OUT: 'Transfer out',
-  PURCHASE: 'Purchase (old)',
-  RETURN: 'Return (old)',
-  ADJUSTMENT: 'Adjustment (old)',
-  RESERVE: 'Reserve (old)',
-  RELEASE: 'Release (old)',
-  STOCK_TAKE: 'Stock take (old)',
+  get OPENING_STOCK() { return i18n.t('common.openingStock'); },
+  get PURCHASE_RECEIPT() { return i18n.t('inventory.purchaseReceipt'); },
+  get RESERVATION() { return i18n.t('common.reserved'); },
+  get RESERVATION_RELEASE() { return i18n.t('inventory.reservationReleased'); },
+  get SALE() { return i18n.t('inventory.saleFulfilled'); },
+  get CUSTOMER_RETURN() { return i18n.t('inventory.customerReturn'); },
+  get PURCHASE_RETURN() { return i18n.t('inventory.purchaseReturn'); },
+  get DAMAGE() { return i18n.t('inventory.damagedBlocked'); },
+  get DAMAGE_RECOVERY() { return i18n.t('inventory.unblocked'); },
+  get WRITE_OFF() { return i18n.t('inventory.writtenOff'); },
+  get ADJUSTMENT_IN() { return i18n.t('inventory.adjustmentIn'); },
+  get ADJUSTMENT_OUT() { return i18n.t('inventory.adjustmentOut'); },
+  get TRANSFER_IN() { return i18n.t('inventory.transferIn'); },
+  get TRANSFER_OUT() { return i18n.t('inventory.transferOut'); },
+  get PURCHASE() { return i18n.t('inventory.purchaseOld'); },
+  get RETURN() { return i18n.t('inventory.returnOld'); },
+  get ADJUSTMENT() { return i18n.t('inventory.adjustmentOld'); },
+  get RESERVE() { return i18n.t('inventory.reserveOld'); },
+  get RELEASE() { return i18n.t('inventory.releaseOld'); },
+  get STOCK_TAKE() { return i18n.t('inventory.stockTakeOld'); },
 };
 
 /** Every movement type, for a filter. */
@@ -72,14 +73,14 @@ const MOVEMENT_TONE: Record<string, keyof typeof TONE> = {
 export const movementTone = (type: string) => TONE[MOVEMENT_TONE[type] ?? 'adjust'];
 
 export const LEDGER_GROUPS: { value: string; label: string }[] = [
-  { value: '', label: 'All Movements' },
-  { value: 'receipts', label: 'Receipts' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'reservations', label: 'Reservations' },
-  { value: 'adjustments', label: 'Adjustments & Counts' },
-  { value: 'damage', label: 'Damage & Write-offs' },
-  { value: 'transfers', label: 'Transfers' },
-  { value: 'returns', label: 'Returns' },
+  { value: '', get label() { return i18n.t('inventory.allMovements'); } },
+  { value: 'receipts', get label() { return i18n.t('inventory.receipts'); } },
+  { value: 'sales', get label() { return i18n.t('common.sales'); } },
+  { value: 'reservations', get label() { return i18n.t('common.reservations'); } },
+  { value: 'adjustments', get label() { return i18n.t('inventory.adjustmentsAndCounts'); } },
+  { value: 'damage', get label() { return i18n.t('inventory.damageAndWriteOffs'); } },
+  { value: 'transfers', get label() { return i18n.t('inventory.transfers'); } },
+  { value: 'returns', get label() { return i18n.t('common.returns'); } },
 ];
 
 type Units = Pick<StockBalance, 'baseUom' | 'salesUom' | 'salesFactor'>;
@@ -116,36 +117,36 @@ export function moved(e: { enteredQuantity: number | null; baseQuantity: number 
 export const reorderQty = (r: StockBalance) => Math.max(0, r.suggestedReorder ?? r.minimum - r.available);
 
 const ORDER_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
-  PENDING: { label: 'Pending', tone: 'slate' },
-  CONFIRMED: { label: 'Confirmed', tone: 'blue' },
-  ACCEPTED: { label: 'Confirmed', tone: 'blue' },
-  PROCESSING: { label: 'Processing', tone: 'amber' },
-  PACKED: { label: 'Packing', tone: 'violet' },
-  PACKING: { label: 'Packing', tone: 'violet' },
-  READY_FOR_PICKUP: { label: 'Ready for Pickup', tone: 'green' },
-  SHIPPED: { label: 'Shipped', tone: 'blue' },
+  PENDING: { get label() { return i18n.t('common.pending'); }, tone: 'slate' },
+  CONFIRMED: { get label() { return i18n.t('common.confirmed'); }, tone: 'blue' },
+  ACCEPTED: { get label() { return i18n.t('common.confirmed'); }, tone: 'blue' },
+  PROCESSING: { get label() { return i18n.t('common.processing'); }, tone: 'amber' },
+  PACKED: { get label() { return i18n.t('inventory.packing'); }, tone: 'violet' },
+  PACKING: { get label() { return i18n.t('inventory.packing'); }, tone: 'violet' },
+  READY_FOR_PICKUP: { get label() { return i18n.t('inventory.readyForPickup'); }, tone: 'green' },
+  SHIPPED: { get label() { return i18n.t('common.shipped'); }, tone: 'blue' },
 };
 export const reservationOrderStatus = (s: string | null | undefined) =>
-  ORDER_STATUS[s ?? ''] ?? { label: s ? s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()) : 'Open', tone: 'slate' as BadgeTone };
+  ORDER_STATUS[s ?? ''] ?? { label: s ? s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()) : i18n.t('common.open'), tone: 'slate' as BadgeTone };
 
 /** "3 hours" / "2 days" since `from`. */
 export function heldFor(from: string, now: number) {
   const h = Math.floor((now - new Date(from).getTime()) / 3600000);
-  if (h < 1) return 'Under an hour';
-  if (h < 24) return `${h} hour${h === 1 ? '' : 's'}`;
+  if (h < 1) return i18n.t('inventory.underAnHour');
+  if (h < 24) return i18n.t('common.hourCount', { count: h });
   const d = Math.floor(h / 24);
-  return `${d} day${d === 1 ? '' : 's'}`;
+  return i18n.t('common.dayCount', { count: d });
 }
 
 export type StockOperation = 'receive' | 'adjust' | 'block' | 'transfer' | 'return' | 'levels';
 
 export const OPERATION_TITLES: Record<StockOperation, string> = {
-  receive: 'Receive stock',
-  adjust: 'Count / adjust stock',
-  block: 'Damaged / blocked stock',
-  transfer: 'Transfer to another warehouse',
-  return: 'Return',
-  levels: 'Stock levels',
+  get receive() { return i18n.t('inventory.receiveStock'); },
+  get adjust() { return i18n.t('inventory.countAdjustStock'); },
+  get block() { return i18n.t('inventory.damagedBlockedStock'); },
+  get transfer() { return i18n.t('inventory.transferToAnotherWarehouse'); },
+  get return() { return i18n.t('common.return'); },
+  get levels() { return i18n.t('inventory.stockLevels'); },
 };
 
 /** The panel's checks before an operation is sent; null when it can be. */
@@ -155,15 +156,15 @@ export function operationProblem(
 ): string | null {
   if (op === 'levels') {
     const nums = [v.minimum, v.maximum, v.reorder].filter(x => x && x.trim() !== '');
-    if (nums.some(x => !(Number(x) >= 0))) return 'Levels must be 0 or more';
-    if (v.maximum?.trim() && v.minimum?.trim() && Number(v.maximum) < Number(v.minimum)) return "The maximum can't be below the minimum";
+    if (nums.some(x => !(Number(x) >= 0))) return i18n.t('inventory.levelsMustBe0OrMore');
+    if (v.maximum?.trim() && v.minimum?.trim() && Number(v.maximum) < Number(v.minimum)) return i18n.t('inventory.theMaximumCanTBeBelow');
     return null;
   }
   const q = Number(v.quantity);
   const countToZero = op === 'adjust' && v.mode === 'COUNT' && v.quantity.trim() !== '' && q >= 0;
-  if (!(q > 0 || countToZero)) return 'Enter a quantity';
-  if ((op === 'adjust' || op === 'block' || op === 'return') && !v.reason.trim()) return "Enter a reason — it's kept in the ledger";
-  if (op === 'receive' && (!v.variantId || !v.warehouseId)) return 'Pick the SKU and the warehouse';
-  if (op === 'transfer' && !v.toWarehouseId) return 'Pick the warehouse to transfer to';
+  if (!(q > 0 || countToZero)) return i18n.t('inventory.enterAQuantity');
+  if ((op === 'adjust' || op === 'block' || op === 'return') && !v.reason.trim()) return i18n.t('inventory.enterAReasonItsKeptIn');
+  if (op === 'receive' && (!v.variantId || !v.warehouseId)) return i18n.t('inventory.pickTheSkuAndTheWarehouse');
+  if (op === 'transfer' && !v.toWarehouseId) return i18n.t('inventory.pickTheWarehouseToTransferTo');
   return null;
 }

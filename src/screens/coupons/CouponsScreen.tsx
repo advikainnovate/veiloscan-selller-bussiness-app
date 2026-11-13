@@ -13,20 +13,23 @@ import { Badge } from '../../components/ui/Badge';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { BanIcon, CheckCircleIcon, ClockIcon, PlusIcon, TicketIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const TYPE_FILTERS = [
-  { value: '', label: 'All Types' },
-  { value: 'FLAT', label: 'Flat' },
-  { value: 'PERCENTAGE', label: 'Percentage' },
+  { value: '', get label() { return i18n.t('common.allTypes'); } },
+  { value: 'FLAT', get label() { return i18n.t('common.flat'); } },
+  { value: 'PERCENTAGE', get label() { return i18n.t('common.percentage'); } },
 ];
 const STATUS_FILTERS = [
-  { value: '', label: 'All Status' },
-  { value: '1', label: 'Active' },
-  { value: '0', label: 'Inactive' },
+  { value: '', get label() { return i18n.t('common.allStatus'); } },
+  { value: '1', get label() { return i18n.t('common.active'); } },
+  { value: '0', get label() { return i18n.t('common.inactive'); } },
 ];
 
 /** Sales › Coupons: discount codes customers use at checkout. */
 export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('coupons-master:manage');
   const { data, error, loading, refreshing, reload } = useFetch(() => (allowed ? couponService.list() : Promise.resolve([])), [allowed]);
@@ -61,8 +64,8 @@ export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Coupons" onBack={navigation.goBack} />
-        <ComingSoon label="Coupons" icon={TicketIcon} allowed={false} />
+        <AppHeader title={t('coupons.coupons')} onBack={navigation.goBack} />
+        <ComingSoon label={t('coupons.coupons')} icon={TicketIcon} allowed={false} />
       </View>
     );
   }
@@ -72,29 +75,28 @@ export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
       <View style={styles.titleRow}>
         <View style={styles.flex}>
           <Text style={styles.pageTitle} accessibilityRole="header">
-            Coupons
-          </Text>
-          <Text style={styles.pageSubtitle}>Discount coupon codes available to customers at checkout.</Text>
+            {t('coupons.coupons')}</Text>
+          <Text style={styles.pageSubtitle}>{t('coupons.discountCouponCodesAvailableToCustomers')}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Create Coupon"
+          accessibilityLabel={t('coupons.createCoupon')}
           onPress={() => navigation.navigate('CouponForm', {})}
           style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
         >
           <PlusIcon size={16} color={colors.white} strokeWidth={2.4} />
-          <Text style={styles.addText}>Create</Text>
+          <Text style={styles.addText}>{t('coupons.create')}</Text>
         </Pressable>
       </View>
 
       <View style={styles.stats}>
-        <Stat icon={TicketIcon} tone={['#fff7ed', '#ea580c']} label="Total Coupons" value={stats.total} />
-        <Stat icon={CheckCircleIcon} tone={['#ecfdf5', '#059669']} label="Active" value={stats.active} />
-        <Stat icon={BanIcon} tone={['#fff1f2', '#e11d48']} label="Inactive" value={stats.inactive} />
-        <Stat icon={ClockIcon} tone={['#fffbeb', '#d97706']} label="Expired" value={stats.expired} />
+        <Stat icon={TicketIcon} tone={['#fff7ed', '#ea580c']} label={t('coupons.totalCoupons')} value={stats.total} />
+        <Stat icon={CheckCircleIcon} tone={['#ecfdf5', '#059669']} label={t('common.active')} value={stats.active} />
+        <Stat icon={BanIcon} tone={['#fff1f2', '#e11d48']} label={t('common.inactive')} value={stats.inactive} />
+        <Stat icon={ClockIcon} tone={['#fffbeb', '#d97706']} label={t('common.expired')} value={stats.expired} />
       </View>
 
-      <SearchBar value={search} onChange={setSearch} placeholder="Search by title or coupon code…" />
+      <SearchBar value={search} onChange={setSearch} placeholder={t('coupons.searchByTitleOrCouponCode')} />
       <FilterChips options={TYPE_FILTERS} value={type} onChange={setType} />
       <FilterChips options={STATUS_FILTERS} value={status} onChange={setStatus} />
       {filtered ? (
@@ -108,7 +110,7 @@ export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
           hitSlop={6}
           style={styles.reset}
         >
-          <Text style={styles.resetText}>Reset filters</Text>
+          <Text style={styles.resetText}>{t('common.resetFilters')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -116,7 +118,7 @@ export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Coupons" subtitle={data ? `${rows.length} coupon${rows.length === 1 ? '' : 's'}` : undefined} onBack={navigation.goBack} />
+      <AppHeader title={t('coupons.coupons')} subtitle={data ? t('coupons.couponCount', { count: rows.length }) : undefined} onBack={navigation.goBack} />
       <FlatList
         data={loading || (error && !data) ? [] : visible}
         keyExtractor={item => item.id}
@@ -130,8 +132,8 @@ export function CouponsScreen({ navigation }: ScreenProps<'Coupons'>) {
           ) : (
             <EmptyState
               icon={TicketIcon}
-              title={filtered ? 'No coupons match' : 'No coupons found'}
-              text={filtered ? 'Try another filter or search.' : 'Create a coupon code customers can use at checkout.'}
+              title={filtered ? t('coupons.noCouponsMatch') : t('coupons.noCouponsFound')}
+              text={filtered ? t('common.tryAnotherFilterOrSearch') : t('coupons.createACouponCodeCustomersCan')}
             />
           )
         }
@@ -165,6 +167,7 @@ function Stat({ icon: Icon, tone, label, value }: { icon: ComponentType<IconProp
 }
 
 function CouponCard({ coupon, onPress }: { coupon: Coupon; onPress: () => void }) {
+  const { t } = useTranslation();
   const active = isActiveCoupon(coupon);
   const expired = isExpiredCoupon(coupon);
   return (
@@ -186,14 +189,14 @@ function CouponCard({ coupon, onPress }: { coupon: Coupon; onPress: () => void }
         <View style={styles.right}>
           <Text style={styles.discount}>{formatDiscount(coupon)}</Text>
           <View style={styles.badges}>
-            {expired ? <Badge label="Expired" tone="amber" /> : null}
-            <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
+            {expired ? <Badge label={t('common.expired')} tone="amber" /> : null}
+            <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
           </View>
         </View>
       </View>
       <Text style={styles.meta} numberOfLines={1}>
-        {`${coupon.startDate ? formatDay(coupon.startDate) : '—'} → ${coupon.endDate ? formatDay(coupon.endDate) : 'No end date'} · ${
-          coupon.usageLimitTotal ? `${coupon.usageLimitTotal} total` : 'Unlimited'
+        {`${coupon.startDate ? formatDay(coupon.startDate) : '—'} → ${coupon.endDate ? formatDay(coupon.endDate) : t('coupons.noEndDate')} · ${
+          coupon.usageLimitTotal ? t('coupons.limitTotal', { count: coupon.usageLimitTotal }) : t('common.unlimited')
         }`}
       </Text>
     </Pressable>

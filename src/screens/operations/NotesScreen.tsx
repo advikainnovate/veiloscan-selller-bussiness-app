@@ -18,19 +18,21 @@ import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '..
 import { confirmAction, HistoryList, opsStyles, Pager, PageTitle, PhotoAttachments, type PendingFile } from '../../components/operations/OpsParts';
 import { BellIcon, ClipboardListIcon, FileTextIcon, PlusIcon, StoreIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 
 const PRIORITY: Record<NotePriority, { label: string; tone: BadgeTone; bar: string }> = {
-  NORMAL: { label: 'Normal', tone: 'slate', bar: '#e2e8f0' },
-  IMPORTANT: { label: 'Important', tone: 'amber', bar: '#fbbf24' },
-  URGENT: { label: 'Urgent', tone: 'red', bar: '#ef4444' },
+  NORMAL: { get label() { return i18n.t('operations.normal'); }, tone: 'slate', bar: '#e2e8f0' },
+  IMPORTANT: { get label() { return i18n.t('operations.important'); }, tone: 'amber', bar: '#fbbf24' },
+  URGENT: { get label() { return i18n.t('common.urgent'); }, tone: 'red', bar: '#ef4444' },
 };
 const STATUS_TABS: { value: NoteStatus; label: string }[] = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'ARCHIVED', label: 'Archived' },
+  { value: 'ACTIVE', get label() { return i18n.t('common.active'); } },
+  { value: 'COMPLETED', get label() { return i18n.t('common.completed'); } },
+  { value: 'ARCHIVED', get label() { return i18n.t('operations.archived'); } },
 ];
 type ReminderChoice = 'none' | 'today' | 'tomorrow' | 'custom';
 
@@ -52,6 +54,7 @@ export function reminderTime(choice: ReminderChoice, customDate: string, customT
 
 /** Operations › Notes: the shop diary — reminders, supplier visits, things to remember. */
 export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-notes:view');
   const canCreate = hasPermission('store-notes:create');
@@ -88,8 +91,8 @@ export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Notes" onBack={navigation.goBack} />
-        <ComingSoon label="Notes" icon={ClipboardListIcon} allowed={false} />
+        <AppHeader title={tr('common.notes')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.notes')} icon={ClipboardListIcon} allowed={false} />
       </View>
     );
   }
@@ -105,10 +108,10 @@ export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
   }
 
   async function remove(note: StoreNote) {
-    if (!(await confirmAction(`Delete the note "${note.title}"?`, undefined, 'Delete', true))) return;
+    if (!(await confirmAction(tr('operations.deleteTheNoteTitle', { title: note.title }), undefined, tr('common.delete'), true))) return;
     try {
       await storeOperationsService.removeNote(storeId, note.id);
-      toast('Note deleted');
+      toast(tr('operations.noteDeleted'));
       list.reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -123,27 +126,27 @@ export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
     <View style={styles.headerBlock}>
       <View style={opsStyles.rowBetween}>
         <View style={styles.flex}>
-          <PageTitle title="Notes" subtitle="Your shop diary: reminders, supplier visits, things to remember." />
+          <PageTitle title={tr('common.notes')} subtitle={tr('operations.yourShopDiaryRemindersSupplierVisits')} />
         </View>
         {canCreate && store ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Add Note" onPress={() => setEditing('new')} style={opsStyles.primaryBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('operations.addNote')} onPress={() => setEditing('new')} style={opsStyles.primaryBtn}>
             <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-            <Text style={opsStyles.primaryBtnText}>Add Note</Text>
+            <Text style={opsStyles.primaryBtnText}>{tr('operations.addNote')}</Text>
           </Pressable>
         ) : null}
       </View>
       <FilterChips
         options={STATUS_TABS.map(t => ({
           value: t.value,
-          label: t.value === 'ACTIVE' && counts?.urgent ? `${t.label} · ${counts.urgent} urgent` : t.label,
+          label: t.value === 'ACTIVE' && counts?.urgent ? tr('operations.labelUrgentUrgent', { label: t.label, urgent: counts.urgent }) : t.label,
           count: counts?.[t.value.toLowerCase() as 'active' | 'completed' | 'archived'],
         }))}
         value={status}
         onChange={v => setStatus(v as NoteStatus)}
       />
-      <SearchBar value={query} onChange={setQuery} placeholder="Search notes…" />
+      <SearchBar value={query} onChange={setQuery} placeholder={tr('operations.searchNotes')} />
       <FilterChips
-        options={[{ value: '', label: 'All priorities' }, ...(Object.keys(PRIORITY) as NotePriority[]).map(p => ({ value: p, label: PRIORITY[p].label }))]}
+        options={[{ value: '', label: tr('common.allPriorities') }, ...(Object.keys(PRIORITY) as NotePriority[]).map(p => ({ value: p, label: PRIORITY[p].label }))]}
         value={priority}
         onChange={setPriority}
       />
@@ -152,9 +155,9 @@ export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Notes" onBack={navigation.goBack} />
+      <AppHeader title={tr('common.notes')} onBack={navigation.goBack} />
       {!store ? (
-        <EmptyState icon={StoreIcon} title="You don't have a store yet" />
+        <EmptyState icon={StoreIcon} title={tr('common.youDonTHaveAStore')} />
       ) : (
         <FlatList
           ref={listRef}
@@ -183,8 +186,8 @@ export function NotesScreen({ navigation }: ScreenProps<'Notes'>) {
             ) : (
               <EmptyState
                 icon={ClipboardListIcon}
-                title={filtered ? 'No notes match' : `No ${status.toLowerCase()} notes`}
-                text={status === 'ACTIVE' && !filtered ? 'Your shop diary: supplier visits, things to reorder, reminders for the team.' : undefined}
+                title={filtered ? tr('operations.noNotesMatch') : tr('operations.noLowercaseNotes', { lowerCase: status.toLowerCase() })}
+                text={status === 'ACTIVE' && !filtered ? tr('operations.yourShopDiarySupplierVisitsThings') : undefined}
               />
             )
           }
@@ -249,12 +252,13 @@ function NoteCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = PRIORITY[n.priority] ?? PRIORITY.NORMAL;
   const reminderDue = n.reminderAt && !n.reminderSentAt && new Date(n.reminderAt) > new Date();
   return (
     <View style={styles.card}>
       <View style={[styles.bar, { backgroundColor: meta.bar }]} />
-      <Pressable accessibilityRole="button" accessibilityLabel={`Note: ${n.title}`} onPress={onOpen} style={styles.cardBody}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('operations.noteTitle', { title: n.title })} onPress={onOpen} style={styles.cardBody}>
         <View style={opsStyles.rowBetween}>
           <Text style={[styles.noteTitle, n.status === 'COMPLETED' && styles.done]} numberOfLines={2}>
             {n.title}
@@ -275,16 +279,16 @@ function NoteCard({
             </View>
           ) : null}
           {n.attachmentUrl ? <FileTextIcon size={13} color={colors.textMuted} /> : null}
-          {n.createdByName ? <Text style={opsStyles.meta}>{`by ${n.createdByName}`}</Text> : null}
+          {n.createdByName ? <Text style={opsStyles.meta}>{t('operations.byCreatedbyname', { createdByName: n.createdByName })}</Text> : null}
         </View>
       </Pressable>
       {canEdit || canDelete ? (
         <View style={styles.actions}>
-          {canEdit && n.status === 'ACTIVE' ? <Action label="Complete" tone={colors.successDark} onPress={onComplete} /> : null}
-          {canEdit && n.status !== 'ACTIVE' ? <Action label="Reopen" onPress={onReopen} /> : null}
-          {canEdit && n.status !== 'ARCHIVED' ? <Action label="Archive" onPress={onArchive} /> : null}
-          {canEdit ? <Action label="Edit" onPress={onEdit} /> : null}
-          {canDelete ? <Action label="Delete" tone={colors.error} onPress={onDelete} last /> : null}
+          {canEdit && n.status === 'ACTIVE' ? <Action label={t('operations.complete')} tone={colors.successDark} onPress={onComplete} /> : null}
+          {canEdit && n.status !== 'ACTIVE' ? <Action label={t('operations.reopen')} onPress={onReopen} /> : null}
+          {canEdit && n.status !== 'ARCHIVED' ? <Action label={t('operations.archive')} onPress={onArchive} /> : null}
+          {canEdit ? <Action label={t('common.edit')} onPress={onEdit} /> : null}
+          {canDelete ? <Action label={t('common.delete')} tone={colors.error} onPress={onDelete} last /> : null}
         </View>
       ) : null}
     </View>
@@ -315,6 +319,7 @@ function NoteFormSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState({ title: '', description: '', noteDate: today, priority: 'NORMAL' as NotePriority });
   const [reminder, setReminder] = useState<ReminderChoice>('none');
@@ -336,8 +341,8 @@ function NoteFormSheet({
   }, [visible, note, today]);
 
   async function save() {
-    if (!form.title.trim()) return setError('Give the note a title');
-    if (reminder === 'custom' && !reminderTime('custom', customDate, customTime)) return setError('Pick the reminder date and time');
+    if (!form.title.trim()) return setError(t('operations.giveTheNoteATitle'));
+    if (reminder === 'custom' && !reminderTime('custom', customDate, customTime)) return setError(t('operations.pickTheReminderDateAndTime'));
     setError('');
     setSaving(true);
     const payload = {
@@ -351,7 +356,7 @@ function NoteFormSheet({
     try {
       if (note) await storeOperationsService.updateNote(storeId, note.id, payload);
       else await storeOperationsService.createNote(storeId, payload);
-      toast(note ? 'Note updated' : 'Note added');
+      toast(note ? t('operations.noteUpdated') : t('operations.noteAdded2'));
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -361,28 +366,28 @@ function NoteFormSheet({
   }
 
   return (
-    <Sheet visible={visible} title={note ? 'Edit Note' : 'Add Note'} onClose={onClose} footer={<Button title={note ? 'Save Changes' : 'Add Note'} onPress={save} loading={saving} />}>
-      <Field label="Title" required>
+    <Sheet visible={visible} title={note ? t('operations.editNote') : t('operations.addNote')} onClose={onClose} footer={<Button title={note ? t('common.saveChanges') : t('operations.addNote')} onPress={save} loading={saving} />}>
+      <Field label={t('common.title')} required>
         <Input value={form.title} onChangeText={title => setForm(f => ({ ...f, title }))} placeholder="e.g. Supplier ABC will visit tomorrow" maxLength={200} />
       </Field>
-      <Field label="Description">
+      <Field label={t('common.description')}>
         <Input value={form.description} onChangeText={description => setForm(f => ({ ...f, description }))} maxLength={5000} multiline />
       </Field>
-      <DateField label="Date" value={form.noteDate} onChange={noteDate => setForm(f => ({ ...f, noteDate: noteDate || today }))} />
-      <Field label="Priority">
+      <DateField label={t('common.date')} value={form.noteDate} onChange={noteDate => setForm(f => ({ ...f, noteDate: noteDate || today }))} />
+      <Field label={t('common.priority')}>
         <Choices
           options={(Object.keys(PRIORITY) as NotePriority[]).map(p => ({ value: p, label: PRIORITY[p].label }))}
           value={form.priority}
           onChange={v => setForm(f => ({ ...f, priority: v as NotePriority }))}
         />
       </Field>
-      <Field label="Reminder" hint={reminder !== 'none' ? "You'll get a notification in the bell when it's due." : undefined}>
+      <Field label={t('common.reminder')} hint={reminder !== 'none' ? t('operations.youLlGetANotificationIn') : undefined}>
         <Choices
           options={[
-            { value: 'none', label: 'No Reminder' },
-            { value: 'today', label: 'Today' },
-            { value: 'tomorrow', label: 'Tomorrow' },
-            { value: 'custom', label: 'Specific Date/Time' },
+            { value: 'none', label: t('operations.noReminder') },
+            { value: 'today', label: t('common.today') },
+            { value: 'tomorrow', label: t('operations.tomorrow') },
+            { value: 'custom', label: t('operations.specificDateTime') },
           ]}
           value={reminder}
           onChange={v => setReminder(v as ReminderChoice)}
@@ -390,23 +395,24 @@ function NoteFormSheet({
       </Field>
       {reminder === 'custom' ? (
         <>
-          <DateField label="Reminder date" required value={customDate} onChange={setCustomDate} />
-          <Field label="Reminder time" hint="24-hour, e.g. 09:30 or 16:00">
-            <Input value={customTime} onChangeText={setCustomTime} keyboardType="numbers-and-punctuation" maxLength={5} accessibilityLabel="Reminder time" />
+          <DateField label={t('operations.reminderDate')} required value={customDate} onChange={setCustomDate} />
+          <Field label={t('operations.reminderTime')} hint={t('operations.n24HourEG0930')}>
+            <Input value={customTime} onChangeText={setCustomTime} keyboardType="numbers-and-punctuation" maxLength={5} accessibilityLabel={t('operations.reminderTime')} />
           </Field>
         </>
       ) : null}
-      <PhotoAttachments label="Attachment" value={files} onChange={setFiles} dirName="store-notes" max={1} kinds={false} />
+      <PhotoAttachments label={t('operations.attachment')} value={files} onChange={setFiles} dirName="store-notes" max={1} kinds={false} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </Sheet>
   );
 }
 
 function NoteViewSheet({ storeId, id, onClose }: { storeId: string; id: string | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const { data, error, loading } = useFetch(() => (id ? storeOperationsService.note(storeId, id) : Promise.resolve(null)), [storeId, id]);
   const note = data && data.id === id ? data : null;
   return (
-    <Sheet visible={!!id} title={note?.title ?? 'Note'} onClose={onClose}>
+    <Sheet visible={!!id} title={note?.title ?? t('common.note')} onClose={onClose}>
       {error ? (
         <Text style={styles.error}>{error}</Text>
       ) : loading || !note ? (
@@ -422,16 +428,16 @@ function NoteViewSheet({ storeId, id, onClose }: { storeId: string; id: string |
           {note.reminderAt ? (
             <View style={styles.reminder}>
               <BellIcon size={15} color="#6d28d9" />
-              <Text style={styles.viewReminder}>{`Reminder ${dateTime(note.reminderAt)}${note.reminderSentAt ? ` · sent ${dateTime(note.reminderSentAt)}` : ''}`}</Text>
+              <Text style={styles.viewReminder}>{[t('operations.reminderAt', { when: dateTime(note.reminderAt) }), note.reminderSentAt ? t('operations.sentAt', { when: dateTime(note.reminderSentAt) }) : null].filter(Boolean).join(' · ')}</Text>
             </View>
           ) : null}
           {note.attachmentUrl ? (
             <Pressable accessibilityRole="link" onPress={() => Linking.openURL(note.attachmentUrl!)} style={styles.attachment}>
               <FileTextIcon size={15} color={colors.text} />
-              <Text style={styles.attachmentText}>{note.attachmentName ?? 'View attachment'}</Text>
+              <Text style={styles.attachmentText}>{note.attachmentName ?? t('operations.viewAttachment')}</Text>
             </Pressable>
           ) : null}
-          <Text style={opsStyles.sectionLabel}>HISTORY</Text>
+          <Text style={opsStyles.sectionLabel}>{t('operations.history')}</Text>
           <HistoryList entries={note.history} />
         </View>
       )}

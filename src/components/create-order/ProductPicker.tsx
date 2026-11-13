@@ -8,6 +8,7 @@ import { sellingOf } from '../../lib/selling';
 import { sellerOrderService, type CatalogItem } from '../../services/seller-order-service';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../list/ListParts';
 import { BoxIcon, CheckIcon, CloseIcon, PlusIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 const SEARCH_DELAY_MS = 300;
 
@@ -29,6 +30,7 @@ export function ProductPicker({
   onAdd: (item: CatalogItem) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -45,20 +47,20 @@ export function ProductPicker({
     [storeId, debounced, categoryId, visible],
   );
 
-  const chips = [{ value: '', label: 'All' }, ...(categories.data ?? []).map(c => ({ value: c.id, label: c.name, count: c.products }))];
+  const chips = [{ value: '', label: t('common.all') }, ...(categories.data ?? []).map(c => ({ value: c.id, label: c.name, count: c.products }))];
   const added = [...inOrder.values()].reduce((n, c) => n + c, 0);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
       <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Add products</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose} style={styles.close}>
+          <Text style={styles.title}>{t('orders.addProducts')}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} hitSlop={10} onPress={onClose} style={styles.close}>
             <CloseIcon size={20} color={colors.text} />
           </Pressable>
         </View>
         <View style={styles.filters}>
-          <SearchBar value={query} onChange={setQuery} placeholder="Search name, SKU or barcode" />
+          <SearchBar value={query} onChange={setQuery} placeholder={t('orders.searchNameSkuOrBarcode')} />
           {chips.length > 1 ? <FilterChips options={chips} value={categoryId} onChange={setCategoryId} /> : null}
         </View>
 
@@ -74,15 +76,15 @@ export function ProductPicker({
             ) : catalog.error ? (
               <ErrorState message={catalog.error} onRetry={() => catalog.reload()} />
             ) : (
-              <EmptyState icon={BoxIcon} title="No products found" text={debounced ? 'Try another name, SKU or barcode.' : 'This store has no products to sell yet.'} />
+              <EmptyState icon={BoxIcon} title={t('common.noProductsFound')} text={debounced ? t('orders.tryAnotherNameSkuOrBarcode') : t('orders.thisStoreHasNoProductsTo')} />
             )
           }
         />
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-          <Text style={styles.footerText}>{added ? `${added} item${added === 1 ? '' : 's'} in the order` : 'Tap a product to add it'}</Text>
+          <Text style={styles.footerText}>{added ? t('orders.itemsInTheOrder', { count: added }) : t('orders.tapAProductToAddIt')}</Text>
           <Pressable accessibilityRole="button" onPress={onClose} style={styles.done}>
-            <Text style={styles.doneText}>Done</Text>
+            <Text style={styles.doneText}>{t('common.done')}</Text>
           </Pressable>
         </View>
       </View>
@@ -91,13 +93,14 @@ export function ProductPicker({
 }
 
 function CatalogRow({ item, count, onAdd }: { item: CatalogItem; count: number; onAdd: () => void }) {
+  const { t } = useTranslation();
   const selling = sellingOf(item);
   const outOfStock = item.stock !== null && item.stock <= 0;
   const unit = selling.sellingUom === 'PCS' ? '' : ` ${selling.sellingUom}`;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Add ${item.productName}${item.variantLabel ? `, ${item.variantLabel}` : ''}`}
+      accessibilityLabel={t('orders.addProductName', { name: item.variantLabel ? `${item.productName}, ${item.variantLabel}` : item.productName })}
       onPress={onAdd}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -119,7 +122,7 @@ function CatalogRow({ item, count, onAdd }: { item: CatalogItem; count: number; 
           <Text style={styles.price}>{priceText(item)}</Text>
           {item.mrp && item.mrp > item.price ? <Text style={styles.mrp}>₹{item.mrp}</Text> : null}
           <Text style={[styles.stock, outOfStock && styles.stockOut]}>
-            {item.stock === null ? '' : outOfStock ? 'Out of stock' : `${Math.round(item.stock * 100) / 100}${unit} in stock`}
+            {item.stock === null ? '' : outOfStock ? t('common.outOfStock2') : t('orders.countUnitInStock', { count: Math.round(item.stock * 100) / 100, unit })}
           </Text>
         </View>
       </View>

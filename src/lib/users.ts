@@ -1,45 +1,46 @@
 import type { BadgeTone } from '../components/ui/Badge';
 import type { StaffUser, UserSession } from '../services/user-service';
+import i18n from '../i18n';
 
 // Management › Users: the Seller Panel's staff-user rules
 // (src/components/dashboard/users/user-wizard.tsx).
 
 export const USER_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
-  ACTIVE: { label: 'Active', tone: 'green' },
-  INACTIVE: { label: 'Inactive', tone: 'slate' },
-  PENDING: { label: 'Pending', tone: 'amber' },
-  HOLD: { label: 'On hold', tone: 'orange' },
-  BLOCKED: { label: 'Blocked', tone: 'red' },
+  ACTIVE: { get label() { return i18n.t('common.active'); }, tone: 'green' },
+  INACTIVE: { get label() { return i18n.t('common.inactive'); }, tone: 'slate' },
+  PENDING: { get label() { return i18n.t('common.pending'); }, tone: 'amber' },
+  HOLD: { get label() { return i18n.t('users.onHold'); }, tone: 'orange' },
+  BLOCKED: { get label() { return i18n.t('common.blocked'); }, tone: 'red' },
 };
 export const userStatus = (status: unknown) => USER_STATUS[String(status)] ?? { label: String(status ?? '—'), tone: 'slate' as BadgeTone };
 
 export const STATUS_OPTIONS = Object.entries(USER_STATUS).map(([value, s]) => ({ value, label: s.label }));
 
 export const GENDER_OPTIONS = [
-  { value: 'MALE', label: 'Male' },
-  { value: 'FEMALE', label: 'Female' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'MALE', get label() { return i18n.t('common.male'); } },
+  { value: 'FEMALE', get label() { return i18n.t('common.female'); } },
+  { value: 'OTHER', get label() { return i18n.t('common.other'); } },
 ];
 export const genderLabel = (g: unknown) => GENDER_OPTIONS.find(o => o.value === g)?.label ?? null;
 
 export const COUNTRY_CODES = [
-  { value: '91', label: '+91 India' },
-  { value: '1', label: '+1 USA' },
-  { value: '44', label: '+44 UK' },
-  { value: '971', label: '+971 UAE' },
-  { value: '65', label: '+65 Singapore' },
-  { value: '61', label: '+61 Australia' },
+  { value: '91', get label() { return i18n.t('users.n91India'); } },
+  { value: '1', get label() { return i18n.t('users.n1Usa'); } },
+  { value: '44', get label() { return i18n.t('users.n44Uk'); } },
+  { value: '971', get label() { return i18n.t('users.n971Uae'); } },
+  { value: '65', get label() { return i18n.t('users.n65Singapore'); } },
+  { value: '61', get label() { return i18n.t('users.n61Australia'); } },
 ];
 
 export const PASSWORD_RULES: { test: (pw: string) => boolean; label: string }[] = [
-  { test: pw => pw.length >= 8, label: 'At least 8 characters' },
-  { test: pw => /[A-Z]/.test(pw), label: 'One uppercase letter' },
-  { test: pw => /[a-z]/.test(pw), label: 'One lowercase letter' },
-  { test: pw => /\d/.test(pw), label: 'One number' },
-  { test: pw => /[^A-Za-z0-9]/.test(pw), label: 'One special symbol' },
+  { test: pw => pw.length >= 8, get label() { return i18n.t('common.atLeast8Characters'); } },
+  { test: pw => /[A-Z]/.test(pw), get label() { return i18n.t('users.oneUppercaseLetter'); } },
+  { test: pw => /[a-z]/.test(pw), get label() { return i18n.t('users.oneLowercaseLetter'); } },
+  { test: pw => /\d/.test(pw), get label() { return i18n.t('users.oneNumber'); } },
+  { test: pw => /[^A-Za-z0-9]/.test(pw), get label() { return i18n.t('users.oneSpecialSymbol'); } },
 ];
 
-export const userName = (u: Pick<StaffUser, 'firstName' | 'lastName'>) => [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || 'Staff user';
+export const userName = (u: Pick<StaffUser, 'firstName' | 'lastName'>) => [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || i18n.t('users.staffUser');
 
 export function userInitials(u: Pick<StaffUser, 'firstName' | 'lastName'>) {
   const parts = userName(u).split(/\s+/).filter(Boolean);
@@ -97,13 +98,13 @@ export const EMPTY_USER: UserForm = {
 
 /** The first thing wrong with the form, or null. */
 export function userProblem(f: UserForm, isEdit: boolean): string | null {
-  if (!f.firstName.trim() || !f.lastName.trim()) return 'Enter the first and last name.';
+  if (!f.firstName.trim() || !f.lastName.trim()) return i18n.t('users.enterTheFirstAndLastName');
   if (!isEdit) {
-    if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) return 'Enter a valid email address.';
-    if (!/^\d{6,15}$/.test(f.phoneNumber.trim())) return 'Enter a mobile number of 6–15 digits.';
-    if (f.password && PASSWORD_RULES.some(r => !r.test(f.password))) return 'The password must meet every rule listed, or leave it blank.';
+    if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) return i18n.t('common.enterAValidEmailAddress2');
+    if (!/^\d{6,15}$/.test(f.phoneNumber.trim())) return i18n.t('users.enterAMobileNumberOf6');
+    if (f.password && PASSWORD_RULES.some(r => !r.test(f.password))) return i18n.t('users.thePasswordMustMeetEveryRule');
   }
-  if (!f.roleId) return 'Choose a role.';
+  if (!f.roleId) return i18n.t('users.chooseARole');
   return null;
 }
 
@@ -120,12 +121,12 @@ export interface DeviceGroup {
 export function deviceGroups(sessions: UserSession[]): DeviceGroup[] {
   const groups = new Map<string, DeviceGroup>();
   for (const s of sessions) {
-    const name = s.deviceName || s.deviceType || 'Unknown device';
+    const name = s.deviceName || s.deviceType || i18n.t('users.unknownDevice');
     const key = `${name}|${s.browser ?? ''}|${s.os ?? ''}`;
     const active = Boolean(s.isActive) && !s.logoutTime;
     const g = groups.get(key);
     if (!g) {
-      groups.set(key, { key, name, detail: [s.browser, s.os].filter(Boolean).join(' · ') || 'Unknown browser / OS', lastSeen: s.startTime, sessions: 1, active });
+      groups.set(key, { key, name, detail: [s.browser, s.os].filter(Boolean).join(' · ') || i18n.t('users.unknownBrowserOs'), lastSeen: s.startTime, sessions: 1, active });
     } else {
       g.sessions += 1;
       g.active = g.active || active;

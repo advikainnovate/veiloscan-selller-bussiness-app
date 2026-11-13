@@ -26,6 +26,7 @@ import {
 import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { Alert } from '../ui/Alert';
+import { useTranslation } from 'react-i18next';
 
 type Amounts = Record<PaymentMethod, string>;
 const EMPTY: Amounts = {
@@ -61,6 +62,7 @@ export function CollectPaymentSheet({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const request =
     summary.creditRequest?.status === 'APPROVED' ? summary.creditRequest : null;
@@ -97,17 +99,17 @@ export function CollectPaymentSheet({
 
   let problem: string | null = null;
   if (remainingPaise < 0)
-    problem = `Payments are ${formatRupees(
+    problem = t('orders.paymentsAreAmountMoreThanThe', { amount: formatRupees(
       -remainingPaise / 100,
-    )} more than the amount due.`;
+    ) });
   else if (useCredit && creditPaise === 0)
-    problem = 'Nothing is left to put on credit.';
+    problem = t('orders.nothingIsLeftToPutOn');
   else if (useCredit && creditTermsProblem(terms, summary.maxCreditDays))
     problem = creditTermsProblem(terms, summary.maxCreditDays);
   else if (!useCredit && remainingPaise > 0)
-    problem = `${formatRupees(
+    problem = t('orders.amountIsStillUnpaidCollectIt', { amount: formatRupees(
       remainingPaise / 100,
-    )} is still unpaid — collect it, or put it on Customer Credit.`;
+    ) });
 
   async function submit() {
     if (problem || saving) return;
@@ -133,10 +135,10 @@ export function CollectPaymentSheet({
       });
       toast(
         useCredit
-          ? `${formatRupees(paidNowPaise / 100)} received · ${formatRupees(
+          ? t('orders.amountReceivedAmount2OnCreditUntil', { amount: formatRupees(paidNowPaise / 100), amount2: formatRupees(
               creditPaise / 100,
-            )} on credit until ${formatDay(dueDate)}`
-          : 'Payment recorded · order picked up',
+            ), dueDate: formatDay(dueDate) })
+          : t('orders.paymentRecordedOrderPickedUp'),
       );
       onDone();
     } catch (err) {
@@ -149,10 +151,8 @@ export function CollectPaymentSheet({
   return (
     <Sheet
       visible={visible}
-      title="Collect payment"
-      subtitle={`${formatRupees(summary.amountDue)} due for ${
-        summary.orderNumber
-      }. Enter what the customer pays by each method.`}
+      title={t('orders.collectPayment')}
+      subtitle={t('orders.amountdueDueForOrdernumberEnterWhat', { amountDue: formatRupees(summary.amountDue), orderNumber: summary.orderNumber })}
       onClose={onClose}
       footer={
         <>
@@ -162,8 +162,8 @@ export function CollectPaymentSheet({
             <Text style={styles.problem}>{problem}</Text>
           ) : null}
           <Button
-            title={useCredit ? 'Record & complete' : 'Paid · mark picked up'}
-            loadingTitle="Saving..."
+            title={useCredit ? t('orders.recordAndComplete') : t('orders.paidMarkPickedUp')}
+            loadingTitle={t('orders.saving')}
             loading={saving}
             disabled={!!problem}
             onPress={submit}
@@ -191,7 +191,7 @@ export function CollectPaymentSheet({
                 placeholderTextColor={colors.textMuted}
                 selectionColor={colors.secondary}
                 style={styles.amountInput}
-                accessibilityLabel={`${method.label} amount`}
+                accessibilityLabel={t('orders.labelAmount', { label: method.label })}
               />
             </View>
             {HAS_REFERENCE.includes(method.value) && paise(value) > 0 ? (
@@ -201,7 +201,7 @@ export function CollectPaymentSheet({
                   onChangeText={text =>
                     setReferences({ ...references, [method.value]: text })
                   }
-                  placeholder="Reference no. (optional)"
+                  placeholder={t('orders.referenceNoOptional')}
                   placeholderTextColor={colors.textMuted}
                   selectionColor={colors.secondary}
                   autoCapitalize="characters"
@@ -215,15 +215,15 @@ export function CollectPaymentSheet({
 
       <View style={styles.summary}>
         <SummaryLine
-          label="Amount due"
+          label={t('orders.amountDue')}
           value={formatRupees(summary.amountDue)}
         />
         <SummaryLine
-          label="Paying now"
+          label={t('orders.payingNow')}
           value={formatRupees(paidNowPaise / 100)}
         />
         <SummaryLine
-          label={useCredit ? 'On Customer Credit' : 'Still unpaid'}
+          label={useCredit ? t('orders.onCustomerCredit') : t('orders.stillUnpaid')}
           value={formatRupees(Math.max(0, remainingPaise) / 100)}
           strong
         />
@@ -234,11 +234,9 @@ export function CollectPaymentSheet({
           <View style={styles.creditRow}>
             <View style={styles.flex}>
               <Text style={styles.creditTitle}>
-                Put the rest on Customer Credit
-              </Text>
+                {t('orders.putTheRestOnCustomerCredit')}</Text>
               <Text style={styles.creditText}>
-                The customer takes the order now and pays the balance later.
-              </Text>
+                {t('orders.theCustomerTakesTheOrderNow')}</Text>
             </View>
             <Switch
               value={useCredit}

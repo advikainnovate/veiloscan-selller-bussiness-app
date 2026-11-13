@@ -7,6 +7,7 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { DrawerProvider } from '../context/DrawerContext';
 import { NotificationProvider } from '../context/NotificationContext';
 import { hasOnboarded } from '../lib/session';
@@ -62,6 +63,7 @@ import { QuantitySlabsScreen } from '../screens/pricing/QuantitySlabsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
+import { LanguageSettingsScreen } from '../screens/settings/LanguageSettingsScreen';
 import { ShippingScreen } from '../screens/shipping/ShippingScreen';
 import { ShippingZoneScreen } from '../screens/shipping/ShippingZoneScreen';
 import { ShippingZoneFormScreen } from '../screens/shipping/ShippingZoneFormScreen';
@@ -104,6 +106,8 @@ const theme: Theme = {
  */
 export function RootNavigator() {
   const { status } = useAuth();
+  // The saved language is restored before the first screen, so nothing flashes in English.
+  const { ready: languageReady } = useLanguage();
   const [onboarded, setOnboardedState] = useState<boolean | null>(null);
   const [splashDone, setSplashDone] = useState(false);
   // The menu key of the page on screen, so the drawer can highlight it.
@@ -142,7 +146,7 @@ export function RootNavigator() {
     if (status === 'signedIn') setOnboardedState(true);
   }, [status]);
 
-  const ready = status !== 'loading' && onboarded !== null;
+  const ready = status !== 'loading' && onboarded !== null && languageReady;
   if (!splashDone || !ready) {
     return <SplashScreen ready={ready} onFinish={() => setSplashDone(true)} />;
   }
@@ -459,6 +463,11 @@ export function RootNavigator() {
                 <Stack.Screen
                   name="Subscription"
                   component={SubscriptionScreen}
+                  options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                  name="LanguageSettings"
+                  component={LanguageSettingsScreen}
                   options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen

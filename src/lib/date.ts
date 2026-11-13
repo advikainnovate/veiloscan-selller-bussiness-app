@@ -1,7 +1,18 @@
+import i18n from '../i18n';
 // Dates as the Seller Panel shows them, formatted by hand so they don't depend
-// on the JS engine's locale data.
+// on the JS engine's locale data. Month and weekday names come from the
+// translation files (date.*), so they follow the app's language; digits stay
+// 0-9 in every language, as Indian shop owners write them.
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_KEYS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'] as const;
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+/** Jan / जन॰ (0 = January). */
+export const monthShort = (index: number) => i18n.t(`date.monthShort.${MONTH_KEYS[index]}`);
+/** January / जनवरी */
+export const monthLong = (index: number) => i18n.t(`date.monthLong.${MONTH_KEYS[index]}`);
+/** Friday / शुक्रवार (0 = Sunday) */
+export const weekdayLong = (index: number) => i18n.t(`date.weekdayLong.${WEEKDAY_KEYS[index]}`);
 
 function parse(value: unknown): Date | null {
   if (!value) return null;
@@ -19,7 +30,7 @@ export function formatTime(value: unknown) {
   if (!date) return '—';
   const hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours % 12 || 12}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`;
+  return `${hours % 12 || 12}:${minutes} ${hours < 12 ? i18n.t('date.am') : i18n.t('date.pm')}`;
 }
 
 /** 12 Oct 2026 (the year only when it isn't this year). */
@@ -27,7 +38,7 @@ export function formatDay(value: unknown) {
   const date = parse(value);
   if (!date) return '—';
   const year = date.getFullYear() === new Date().getFullYear() ? '' : ` ${date.getFullYear()}`;
-  return `${date.getDate()} ${MONTHS[date.getMonth()]}${year}`;
+  return `${date.getDate()} ${monthShort(date.getMonth())}${year}`;
 }
 
 /** Today, 3:05 PM · Yesterday, 9:12 AM · 12 Oct, 3:05 PM */
@@ -37,8 +48,15 @@ export function formatWhen(value: unknown) {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  const day = sameDay(date, today) ? 'Today' : sameDay(date, yesterday) ? 'Yesterday' : formatDay(date);
+  const day = sameDay(date, today) ? i18n.t('common.today') : sameDay(date, yesterday) ? i18n.t('common.yesterday') : formatDay(date);
   return `${day}, ${formatTime(date)}`;
+}
+
+/** Friday, 13 November — the Home header. */
+export function formatLongDate(value: unknown) {
+  const date = parse(value);
+  if (!date) return '—';
+  return `${weekdayLong(date.getDay())}, ${date.getDate()} ${monthLong(date.getMonth())}`;
 }
 
 export function isToday(value: unknown) {

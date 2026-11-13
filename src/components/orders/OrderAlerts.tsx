@@ -6,6 +6,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { openNotification } from '../../lib/notifications';
 import type { AppNotification } from '../../services/dashboard-service';
 import { ClipboardListIcon, CloseIcon, ShoppingBagIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /** New-order banners at the top of the screen, as the Seller Panel's alert stack. */
 export function OrderAlerts() {
@@ -33,6 +34,7 @@ export function OrderAlerts() {
 const ALERT_MS = 3000;
 
 function AlertCard({ alert, onView, onDismiss }: { alert: AppNotification; onView: () => void; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const progress = useRef(new Animated.Value(0)).current;
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
@@ -59,16 +61,16 @@ function AlertCard({ alert, onView, onDismiss }: { alert: AppNotification; onVie
       </View>
       <View style={styles.flex}>
         <Text style={styles.title} numberOfLines={1}>
-          {alert.title || (request ? 'New order request' : 'New order')}
+          {alert.title || (request ? t('orders.newOrderRequest') : t('common.newOrder'))}
         </Text>
         <Text style={styles.message} numberOfLines={2}>
           {alert.message}
         </Text>
       </View>
       <Pressable accessibilityRole="button" onPress={onView} style={styles.view}>
-        <Text style={styles.viewText}>View</Text>
+        <Text style={styles.viewText}>{t('common.view')}</Text>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={10} onPress={onDismiss}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('orders.dismiss')} hitSlop={10} onPress={onDismiss}>
         <CloseIcon size={16} color="rgba(255,255,255,0.7)" />
       </Pressable>
     </Animated.View>

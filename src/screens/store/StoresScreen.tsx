@@ -33,6 +33,7 @@ import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '..
 import { confirmAction, opsStyles, PageTitle, StatCard, StatGrid } from '../../components/operations/OpsParts';
 import { BanIcon, CheckCircleIcon, ClockIcon, CloseIcon, EditIcon, MapPinIcon, PlusIcon, RefreshIcon, SettingsIcon, SlidersIcon, StoreIcon, type IconProps } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * All Stores (the panel's /dashboard/stores, opened from the store
@@ -41,6 +42,7 @@ import type { ScreenProps } from '../../navigation/types';
  * open, stores:create to add, stores:edit / stores:delete per store.
  */
 export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const { current, select, refresh } = useStore();
   const toast = useToast();
@@ -65,8 +67,8 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
   if (!canView) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="All Stores" onBack={navigation.goBack} />
-        <ComingSoon label="All Stores" icon={StoreIcon} allowed={false} />
+        <AppHeader title={t('common.allStores')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.allStores')} icon={StoreIcon} allowed={false} />
       </View>
     );
   }
@@ -82,10 +84,10 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
 
   async function closeStore(store: StoreRecord) {
     setActionsFor(null);
-    if (!(await confirmAction(`Close "${store.name}"?`, 'It will be removed from the store list.', 'Close Store', true))) return;
+    if (!(await confirmAction(t('store.closeName', { name: store.name }), t('store.itWillBeRemovedFromThe'), t('store.closeStore'), true))) return;
     try {
       await storeManageService.remove(store.id);
-      toast('Store closed');
+      toast(t('store.storeClosed'));
       changed();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -96,44 +98,44 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
     <View style={styles.headerGap}>
       <View style={opsStyles.rowBetween}>
         <View style={styles.flex}>
-          <PageTitle title="All Stores" subtitle="Your registered stores. View, edit or take action on each one." />
+          <PageTitle title={t('common.allStores')} subtitle={t('store.yourRegisteredStoresViewEditOr')} />
         </View>
       </View>
       {canCreate ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Add New Store" onPress={() => navigation.navigate('CreateStore')} style={[opsStyles.primaryBtn, styles.selfStart]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.addNewStore')} onPress={() => navigation.navigate('CreateStore')} style={[opsStyles.primaryBtn, styles.selfStart]}>
           <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-          <Text style={opsStyles.primaryBtnText}>Add New Store</Text>
+          <Text style={opsStyles.primaryBtnText}>{t('common.addNewStore')}</Text>
         </Pressable>
       ) : null}
       <StatGrid>
-        <StatCard icon={StoreIcon} tone="orange" label="Total Stores" value={String(stats.total)} sub="All registered stores" loading={loading && !data} />
-        <StatCard icon={ClockIcon} tone="amber" label="Pending Approval" value={String(stats.pending)} sub="Awaiting review" loading={loading && !data} />
-        <StatCard icon={CheckCircleIcon} tone="emerald" label="Approved" value={String(stats.approved)} sub="Active stores" loading={loading && !data} />
-        <StatCard icon={CloseIcon} tone="red" label="Rejected" value={String(stats.rejected)} sub="Not approved" loading={loading && !data} />
-        <StatCard icon={ClockIcon} tone="blue" label="In Review" value={String(stats.inReview)} sub="Under verification" loading={loading && !data} />
+        <StatCard icon={StoreIcon} tone="orange" label={t('store.totalStores')} value={String(stats.total)} sub={t('store.allRegisteredStores')} loading={loading && !data} />
+        <StatCard icon={ClockIcon} tone="amber" label={t('store.pendingApproval')} value={String(stats.pending)} sub={t('common.awaitingReview')} loading={loading && !data} />
+        <StatCard icon={CheckCircleIcon} tone="emerald" label={t('common.approved')} value={String(stats.approved)} sub={t('store.activeStores')} loading={loading && !data} />
+        <StatCard icon={CloseIcon} tone="red" label={t('common.rejected')} value={String(stats.rejected)} sub={t('common.notApproved')} loading={loading && !data} />
+        <StatCard icon={ClockIcon} tone="blue" label={t('common.inReview')} value={String(stats.inReview)} sub={t('store.underVerification')} loading={loading && !data} />
       </StatGrid>
       {usage.data ? <UsageStrip usage={usage.data} /> : null}
-      <SearchBar value={filters.search} onChange={set('search')} placeholder="Search by store name, owner, email, GST, or location..." />
-      <FilterChips options={[{ value: '', label: 'All Status' }, ...STATUS_FILTERS]} value={filters.status} onChange={set('status')} />
+      <SearchBar value={filters.search} onChange={set('search')} placeholder={t('store.searchByStoreNameOwnerEmail')} />
+      <FilterChips options={[{ value: '', label: t('common.allStatus') }, ...STATUS_FILTERS]} value={filters.status} onChange={set('status')} />
       <View style={opsStyles.row}>
-        <Pressable accessibilityRole="button" accessibilityLabel="More filters" onPress={() => setMoreFilters(true)} style={opsStyles.smallBtn}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.moreFilters')} onPress={() => setMoreFilters(true)} style={opsStyles.smallBtn}>
           <SlidersIcon size={15} color={colors.text} />
-          <Text style={opsStyles.smallBtnText}>{extraFilters ? `Filters (${extraFilters})` : 'Filters'}</Text>
+          <Text style={opsStyles.smallBtnText}>{extraFilters ? t('store.filtersExtrafilters', { extraFilters }) : t('common.filters')}</Text>
         </Pressable>
         {hasFilters ? (
           <Pressable accessibilityRole="button" onPress={() => setFilters(STORE_FILTERS_INITIAL)} style={opsStyles.smallBtn}>
             <RefreshIcon size={15} color={colors.text} />
-            <Text style={opsStyles.smallBtnText}>Reset</Text>
+            <Text style={opsStyles.smallBtnText}>{t('common.reset')}</Text>
           </Pressable>
         ) : null}
-        <Text style={[opsStyles.muted, styles.flex, styles.right]}>{`${rows.length} store${rows.length === 1 ? '' : 's'}`}</Text>
+        <Text style={[opsStyles.muted, styles.flex, styles.right]}>{t('common.storeCount', { count: rows.length })}</Text>
       </View>
     </View>
   );
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="All Stores" subtitle="Stores" onBack={navigation.goBack} />
+      <AppHeader title={t('common.allStores')} subtitle={t('common.stores')} onBack={navigation.goBack} />
       {error && !data ? (
         <ErrorState message={error} onRetry={reload} />
       ) : (
@@ -147,7 +149,7 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
             loading && !data ? (
               <ListSkeleton rows={3} height={150} />
             ) : (
-              <EmptyState icon={StoreIcon} title={hasFilters ? 'No stores match these filters.' : 'No stores yet'} text={hasFilters ? undefined : canCreate ? 'Add one to get started.' : undefined} />
+              <EmptyState icon={StoreIcon} title={hasFilters ? t('store.noStoresMatchTheseFilters') : t('common.noStoresYet')} text={hasFilters ? undefined : canCreate ? t('store.addOneToGetStarted') : undefined} />
             )
           }
           renderItem={({ item }) => (
@@ -161,10 +163,10 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
         />
       )}
 
-      <Sheet visible={moreFilters} title="Filters" onClose={() => setMoreFilters(false)}>
-        <SelectField label="Business Type" value={filters.businessType} options={BUSINESS_TYPES} onChange={set('businessType')} allowClear="All Types" placeholder="All Types" />
-        <SelectField label="Category" value={filters.category} options={choices.categories} onChange={set('category')} allowClear="All Categories" placeholder="All Categories" />
-        <SelectField label="Location" value={filters.city} options={choices.cities} onChange={set('city')} allowClear="All Cities" placeholder="All Cities" />
+      <Sheet visible={moreFilters} title={t('common.filters')} onClose={() => setMoreFilters(false)}>
+        <SelectField label={t('store.businessType')} value={filters.businessType} options={BUSINESS_TYPES} onChange={set('businessType')} allowClear={t('common.allTypes')} placeholder={t('common.allTypes')} />
+        <SelectField label={t('common.category')} value={filters.category} options={choices.categories} onChange={set('category')} allowClear={t('store.allCategories')} placeholder={t('store.allCategories')} />
+        <SelectField label={t('common.location')} value={filters.city} options={choices.cities} onChange={set('city')} allowClear={t('store.allCities')} placeholder={t('store.allCities')} />
       </Sheet>
 
       <StoreActionsSheet
@@ -188,7 +190,7 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
         onSwitch={s => {
           setActionsFor(null);
           select(s.id);
-          toast(`Switched to ${s.name}`);
+          toast(t('common.switchedToName', { name: s.name }));
         }}
         onCloseStore={closeStore}
       />
@@ -198,17 +200,18 @@ export function StoresScreen({ navigation }: ScreenProps<'Stores'>) {
 
 function UsageStrip({ usage }: { usage: FeatureUsage }) {
   // Unlimited allowances aren't worth a row of their own.
+  const { t } = useTranslation();
   if (usage.isEnabled && usage.allowed === null) return null;
   const exhausted = usage.remaining === 0;
-  const used = !usage.isEnabled ? 'Not included' : `${usage.used} of ${usage.allowed} used`;
-  const left = !usage.isEnabled ? '—' : usage.remaining === null ? 'No limit' : exhausted ? 'None left' : `${usage.remaining} left`;
+  const used = !usage.isEnabled ? t('common.notIncluded') : t('common.usedOfAllowedUsed', { used: usage.used, allowed: usage.allowed });
+  const left = !usage.isEnabled ? '—' : usage.remaining === null ? t('common.noLimit') : exhausted ? t('common.noneLeft') : t('common.remainingLeft', { remaining: usage.remaining });
   const share = usage.allowed ? Math.min(1, usage.used / usage.allowed) : 1;
   return (
     <View style={[styles.usage, exhausted && styles.usageFull]}>
       <View style={opsStyles.rowBetween}>
-        <Text style={styles.usageLabel}>Stores on your plan</Text>
+        <Text style={styles.usageLabel}>{t('store.storesOnYourPlan')}</Text>
         <Pressable accessibilityRole="link" onPress={() => openMenuKey('subscription')}>
-          <Text style={styles.link}>Plan</Text>
+          <Text style={styles.link}>{t('common.plan')}</Text>
         </Pressable>
       </View>
       <View style={styles.bar}>
@@ -223,12 +226,13 @@ function UsageStrip({ usage }: { usage: FeatureUsage }) {
 }
 
 function StoreCard({ store, current, onOpen, onMore }: { store: StoreRecord; current: boolean; onOpen: () => void; onMore: () => void }) {
+  const { t } = useTranslation();
   const status = DISPLAY_STATUS[displayStatus(store)];
   const logo = (store.branding?.logo as { url?: string } | undefined)?.url;
   const location = storeLocation(store);
   const gst = !!store.taxDetails?.gstRegistered;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Open ${store.name}`} onPress={onOpen} style={({ pressed }) => [styles.card, pressed && opsStyles.pressed]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('store.openName', { name: store.name })} onPress={onOpen} style={({ pressed }) => [styles.card, pressed && opsStyles.pressed]}>
       <View style={styles.cardHead}>
         <View style={styles.logo}>{logo ? <Image source={{ uri: logo }} style={styles.fill} /> : <StoreIcon size={20} color={colors.white} />}</View>
         <View style={styles.flex}>
@@ -236,22 +240,22 @@ function StoreCard({ store, current, onOpen, onMore }: { store: StoreRecord; cur
             {store.name}
           </Text>
           <Text style={opsStyles.meta} numberOfLines={1}>
-            {`#${store.code}${current ? ' · Current store' : ''}`}
+            {`#${store.code}${current ? ` · ${t('store.currentStore')}` : ''}`}
           </Text>
         </View>
-        <Badge label={status.label === 'Pending Approval' ? 'Pending' : status.label} tone={status.tone} />
-        <Pressable accessibilityRole="button" accessibilityLabel={`More for ${store.name}`} hitSlop={8} onPress={onMore} style={styles.more}>
+        <Badge label={displayStatus(store) === 'PENDING' ? t('common.pending') : status.label} tone={status.tone} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t('store.moreForName', { name: store.name })} hitSlop={8} onPress={onMore} style={styles.more}>
           <Text style={styles.dots}>⋮</Text>
         </Pressable>
       </View>
       <View style={styles.pills}>
         <Badge label={labelFor(BUSINESS_TYPES, store.businessType)} tone="blue" />
         {store.businessCategory ? <Badge label={store.businessCategory} tone="slate" /> : null}
-        <Badge label={gst ? 'GST Provided' : 'GST Not Provided'} tone={gst ? 'green' : 'slate'} />
+        <Badge label={gst ? t('store.gstProvided') : t('store.gstNotProvided')} tone={gst ? 'green' : 'slate'} />
       </View>
       <View style={styles.facts}>
         <Text style={opsStyles.meta} numberOfLines={1}>
-          {`Owner: ${ownerName(store) || '—'}${store.owner?.email ? ` · ${String(store.owner.email)}` : ''}`}
+          {`${t('store.ownerNamed', { name: ownerName(store) || '—' })}${store.owner?.email ? ` · ${String(store.owner.email)}` : ''}`}
         </Text>
         {location ? (
           <View style={opsStyles.row}>
@@ -293,12 +297,13 @@ function StoreActionsSheet({
   onSwitch: (s: StoreRecord) => void;
   onCloseStore: (s: StoreRecord) => void;
 }) {
+  const { t } = useTranslation();
   const actions: { label: string; icon: React.ComponentType<IconProps>; danger?: boolean; hidden: boolean; onPress: (s: StoreRecord) => void }[] = [
-    { label: 'View Details', icon: SettingsIcon, hidden: false, onPress: onView },
-    { label: 'Switch to this store', icon: CheckCircleIcon, hidden: isCurrent, onPress: onSwitch },
-    { label: 'Edit Store', icon: EditIcon, hidden: !canEdit, onPress: onEdit },
-    { label: 'Continue Onboarding', icon: ClockIcon, hidden: !canEdit || store?.onboardingStatus === 'COMPLETED', onPress: onOnboarding },
-    { label: 'Close Store', icon: BanIcon, danger: true, hidden: !canDelete, onPress: onCloseStore },
+    { label: t('store.viewDetails'), icon: SettingsIcon, hidden: false, onPress: onView },
+    { label: t('store.switchToThisStore'), icon: CheckCircleIcon, hidden: isCurrent, onPress: onSwitch },
+    { label: t('store.editStore2'), icon: EditIcon, hidden: !canEdit, onPress: onEdit },
+    { label: t('store.continueOnboarding'), icon: ClockIcon, hidden: !canEdit || store?.onboardingStatus === 'COMPLETED', onPress: onOnboarding },
+    { label: t('store.closeStore'), icon: BanIcon, danger: true, hidden: !canDelete, onPress: onCloseStore },
   ];
   return (
     <Sheet visible={!!store} title={store?.name ?? ''} subtitle={store ? `#${store.code}` : undefined} onClose={onClose}>

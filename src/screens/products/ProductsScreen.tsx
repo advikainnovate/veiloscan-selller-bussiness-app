@@ -20,32 +20,34 @@ import { Sheet } from '../../components/ui/Sheet';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { BanIcon, BoxIcon, CheckCircleIcon, CheckIcon, FilterIcon, PlusIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Approval stages (see lib/product-approval) plus stock views, as the Seller Panel's tabs.
 const STATUS_TABS = [
-  { value: 'all', label: 'All' },
-  { value: 'published', label: 'Published' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'changes_required', label: 'Changes Required' },
-  { value: 'unpublished', label: 'Unpublished' },
-  { value: 'out_of_stock', label: 'Out of Stock' },
-  { value: 'low_stock', label: 'Low Stock' },
+  { value: 'all', get label() { return i18n.t('common.all'); } },
+  { value: 'published', get label() { return i18n.t('products.published'); } },
+  { value: 'draft', get label() { return i18n.t('common.draft'); } },
+  { value: 'in_review', get label() { return i18n.t('common.inReview'); } },
+  { value: 'changes_required', get label() { return i18n.t('products.changesRequired'); } },
+  { value: 'unpublished', get label() { return i18n.t('products.unpublished'); } },
+  { value: 'out_of_stock', get label() { return i18n.t('common.outOfStock'); } },
+  { value: 'low_stock', get label() { return i18n.t('common.lowStock'); } },
 ];
 const STAGE_TABS = ['published', 'draft', 'in_review', 'changes_required', 'unpublished'];
 
 const STOCK: Record<StockStatus, { label: string; color: string }> = {
-  IN_STOCK: { label: 'In stock', color: colors.successDark },
-  LOW_STOCK: { label: 'Low stock', color: colors.warningDark },
-  OUT_OF_STOCK: { label: 'Out of stock', color: colors.error },
+  IN_STOCK: { get label() { return i18n.t('common.inStock'); }, color: colors.successDark },
+  LOW_STOCK: { get label() { return i18n.t('common.lowStock2'); }, color: colors.warningDark },
+  OUT_OF_STOCK: { get label() { return i18n.t('common.outOfStock2'); }, color: colors.error },
 };
 
 type SortKey = 'newest' | 'name' | 'price' | 'stock';
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'newest', label: 'Newest' },
-  { key: 'name', label: 'Name' },
-  { key: 'price', label: 'Price' },
-  { key: 'stock', label: 'Stock' },
+  { key: 'newest', get label() { return i18n.t('products.newest'); } },
+  { key: 'name', get label() { return i18n.t('common.name'); } },
+  { key: 'price', get label() { return i18n.t('common.price'); } },
+  { key: 'stock', get label() { return i18n.t('common.stock'); } },
 ];
 
 // Brand filter value for products without a brand.
@@ -80,6 +82,7 @@ const NO_FILTERS: Filters = { categoryId: '', brandId: '', stock: '', priceMin: 
 
 /** Products tab: the catalog with approval stages, stock, filters and the row actions of the Seller Panel. */
 export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('products-master:manage');
   const toast = useToast();
@@ -176,13 +179,13 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
     );
     setBulkBusy(false);
     const done = items.length - failed.length;
-    const verb = kind === 'submit' ? 'submitted for approval' : 'activated';
+    const verb = kind === 'submit' ? tr('products.verbSubmittedForApproval') : tr('products.verbActivated');
     if (failed.length) {
-      toast(`${done} of ${items.length} ${verb}. ${failed.length} failed: ${extractErrorMessage(firstError)}`, 'error');
+      toast(tr('products.doneOfItemscountVerbFailedcountFailed', { done, itemsCount: items.length, verb, failedCount: failed.length, firstError: extractErrorMessage(firstError) }), 'error');
       // Keep the failed ones selected so they can be retried.
       setSelected(new Set(failed.map(r => r.id)));
     } else {
-      toast(`${done} product${done === 1 ? '' : 's'} ${verb}`);
+      toast(tr(kind === 'submit' ? 'products.productsSubmittedForApproval' : 'products.productsActivated', { count: done }));
       setSelected(new Set());
       setSelecting(false);
     }
@@ -192,8 +195,8 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Products" />
-        <ComingSoon label="Products" icon={BoxIcon} allowed={false} />
+        <AppHeader title={tr('common.products')} />
+        <ComingSoon label={tr('common.products')} icon={BoxIcon} allowed={false} />
       </View>
     );
   }
@@ -206,35 +209,35 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
         <View style={styles.summaryGlow} />
         <View style={styles.summaryTop}>
           <View>
-            <Text style={styles.summaryLabel}>Products</Text>
+            <Text style={styles.summaryLabel}>{tr('common.products')}</Text>
             <Text style={styles.summaryValue}>{stats.total}</Text>
           </View>
           {stats.outOfStock ? (
             <Pressable accessibilityRole="button" onPress={() => setTab(tab === 'out_of_stock' ? 'all' : 'out_of_stock')} style={styles.alertPill}>
               <BanIcon size={13} color="#fca5a5" />
-              <Text style={styles.alertPillText}>{`${stats.outOfStock} out of stock`}</Text>
+              <Text style={styles.alertPillText}>{tr('products.outofstockOutOfStock', { outOfStock: stats.outOfStock })}</Text>
             </Pressable>
           ) : (
             <View style={[styles.alertPill, styles.okPill]}>
               <CheckCircleIcon size={13} color="#4ade80" />
-              <Text style={[styles.alertPillText, styles.okPillText]}>All in stock</Text>
+              <Text style={[styles.alertPillText, styles.okPillText]}>{tr('products.allInStock')}</Text>
             </View>
           )}
         </View>
         <View style={styles.summaryStats}>
-          <SummaryStat label="Live" value={stats.published} dot="#4ade80" active={tab === 'published'} onPress={() => setTab(tab === 'published' ? 'all' : 'published')} />
-          <SummaryStat label="In review" value={stats.inReview} dot="#fbbf24" active={tab === 'in_review'} onPress={() => setTab(tab === 'in_review' ? 'all' : 'in_review')} />
-          <SummaryStat label="Changes" value={stats.changes} dot="#fb923c" active={tab === 'changes_required'} onPress={() => setTab(tab === 'changes_required' ? 'all' : 'changes_required')} />
-          <SummaryStat label="Draft" value={stats.draft} dot="#94a3b8" active={tab === 'draft'} onPress={() => setTab(tab === 'draft' ? 'all' : 'draft')} />
+          <SummaryStat label={tr('products.live')} value={stats.published} dot="#4ade80" active={tab === 'published'} onPress={() => setTab(tab === 'published' ? 'all' : 'published')} />
+          <SummaryStat label={tr('products.inReview')} value={stats.inReview} dot="#fbbf24" active={tab === 'in_review'} onPress={() => setTab(tab === 'in_review' ? 'all' : 'in_review')} />
+          <SummaryStat label={tr('common.changes')} value={stats.changes} dot="#fb923c" active={tab === 'changes_required'} onPress={() => setTab(tab === 'changes_required' ? 'all' : 'changes_required')} />
+          <SummaryStat label={tr('common.draft')} value={stats.draft} dot="#94a3b8" active={tab === 'draft'} onPress={() => setTab(tab === 'draft' ? 'all' : 'draft')} />
         </View>
       </View>
       <View style={styles.searchRow}>
         <View style={styles.flex}>
-          <SearchBar value={search} onChange={setSearch} placeholder="Search name or SKU" />
+          <SearchBar value={search} onChange={setSearch} placeholder={tr('products.searchNameOrSku')} />
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Filters${activeFilters ? `, ${activeFilters} on` : ''}`}
+          accessibilityLabel={activeFilters ? tr('products.filtersCountOn', { count: activeFilters }) : tr('products.filters')}
           onPress={() => setFilterOpen(true)}
           style={[styles.filterBtn, activeFilters > 0 && styles.filterBtnOn]}
         >
@@ -265,7 +268,7 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
           }}
           style={styles.selectBtn}
         >
-          <Text style={styles.selectText}>{selecting ? 'Done' : 'Select'}</Text>
+          <Text style={styles.selectText}>{selecting ? tr('common.done') : tr('products.select')}</Text>
         </Pressable>
       </View>
     </View>
@@ -273,7 +276,7 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Products" subtitle={loaded ? `${rows.length} product${rows.length === 1 ? '' : 's'}` : undefined} />
+      <AppHeader title={tr('common.products')} subtitle={loaded ? tr('common.productCount', { count: rows.length }) : undefined} />
       <FlatList
         data={loading || (error && !loaded) ? [] : visible}
         keyExtractor={item => item.id}
@@ -299,8 +302,8 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
           ) : (
             <EmptyState
               icon={BoxIcon}
-              title={rows.length ? 'No products match' : 'No products yet'}
-              text={rows.length ? 'Try another tab, filter or search.' : 'Add your first product to start selling.'}
+              title={rows.length ? tr('products.noProductsMatch') : tr('products.noProductsYet')}
+              text={rows.length ? tr('products.tryAnotherTabFilterOrSearch') : tr('products.addYourFirstProductToStart')}
             />
           )
         }
@@ -312,16 +315,16 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
 
       {selecting ? (
         <View style={styles.bulkBar}>
-          <Text style={styles.bulkText}>{selected.size} selected</Text>
+          <Text style={styles.bulkText}>{tr('products.sizeSelected', { size: selected.size })}</Text>
           <Button
-            title={`Submit (${toSubmit.length})`}
+            title={tr('products.submitTosubmitcount', { toSubmitCount: toSubmit.length })}
             variant="ghost"
             disabled={!toSubmit.length || bulkBusy}
             onPress={() => bulk('submit')}
             style={styles.bulkBtn}
           />
           <Button
-            title={`Activate (${toActivate.length})`}
+            title={tr('products.activateToactivatecount', { toActivateCount: toActivate.length })}
             loading={bulkBusy}
             disabled={!toActivate.length}
             onPress={() => bulk('activate')}
@@ -331,12 +334,12 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add product"
+          accessibilityLabel={tr('common.addProduct')}
           onPress={() => navigation.navigate('ProductEditor', {})}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <PlusIcon size={20} color={colors.white} strokeWidth={2.4} />
-          <Text style={styles.fabText}>Add product</Text>
+          <Text style={styles.fabText}>{tr('common.addProduct')}</Text>
         </Pressable>
       )}
 
@@ -355,16 +358,16 @@ export function ProductsScreen({ navigation }: TabScreenProps<'Products'>) {
       <Sheet visible={!!menuFor} title={menuFor?.productName ?? ''} subtitle={menuFor ? productStage(menuFor).label : undefined} onClose={() => setMenuFor(null)}>
         {menuFor ? (
           <View style={styles.menu}>
-            <MenuItem label="View details" onPress={() => navigation.navigate('ProductDetail', { id: menuFor.id })} close={() => setMenuFor(null)} />
-            <MenuItem label="Edit" onPress={() => navigation.navigate('ProductEditor', { id: menuFor.id })} close={() => setMenuFor(null)} />
-            <MenuItem label="Duplicate" onPress={() => actions.duplicate(menuFor)} close={() => setMenuFor(null)} />
+            <MenuItem label={tr('products.viewDetails')} onPress={() => navigation.navigate('ProductDetail', { id: menuFor.id })} close={() => setMenuFor(null)} />
+            <MenuItem label={tr('common.edit')} onPress={() => navigation.navigate('ProductEditor', { id: menuFor.id })} close={() => setMenuFor(null)} />
+            <MenuItem label={tr('common.duplicate')} onPress={() => actions.duplicate(menuFor)} close={() => setMenuFor(null)} />
             {canSubmitForApproval(menuFor) ? (
-              <MenuItem label={productStage(menuFor).key === 'changes_required' ? 'Resubmit for approval' : 'Submit for approval'} onPress={() => actions.submit(menuFor)} close={() => setMenuFor(null)} />
+              <MenuItem label={productStage(menuFor).key === 'changes_required' ? tr('products.resubmitForApproval') : tr('products.submitForApproval')} onPress={() => actions.submit(menuFor)} close={() => setMenuFor(null)} />
             ) : null}
             {canPublish(menuFor) ? (
-              <MenuItem label={Number(menuFor.status) === 1 ? 'Deactivate' : 'Activate'} onPress={() => actions.toggleStatus(menuFor)} close={() => setMenuFor(null)} />
+              <MenuItem label={Number(menuFor.status) === 1 ? tr('common.deactivate') : tr('common.activate')} onPress={() => actions.toggleStatus(menuFor)} close={() => setMenuFor(null)} />
             ) : null}
-            <MenuItem label="Delete" danger onPress={() => actions.remove(menuFor)} close={() => setMenuFor(null)} />
+            <MenuItem label={tr('common.delete')} danger onPress={() => actions.remove(menuFor)} close={() => setMenuFor(null)} />
           </View>
         ) : null}
       </Sheet>
@@ -434,11 +437,12 @@ function ProductCard({
   onPress: () => void;
   onMenu: () => void;
 }) {
+  const { t: tr } = useTranslation();
   const stage = productStage(product);
   const stock = STOCK[product.stockStatus];
   const stockText = product.stockTotals.length
     ? product.stockTotals.map(t => readableQty(t.available, t.uom, uoms)).join(' + ')
-    : 'No stock yet';
+    : tr('products.noStockYet');
   const off = product.mrp && product.price !== null && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   return (
     <Pressable
@@ -464,14 +468,14 @@ function ProductCard({
           {product.productName}
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {[category, brand ?? 'No brand', `${product.skuCount} SKU${product.skuCount === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+          {[category, brand ?? tr('products.noBrand'), tr('common.skuCount', { count: product.skuCount })].filter(Boolean).join(' · ')}
         </Text>
         <View style={styles.bottomRow}>
           <Text style={styles.price}>{product.price === null ? '—' : formatRupees(product.price)}</Text>
           {off ? (
             <>
               <Text style={styles.mrp}>{formatRupees(product.mrp!)}</Text>
-              <Text style={styles.off}>{`${off}% off`}</Text>
+              <Text style={styles.off}>{tr('products.offPercentOff', { off })}</Text>
             </>
           ) : null}
         </View>
@@ -486,7 +490,7 @@ function ProductCard({
         </View>
       </View>
       {!selecting ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Actions for ${product.productName}`} hitSlop={10} onPress={onMenu} style={styles.more}>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('products.actionsForProductname', { productName: product.productName })} hitSlop={10} onPress={onMenu} style={styles.more}>
           <Text style={styles.moreText}>⋯</Text>
         </Pressable>
       ) : null}
@@ -509,6 +513,7 @@ function FilterSheet({
   onApply: (next: Filters) => void;
   onClose: () => void;
 }) {
+  const { t: tr } = useTranslation();
   const [draft, setDraft] = useState<Filters>(value);
   React.useEffect(() => {
     if (visible) setDraft(value);
@@ -518,41 +523,41 @@ function FilterSheet({
   return (
     <Sheet
       visible={visible}
-      title="Filters"
+      title={tr('common.filters')}
       onClose={onClose}
       footer={
         <View style={styles.filterActions}>
           <Pressable onPress={() => onApply(NO_FILTERS)} style={styles.resetBtn}>
-            <Text style={styles.resetText}>Reset</Text>
+            <Text style={styles.resetText}>{tr('common.reset')}</Text>
           </Pressable>
-          <Button title="Apply" onPress={() => onApply(draft)} style={styles.flex} />
+          <Button title={tr('common.apply')} onPress={() => onApply(draft)} style={styles.flex} />
         </View>
       }
     >
-      <FilterGroup label="Category">
-        <Choice label="All" on={!draft.categoryId} onPress={() => set({ categoryId: '' })} />
+      <FilterGroup label={tr('common.category')}>
+        <Choice label={tr('common.all')} on={!draft.categoryId} onPress={() => set({ categoryId: '' })} />
         {categories.map(c => (
           <Choice key={c.id} label={String(c.categoryTitle ?? '')} on={draft.categoryId === c.id} onPress={() => set({ categoryId: c.id })} />
         ))}
       </FilterGroup>
-      <FilterGroup label="Brand">
-        <Choice label="All" on={!draft.brandId} onPress={() => set({ brandId: '' })} />
-        <Choice label="No brand" on={draft.brandId === NO_BRAND} onPress={() => set({ brandId: NO_BRAND })} />
+      <FilterGroup label={tr('common.brand')}>
+        <Choice label={tr('common.all')} on={!draft.brandId} onPress={() => set({ brandId: '' })} />
+        <Choice label={tr('products.noBrand')} on={draft.brandId === NO_BRAND} onPress={() => set({ brandId: NO_BRAND })} />
         {brands.map(b => (
           <Choice key={b.id} label={String(b.title ?? '')} on={draft.brandId === b.id} onPress={() => set({ brandId: b.id })} />
         ))}
       </FilterGroup>
-      <FilterGroup label="Stock">
-        <Choice label="All" on={!draft.stock} onPress={() => set({ stock: '' })} />
+      <FilterGroup label={tr('common.stock')}>
+        <Choice label={tr('common.all')} on={!draft.stock} onPress={() => set({ stock: '' })} />
         {(Object.keys(STOCK) as StockStatus[]).map(s => (
           <Choice key={s} label={STOCK[s].label} on={draft.stock === s} onPress={() => set({ stock: s })} />
         ))}
       </FilterGroup>
-      <FilterGroup label="Price (₹)">
+      <FilterGroup label={tr('products.priceRs')}>
         <TextInput
           value={draft.priceMin}
           onChangeText={t => set({ priceMin: t.replace(/[^0-9.]/g, '') })}
-          placeholder="Min"
+          placeholder={tr('products.min')}
           keyboardType="decimal-pad"
           placeholderTextColor={colors.textMuted}
           style={styles.priceInput}
@@ -560,7 +565,7 @@ function FilterSheet({
         <TextInput
           value={draft.priceMax}
           onChangeText={t => set({ priceMax: t.replace(/[^0-9.]/g, '') })}
-          placeholder="Max"
+          placeholder={tr('products.max')}
           keyboardType="decimal-pad"
           placeholderTextColor={colors.textMuted}
           style={styles.priceInput}

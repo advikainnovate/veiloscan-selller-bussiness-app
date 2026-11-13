@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // Indian digit grouping (12,34,567), written out rather than relying on the
 // JS engine's Intl data.
 export function formatNumber(value: number) {
@@ -20,8 +21,8 @@ export type Trend = { direction: 'up' | 'down' | 'flat'; label: string };
 
 /** "+20%" against the previous period, or a plain phrase when there's nothing to compare. */
 export function trend(value: number, previous: number): Trend {
-  if (value === previous) return { direction: 'flat', label: 'Same as' };
-  if (previous === 0) return { direction: 'up', label: 'Up from 0' };
+  if (value === previous) return { direction: 'flat', label: i18n.t('common.sameAs') };
+  if (previous === 0) return { direction: 'up', label: i18n.t('common.upFrom0') };
   const pct = ((value - previous) / previous) * 100;
   const rounded = Math.abs(pct) < 10 ? Math.round(pct * 10) / 10 : Math.round(pct);
   return { direction: pct > 0 ? 'up' : 'down', label: `${pct > 0 ? '+' : '−'}${Math.abs(rounded)}%` };

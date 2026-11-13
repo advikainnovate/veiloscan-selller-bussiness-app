@@ -34,11 +34,13 @@ import { ActionSheet, compactStyles, CountTiles, Fab, ListTop, RowCard, Separato
 import { confirmAction, opsStyles, ReasonSheet } from '../../components/operations/OpsParts';
 import { BanIcon, BuildingIcon, CheckCircleIcon, EditIcon, EyeIcon, RefreshIcon, SlidersIcon, TrashIcon, WarehouseIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 
 /** Catalog › Warehouses: warehouses, retail stores and dark stores, checked by VeiloScan before they hold stock. */
 export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const listPadding = useListPadding();
@@ -83,18 +85,18 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Warehouses" onBack={navigation.goBack} />
-        <ComingSoon label="Warehouses" icon={WarehouseIcon} allowed={false} />
+        <AppHeader title={t('catalog.warehouses')} onBack={navigation.goBack} />
+        <ComingSoon label={t('catalog.warehouses')} icon={WarehouseIcon} allowed={false} />
       </View>
     );
   }
 
   async function toggle(row: WarehouseRow) {
     const off = row.lifecycle === 'ACTIVE';
-    if (!(await confirmAction(`${off ? 'Deactivate' : 'Activate'} "${String(row.facilityTitle)}"?`, undefined, off ? 'Deactivate' : 'Activate', off))) return;
+    if (!(await confirmAction(`${off ? 'Deactivate' : 'Activate'} "${String(row.facilityTitle)}"?`, undefined, off ? t('common.deactivate') : t('common.activate'), off))) return;
     try {
       await warehouseMasterService.update(row.id, { status: off ? 0 : 1 });
-      toast(`Warehouse ${off ? 'deactivated' : 'activated'}`);
+      toast(off ? t('catalog.warehouseDeactivated') : t('catalog.warehouseActivated'));
       refreshAll();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -102,10 +104,10 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
   }
 
   async function remove(row: WarehouseRow) {
-    if (!(await confirmAction('Delete warehouse?', `"${String(row.facilityTitle)}" will be removed from this list. Deactivate it instead if you only want to take it out of use.`, 'Delete', true))) return;
+    if (!(await confirmAction(t('catalog.deleteWarehouse'), t('catalog.facilitytitleWillBeRemovedFromThis', { facilityTitle: String(row.facilityTitle) }), t('common.delete'), true))) return;
     try {
       await warehouseMasterService.remove(row.id);
-      toast('Warehouse deleted');
+      toast(t('catalog.warehouseDeleted'));
       refreshAll();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -116,36 +118,36 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Warehouses" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('catalog.warehouses')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder="Search by name, code or city…" />
+        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder={t('catalog.searchByNameCodeOrCity')} />
         <CountTiles
           tiles={[
-            statusTile('ACTIVE', 'Active', count(['ACTIVE']), 'green'),
-            statusTile('AWAITING', 'Awaiting', count(['PENDING_APPROVAL', 'UNDER_REVIEW']), 'blue'),
-            statusTile('REJECTED', 'Rejected', count(['REJECTED', 'INFO_REQUESTED']), 'red'),
-            statusTile('INACTIVE', 'Inactive', count(['INACTIVE', 'SUSPENDED']), 'slate'),
+            statusTile('ACTIVE', t('common.active'), count(['ACTIVE']), 'green'),
+            statusTile('AWAITING', t('catalog.awaiting'), count(['PENDING_APPROVAL', 'UNDER_REVIEW']), 'blue'),
+            statusTile('REJECTED', t('common.rejected'), count(['REJECTED', 'INFO_REQUESTED']), 'red'),
+            statusTile('INACTIVE', t('common.inactive'), count(['INACTIVE', 'SUSPENDED']), 'slate'),
           ]}
           value={filters.status === 'PENDING_APPROVAL' ? 'AWAITING' : filters.status}
           onSelect={k => set('status', k === 'AWAITING' ? 'PENDING_APPROVAL' : k)}
           loading={loading && !data}
         />
         <View style={styles.figures}>
-          <Text style={styles.figure}>{`Stock value ${shortRupees(rows.reduce((s, r) => s + r.stockValue, 0))}`}</Text>
-          <Text style={styles.figure}>{`Units ${rows.reduce((s, r) => s + r.totalAvailable, 0).toLocaleString('en-IN')}`}</Text>
-          <Text style={[styles.figure, lowItems ? styles.warn : null]}>{`Low stock items ${lowItems}`}</Text>
+          <Text style={styles.figure}>{t('catalog.stockValueShortrupees', { shortRupees: shortRupees(rows.reduce((s, r) => s + r.stockValue, 0)) })}</Text>
+          <Text style={styles.figure}>{t('catalog.unitsTotal', { units: rows.reduce((s, r) => s + r.totalAvailable, 0).toLocaleString('en-IN') })}</Text>
+          <Text style={[styles.figure, lowItems ? styles.warn : null]}>{t('catalog.lowStockItemsLowitems', { lowItems })}</Text>
         </View>
         <SummaryLine
-          hint={filters.status ? WAREHOUSE_STATUS[filters.status as WarehouseLifecycle].hint : 'New warehouses are checked by VeiloScan before you can stock them.'}
+          hint={filters.status ? WAREHOUSE_STATUS[filters.status as WarehouseLifecycle].hint : t('catalog.newWarehousesAreCheckedByVeiloscan')}
           filtered={isFiltered}
           shown={filtered.length}
           total={rows.length}
           noun="warehouse"
           onClear={() => setFilters(WAREHOUSE_FILTERS)}
           extra={
-            <Pressable accessibilityRole="button" accessibilityLabel="More filters" hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.moreFilters')} hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
               <SlidersIcon size={14} color={extra ? colors.secondary : colors.textSecondary} />
-              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? `Filters (${extra})` : 'Filters'}</Text>
+              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? t('common.filtersExtra', { extra }) : t('common.filters')}</Text>
             </Pressable>
           }
         />
@@ -165,7 +167,7 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
           ListHeaderComponent={
             needsAction.length && !isFiltered ? (
               <View style={styles.attention}>
-                <Text style={styles.attentionTitle}>{`${needsAction.length} warehouse${needsAction.length === 1 ? ' needs' : 's need'} your attention`}</Text>
+                <Text style={styles.attentionTitle}>{t('catalog.warehousesNeedAttention', { count: needsAction.length })}</Text>
                 {needsAction.map(r => (
                   <Pressable key={r.id} accessibilityRole="link" onPress={() => navigation.navigate('WarehouseDetail', { id: r.id })}>
                     <Text style={styles.attentionText} numberOfLines={2}>
@@ -182,7 +184,7 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
               <ListSkeleton rows={4} height={96} />
             ) : (
               <View style={compactStyles.empty}>
-                <EmptyState icon={WarehouseIcon} title={isFiltered ? 'No warehouses match' : 'No warehouses found'} text={isFiltered ? 'Try another filter or search term.' : 'Add a warehouse to start stocking products.'} />
+                <EmptyState icon={WarehouseIcon} title={isFiltered ? t('catalog.noWarehousesMatch') : t('catalog.noWarehousesFound')} text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('catalog.addAWarehouseToStartStocking')} />
               </View>
             )
           }
@@ -190,18 +192,18 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
         />
       )}
 
-      <Fab label="Add Warehouse" onPress={() => navigation.navigate('WarehouseForm')} />
+      <Fab label={t('catalog.addWarehouse')} onPress={() => navigation.navigate('WarehouseForm')} />
 
-      <Sheet visible={moreFilters} title="Filters" onClose={() => setMoreFilters(false)}>
-        <SelectField label="Location" value={filters.state} options={states} onChange={v => set('state', v)} allowClear="All Locations" placeholder="All Locations" />
-        <SelectField label="Type" value={filters.type} options={WAREHOUSE_TYPES} onChange={v => set('type', v)} allowClear="All Types" placeholder="All Types" />
+      <Sheet visible={moreFilters} title={t('common.filters')} onClose={() => setMoreFilters(false)}>
+        <SelectField label={t('common.location')} value={filters.state} options={states} onChange={v => set('state', v)} allowClear={t('catalog.allLocations')} placeholder={t('catalog.allLocations')} />
+        <SelectField label={t('common.type')} value={filters.type} options={WAREHOUSE_TYPES} onChange={v => set('type', v)} allowClear={t('common.allTypes')} placeholder={t('common.allTypes')} />
         <SelectField
-          label="Status"
+          label={t('common.status')}
           value={filters.status}
           options={(Object.keys(WAREHOUSE_STATUS) as WarehouseLifecycle[]).map(k => ({ value: k, label: WAREHOUSE_STATUS[k].label }))}
           onChange={v => set('status', v)}
-          allowClear="All Status"
-          placeholder="All Status"
+          allowClear={t('common.allStatus')}
+          placeholder={t('common.allStatus')}
         />
       </Sheet>
 
@@ -213,16 +215,16 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
         actions={
           actionsFor
             ? [
-                { label: 'View', icon: EyeIcon, onPress: () => navigation.navigate('WarehouseDetail', { id: actionsFor.id }) },
-                { label: 'Edit', icon: EditIcon, onPress: () => navigation.navigate('WarehouseForm', { id: actionsFor.id }) },
-                { label: 'Resubmit for review', icon: RefreshIcon, hidden: !canResubmit(actionsFor.lifecycle), onPress: () => setResubmitting(actionsFor) },
+                { label: t('common.view'), icon: EyeIcon, onPress: () => navigation.navigate('WarehouseDetail', { id: actionsFor.id }) },
+                { label: t('common.edit'), icon: EditIcon, onPress: () => navigation.navigate('WarehouseForm', { id: actionsFor.id }) },
+                { label: t('catalog.resubmitForReview'), icon: RefreshIcon, hidden: !canResubmit(actionsFor.lifecycle), onPress: () => setResubmitting(actionsFor) },
                 {
-                  label: actionsFor.lifecycle === 'ACTIVE' ? 'Deactivate' : 'Activate',
+                  label: actionsFor.lifecycle === 'ACTIVE' ? t('common.deactivate') : t('common.activate'),
                   icon: actionsFor.lifecycle === 'ACTIVE' ? BanIcon : CheckCircleIcon,
                   hidden: !canToggle(actionsFor.lifecycle),
                   onPress: () => toggle(actionsFor),
                 },
-                { label: 'Delete', icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
+                { label: t('common.delete'), icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
               ]
             : []
         }
@@ -230,17 +232,17 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
 
       <ReasonSheet
         visible={!!resubmitting}
-        title="Resubmit for review?"
-        message="Make sure you've updated the warehouse with what VeiloScan asked for."
-        label="Note for the reviewer (optional)"
-        confirmLabel="Resubmit"
+        title={t('catalog.resubmitForReview2')}
+        message={t('catalog.makeSureYouVeUpdatedThe')}
+        label={t('catalog.noteForTheReviewerOptional')}
+        confirmLabel={t('catalog.resubmit')}
         required={false}
         maxLength={1000}
         onClose={() => setResubmitting(null)}
         onConfirm={async note => {
           try {
             await warehouseMasterService.resubmit(resubmitting!.id, note);
-            toast('Warehouse resubmitted for review');
+            toast(t('catalog.warehouseResubmittedForReview'));
             setResubmitting(null);
             refreshAll();
           } catch (err) {
@@ -253,10 +255,11 @@ export function WarehousesScreen({ navigation }: ScreenProps<'Warehouses'>) {
 }
 
 function WarehouseCard({ row, onOpen, onMore }: { row: WarehouseRow; onOpen: () => void; onMore: () => void }) {
+  const { t } = useTranslation();
   const status = WAREHOUSE_STATUS[row.lifecycle];
   const stock = WAREHOUSE_STOCK[row.stockStatus];
   return (
-    <RowCard label={`Open ${String(row.facilityTitle)}`} onPress={onOpen}>
+    <RowCard label={t('catalog.openFacilitytitle', { facilityTitle: String(row.facilityTitle) })} onPress={onOpen}>
       <View style={compactStyles.head}>
         <View style={[compactStyles.thumb, styles.icon]}>
           <BuildingIcon size={17} color="#4f46e5" />
@@ -270,17 +273,17 @@ function WarehouseCard({ row, onOpen, onMore }: { row: WarehouseRow; onOpen: () 
           </Text>
         </View>
         <Badge label={status.label} tone={status.tone} />
-        <Pressable accessibilityRole="button" accessibilityLabel={`More for ${String(row.facilityTitle)}`} hitSlop={10} onPress={onMore} style={compactStyles.more}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.moreForFacilitytitle', { facilityTitle: String(row.facilityTitle) })} hitSlop={10} onPress={onMore} style={compactStyles.more}>
           <Text style={compactStyles.dots}>⋮</Text>
         </Pressable>
       </View>
       <View style={styles.stockRow}>
-        <Text style={compactStyles.line}>{`${row.totalAvailable.toLocaleString('en-IN')} units · ₹${row.stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}</Text>
+        <Text style={compactStyles.line}>{`${t('catalog.unitsCount', { units: row.totalAvailable.toLocaleString('en-IN') })} · ₹${row.stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}</Text>
         <Text style={[styles.stockStatus, { color: stock.color }]}>{stock.label}</Text>
       </View>
       {row.contactPerson || row.isDefault ? (
         <Text style={compactStyles.meta} numberOfLines={1}>
-          {[row.contactPerson ? `Manager: ${String(row.contactPerson)}` : null, row.isDefault ? 'Default warehouse' : null].filter(Boolean).join(' · ')}
+          {[row.contactPerson ? t('catalog.managerContactperson', { contactPerson: String(row.contactPerson) }) : null, row.isDefault ? t('catalog.defaultWarehouse') : null].filter(Boolean).join(' · ')}
         </Text>
       ) : null}
       {row.reviewNote && row.lifecycle !== 'ACTIVE' ? (

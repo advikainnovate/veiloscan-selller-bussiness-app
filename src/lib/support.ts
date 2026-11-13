@@ -3,18 +3,19 @@
 import type { BadgeTone } from '../components/ui/Badge';
 export { htmlToText } from './format';
 import type { SupportTicketSummary, TicketPriority, TicketStatus, TicketTypeDef } from '../services/support-service';
+import i18n from '../i18n';
 
 export const TICKET_STATUSES: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER', 'WAITING_FOR_STORE', 'ESCALATED', 'RESOLVED', 'CLOSED', 'REOPENED'];
 
 export const STATUS: Record<TicketStatus, { label: string; tone: BadgeTone }> = {
-  OPEN: { label: 'Open', tone: 'blue' },
-  IN_PROGRESS: { label: 'In progress', tone: 'amber' },
-  WAITING_FOR_CUSTOMER: { label: 'Waiting for customer', tone: 'violet' },
-  WAITING_FOR_STORE: { label: 'Waiting for store', tone: 'violet' },
-  ESCALATED: { label: 'Escalated', tone: 'red' },
-  RESOLVED: { label: 'Resolved', tone: 'green' },
-  CLOSED: { label: 'Closed', tone: 'slate' },
-  REOPENED: { label: 'Reopened', tone: 'amber' },
+  OPEN: { get label() { return i18n.t('common.open'); }, tone: 'blue' },
+  IN_PROGRESS: { get label() { return i18n.t('common.inProgress'); }, tone: 'amber' },
+  WAITING_FOR_CUSTOMER: { get label() { return i18n.t('common.waitingForCustomer'); }, tone: 'violet' },
+  WAITING_FOR_STORE: { get label() { return i18n.t('support.waitingForStore'); }, tone: 'violet' },
+  ESCALATED: { get label() { return i18n.t('support.escalated'); }, tone: 'red' },
+  RESOLVED: { get label() { return i18n.t('support.resolved'); }, tone: 'green' },
+  CLOSED: { get label() { return i18n.t('common.closed'); }, tone: 'slate' },
+  REOPENED: { get label() { return i18n.t('support.reopened'); }, tone: 'amber' },
 };
 export const statusOf = (s: string) => STATUS[s as TicketStatus] ?? { label: s, tone: 'slate' as BadgeTone };
 
@@ -23,48 +24,48 @@ export const PRIORITY_TONE: Record<TicketPriority, BadgeTone> = { LOW: 'slate', 
 export const priorityLabel = (p: string) => p.charAt(0) + p.slice(1).toLowerCase();
 
 export const SOURCE_LABEL: Record<string, string> = {
-  WEB: 'Website',
-  APP: 'Mobile app',
-  EMAIL: 'Email',
-  PHONE: 'Phone',
+  get WEB() { return i18n.t('common.website'); },
+  get APP() { return i18n.t('support.mobileApp'); },
+  get EMAIL() { return i18n.t('common.email'); },
+  get PHONE() { return i18n.t('common.phone'); },
   WHATSAPP: 'WhatsApp',
-  ADMIN: 'Admin panel',
-  STORE: 'Store panel',
-  SYSTEM: 'System',
+  get ADMIN() { return i18n.t('support.adminPanel'); },
+  get STORE() { return i18n.t('support.storePanel'); },
+  get SYSTEM() { return i18n.t('common.system'); },
 };
 /** How a store team logs a ticket for someone who got in touch. */
 export const STAFF_SOURCES = ['PHONE', 'EMAIL', 'WHATSAPP', 'STORE'];
 
 export const QUEUES = [
-  { value: '', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'mine', label: 'Assigned to me' },
-  { value: 'unassigned', label: 'Unassigned' },
-  { value: 'overdue', label: 'Overdue' },
-  { value: 'urgent', label: 'Urgent' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: '', get label() { return i18n.t('common.all'); } },
+  { value: 'active', get label() { return i18n.t('common.active'); } },
+  { value: 'mine', get label() { return i18n.t('support.assignedToMe'); } },
+  { value: 'unassigned', get label() { return i18n.t('support.unassigned'); } },
+  { value: 'overdue', get label() { return i18n.t('common.overdue'); } },
+  { value: 'urgent', get label() { return i18n.t('common.urgent'); } },
+  { value: 'escalated', get label() { return i18n.t('support.escalated'); } },
 ];
 
 export const EVENT_LABEL: Record<string, string> = {
-  TICKET_CREATED: 'Ticket created',
-  STATUS_CHANGED: 'Status changed',
-  PRIORITY_CHANGED: 'Priority changed',
-  CATEGORY_CHANGED: 'Category changed',
-  FIELDS_UPDATED: 'Details updated',
-  ASSIGNED: 'Assigned',
-  UNASSIGNED: 'Unassigned',
-  ESCALATED: 'Escalated',
-  ESCALATION_UPDATED: 'Escalation updated',
-  MESSAGE_ADDED: 'Message added',
-  MESSAGE_EDITED: 'Message edited',
-  ATTACHMENT_ADDED: 'File attached',
-  ATTACHMENT_DOWNLOADED: 'File downloaded',
-  FIRST_RESPONSE: 'First response',
-  SLA_APPLIED: 'SLA applied',
-  SLA_WARNING: 'SLA warning',
-  SLA_BREACHED: 'SLA breached',
-  FEEDBACK_SUBMITTED: 'Feedback submitted',
-  TICKET_DELETED: 'Ticket deleted',
+  get TICKET_CREATED() { return i18n.t('support.ticketCreated'); },
+  get STATUS_CHANGED() { return i18n.t('common.statusChanged'); },
+  get PRIORITY_CHANGED() { return i18n.t('support.priorityChanged'); },
+  get CATEGORY_CHANGED() { return i18n.t('support.categoryChanged'); },
+  get FIELDS_UPDATED() { return i18n.t('support.detailsUpdated'); },
+  get ASSIGNED() { return i18n.t('support.assigned'); },
+  get UNASSIGNED() { return i18n.t('support.unassigned'); },
+  get ESCALATED() { return i18n.t('support.escalated'); },
+  get ESCALATION_UPDATED() { return i18n.t('support.escalationUpdated'); },
+  get MESSAGE_ADDED() { return i18n.t('support.messageAdded'); },
+  get MESSAGE_EDITED() { return i18n.t('support.messageEdited'); },
+  get ATTACHMENT_ADDED() { return i18n.t('support.fileAttached'); },
+  get ATTACHMENT_DOWNLOADED() { return i18n.t('support.fileDownloaded'); },
+  get FIRST_RESPONSE() { return i18n.t('support.firstResponse'); },
+  get SLA_APPLIED() { return i18n.t('support.slaApplied'); },
+  get SLA_WARNING() { return i18n.t('support.slaWarning'); },
+  get SLA_BREACHED() { return i18n.t('support.slaBreached'); },
+  get FEEDBACK_SUBMITTED() { return i18n.t('support.feedbackSubmitted'); },
+  get TICKET_DELETED() { return i18n.t('support.ticketDeleted'); },
 };
 
 export const isActiveStatus = (s: TicketStatus) => s !== 'RESOLVED' && s !== 'CLOSED';
@@ -83,11 +84,11 @@ export function formatMinutes(minutes: number | null | undefined): string {
 
 /** An SLA deadline: met / missed once done, else how long is left (amber inside two hours, red once overdue). */
 export function slaState(due: string | null, done: string | null, overdue: boolean, now = Date.now()): { text: string; tone: 'ok' | 'soon' | 'late' | 'none' } {
-  if (!due) return { text: 'No SLA', tone: 'none' };
-  if (done) return new Date(done).getTime() <= new Date(due).getTime() ? { text: 'met', tone: 'ok' } : { text: 'missed', tone: 'late' };
+  if (!due) return { text: i18n.t('support.noSla'), tone: 'none' };
+  if (done) return new Date(done).getTime() <= new Date(due).getTime() ? { text: i18n.t('support.slaMet'), tone: 'ok' } : { text: i18n.t('support.slaMissed'), tone: 'late' };
   const diff = (new Date(due).getTime() - now) / 60000;
-  if (overdue || diff < 0) return { text: `${formatMinutes(Math.abs(diff))} overdue`, tone: 'late' };
-  return { text: `in ${formatMinutes(diff)}`, tone: diff < 120 ? 'soon' : 'none' };
+  if (overdue || diff < 0) return { text: i18n.t('support.minutesOverdue', { minutes: formatMinutes(Math.abs(diff)) }), tone: 'late' };
+  return { text: i18n.t('support.slaIn', { time: formatMinutes(diff) }), tone: diff < 120 ? 'soon' : 'none' };
 }
 
 /** The customer wrote after the store's last reply. */
@@ -98,8 +99,8 @@ export const requesterName = (t: SupportTicketSummary) => t.customer.name ?? t.c
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024) return i18n.t('support.fixedKb', { fixed: (bytes / 1024).toFixed(0) });
+  return i18n.t('support.fixedMb', { fixed: (bytes / 1024 / 1024).toFixed(1) });
 }
 
 
@@ -127,9 +128,9 @@ export function describeChange(oldValue: Record<string, unknown> | null, newValu
 
 export type Requester = 'store' | 'account' | 'guest';
 export const REQUESTERS: { value: Requester; label: string }[] = [
-  { value: 'store', label: 'Our store' },
-  { value: 'account', label: 'Customer' },
-  { value: 'guest', label: 'Guest' },
+  { value: 'store', get label() { return i18n.t('support.ourStore'); } },
+  { value: 'account', get label() { return i18n.t('common.customer'); } },
+  { value: 'guest', get label() { return i18n.t('support.guest'); } },
 ];
 
 export interface TicketForm {
@@ -170,17 +171,17 @@ export const emptyTicket = (storeId: string, related?: string): TicketForm => ({
 export function ticketProblem(f: TicketForm, type: TicketTypeDef | undefined, storeRequired = true): string | null {
   const guest = f.requester === 'guest';
   const missing = [
-    f.requester === 'account' && !f.customerId && !f.relatedTicketId && !f.orderId ? 'the customer' : null,
-    guest && !f.contactPhone.trim() && !f.contactEmail.trim() && !f.orderId && !f.relatedTicketId ? 'a phone number or email' : null,
-    storeRequired && !f.storeId ? 'the store' : null,
-    type?.order === 'required' && !f.orderId ? 'the order' : null,
-    type?.relatedTicket === 'required' && !f.relatedTicketId ? 'the earlier ticket' : null,
-    !f.categoryId ? 'a category' : null,
-    !f.subject.trim() ? 'a subject' : null,
-    !f.description.trim() ? 'a description' : null,
+    f.requester === 'account' && !f.customerId && !f.relatedTicketId && !f.orderId ? i18n.t('support.theCustomer') : null,
+    guest && !f.contactPhone.trim() && !f.contactEmail.trim() && !f.orderId && !f.relatedTicketId ? i18n.t('support.aPhoneNumberOrEmail') : null,
+    storeRequired && !f.storeId ? i18n.t('support.theStore') : null,
+    type?.order === 'required' && !f.orderId ? i18n.t('support.theOrder') : null,
+    type?.relatedTicket === 'required' && !f.relatedTicketId ? i18n.t('support.theEarlierTicket') : null,
+    !f.categoryId ? i18n.t('support.aCategory') : null,
+    !f.subject.trim() ? i18n.t('support.aSubject') : null,
+    !f.description.trim() ? i18n.t('support.aDescription') : null,
   ].filter(Boolean);
-  if (missing.length) return `Add ${missing.join(', ')}`;
-  if (f.contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.contactEmail.trim())) return 'Enter a valid email address';
+  if (missing.length) return i18n.t('support.addJoin', { join: missing.join(', ') });
+  if (f.contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.contactEmail.trim())) return i18n.t('common.enterAValidEmailAddress');
   return null;
 }
 

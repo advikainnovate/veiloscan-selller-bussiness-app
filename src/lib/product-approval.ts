@@ -1,4 +1,5 @@
 import type { BadgeTone } from '../components/ui/Badge';
+import i18n from '../i18n';
 
 // Ported from the Seller Panel's components/dashboard/products/product-approval.ts.
 // Mirrors ProductApprovalStatus in eshop-backend. A product goes
@@ -16,16 +17,16 @@ export interface ProductStage {
 }
 
 const STAGES: Record<ProductStageKey, ProductStage> = {
-  draft: { key: 'draft', label: 'Draft', tone: 'slate', description: 'Not visible to customers. Complete the details and submit it for approval.' },
-  in_review: { key: 'in_review', label: 'In Review', tone: 'amber', description: "Submitted for approval. It goes live as soon as it's approved." },
+  draft: { key: 'draft', get label() { return i18n.t('common.draft'); }, tone: 'slate', get description() { return i18n.t('products.notVisibleToCustomersCompleteThe'); } },
+  in_review: { key: 'in_review', get label() { return i18n.t('common.inReview'); }, tone: 'amber', get description() { return i18n.t('products.submittedForApprovalItGoesLive'); } },
   changes_required: {
     key: 'changes_required',
-    label: 'Changes Required',
+    get label() { return i18n.t('products.changesRequired'); },
     tone: 'orange',
-    description: 'The reviewer asked for changes. Update the product and submit it again.',
+    get description() { return i18n.t('products.theReviewerAskedForChangesUpdate'); },
   },
-  published: { key: 'published', label: 'Published', tone: 'green', description: 'Approved and live on the storefront.' },
-  unpublished: { key: 'unpublished', label: 'Unpublished', tone: 'red', description: 'Approved but hidden from the storefront. Activate it to make it live again.' },
+  published: { key: 'published', get label() { return i18n.t('products.published'); }, tone: 'green', get description() { return i18n.t('products.approvedAndLiveOnTheStorefront'); } },
+  unpublished: { key: 'unpublished', get label() { return i18n.t('products.unpublished'); }, tone: 'red', get description() { return i18n.t('products.approvedButHiddenFromTheStorefront'); } },
 };
 
 type ProductLike = { approvalStatus?: unknown; status?: unknown; isActive?: unknown; [key: string]: unknown };

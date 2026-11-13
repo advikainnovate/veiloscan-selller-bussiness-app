@@ -6,6 +6,7 @@ import { lineProblem, priceText, quantityNotes, rulesHint, startOf, stockShortfa
 import type { LineQuantityDiscount } from '../../lib/seller-order-pricing';
 import { quantityLabel, round4, sellingOf } from '../../lib/selling';
 import { BoxIcon, CloseIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /** One item in a new order: quantity, its own discount, and the line total. */
 export function LineCard({
@@ -23,6 +24,7 @@ export function LineCard({
   onDiscount: (discount: string) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const { item } = line;
   const problem = lineProblem(line, quantityDiscount?.discount ?? 0);
   const short = stockShortfall(line);
@@ -47,7 +49,7 @@ export function LineCard({
             {[item.variantLabel, priceText(item)].filter(Boolean).join(' · ')}
           </Text>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${item.productName}`} hitSlop={10} onPress={onRemove}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.removeProductname', { productName: item.productName })} hitSlop={10} onPress={onRemove}>
           <CloseIcon size={18} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -57,7 +59,7 @@ export function LineCard({
 
       <View style={styles.bottom}>
         <View style={styles.discountBox}>
-          <Text style={styles.discountLabel}>Discount ₹</Text>
+          <Text style={styles.discountLabel}>{t('orders.discountRs')}</Text>
           <TextInput
             value={line.discount}
             onChangeText={text => onDiscount(text.replace(/[^0-9.]/g, ''))}
@@ -65,7 +67,7 @@ export function LineCard({
             placeholder="0"
             placeholderTextColor={colors.textMuted}
             selectionColor={colors.secondary}
-            accessibilityLabel={`Discount on ${item.productName}`}
+            accessibilityLabel={t('orders.discountOnProductname', { productName: item.productName })}
             style={styles.discountInput}
           />
         </View>
@@ -85,6 +87,7 @@ export function LineCard({
  * (with the quick-select amounts) for products sold by weight, volume, length…
  */
 function QuantityControl({ line, onChange }: { line: OrderLine; onChange: (quantity: number, uom: string) => void }) {
+  const { t } = useTranslation();
   const selling = sellingOf(line.item);
   const [text, setText] = useState(String(line.quantity));
 
@@ -110,7 +113,7 @@ function QuantityControl({ line, onChange }: { line: OrderLine; onChange: (quant
           onChangeText={value => commit(value.replace(/[^0-9]/g, ''))}
           keyboardType="number-pad"
           selectionColor={colors.secondary}
-          accessibilityLabel={`Quantity of ${line.item.productName}`}
+          accessibilityLabel={t('orders.quantityOfProductname', { productName: line.item.productName })}
           style={styles.stepInput}
         />
         <StepButton label="+" onPress={() => onChange(round4(line.quantity + step), line.uom)} />
@@ -127,7 +130,7 @@ function QuantityControl({ line, onChange }: { line: OrderLine; onChange: (quant
           onChangeText={value => commit(value.replace(/[^0-9.]/g, ''))}
           keyboardType="decimal-pad"
           selectionColor={colors.secondary}
-          accessibilityLabel={`Amount of ${line.item.productName}`}
+          accessibilityLabel={t('orders.amountOfProductname', { productName: line.item.productName })}
           style={styles.amountInput}
         />
         {selling.units.map(unit => (
@@ -156,10 +159,11 @@ function QuantityControl({ line, onChange }: { line: OrderLine; onChange: (quant
 }
 
 function StepButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label === '+' ? 'More' : 'Less'}
+      accessibilityLabel={label === '+' ? t('common.more') : t('orders.less')}
       disabled={disabled}
       onPress={onPress}
       style={[styles.stepBtn, disabled && styles.stepBtnDisabled]}

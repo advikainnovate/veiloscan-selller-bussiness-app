@@ -12,6 +12,8 @@ import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { DateField, Field, Input } from '../form/Fields';
 import { ChevronRightIcon, CloseIcon, FileTextIcon, ImageIcon, type IconProps } from '../icons';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Building blocks shared by the Operations screens (the Seller Panel's ops-ui).
 
@@ -39,7 +41,7 @@ export function PageTitle({ title, subtitle }: { title: string; subtitle?: strin
 }
 
 /** "Restricted for your role", where profit would be. */
-export const PROFIT_HIDDEN = 'Restricted for your role';
+export const profitHidden = () => i18n.t('operations.restrictedForYourRole');
 
 export function StatCard({
   icon: Icon,
@@ -161,6 +163,7 @@ export function RangeChips({
   keys?: string[];
   allowCustom?: boolean;
 }) {
+  const { t } = useTranslation();
   const presets = rangePresets(today).filter(p => !keys || keys.includes(p.key));
   const [picking, setPicking] = useState(false);
   const [draft, setDraft] = useState({ from: value.from, to: value.to });
@@ -194,28 +197,28 @@ export function RangeChips({
             }}
             style={[styles.chip, value.key === 'custom' && styles.chipOn]}
           >
-            <Text style={[styles.chipText, value.key === 'custom' && styles.chipTextOn]}>Custom</Text>
+            <Text style={[styles.chipText, value.key === 'custom' && styles.chipTextOn]}>{t('common.custom')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>
       <Sheet
         visible={picking}
-        title="Custom range"
+        title={t('operations.customRange')}
         onClose={() => setPicking(false)}
         footer={
           <Button
-            title="Apply"
+            title={t('common.apply')}
             disabled={invalid}
             onPress={() => {
-              onChange({ key: 'custom', label: 'Custom', ...draft });
+              onChange({ key: 'custom', label: t('common.custom'), ...draft });
               setPicking(false);
             }}
           />
         }
       >
-        <DateField label="From" required value={draft.from} onChange={from => setDraft(d => ({ ...d, from }))} maximumDate={fromISO(draft.to || today)} />
-        <DateField label="To" required value={draft.to} onChange={to => setDraft(d => ({ ...d, to }))} minimumDate={draft.from ? fromISO(draft.from) : undefined} maximumDate={fromISO(today)} />
-        {draft.from && draft.to && draft.from > draft.to ? <Text style={styles.error}>The start can't be after the end.</Text> : null}
+        <DateField label={t('common.from')} required value={draft.from} onChange={from => setDraft(d => ({ ...d, from }))} maximumDate={fromISO(draft.to || today)} />
+        <DateField label={t('common.to')} required value={draft.to} onChange={to => setDraft(d => ({ ...d, to }))} minimumDate={draft.from ? fromISO(draft.from) : undefined} maximumDate={fromISO(today)} />
+        {draft.from && draft.to && draft.from > draft.to ? <Text style={styles.error}>{t('operations.theStartCanTBeAfter')}</Text> : null}
       </Sheet>
     </>
   );
@@ -223,16 +226,17 @@ export function RangeChips({
 
 /** Previous / next with "Showing 1–20 of 54". */
 export function Pager({ page, total, limit, onPage, noun = 'items' }: { page: number; total: number; limit: number; onPage: (p: number) => void; noun?: string }) {
+  const { t } = useTranslation();
   if (!total) return null;
   const pages = Math.max(1, Math.ceil(total / limit));
   return (
     <View style={styles.pager}>
-      <Text style={styles.pagerText}>{`Showing ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} of ${total} ${noun}`}</Text>
+      <Text style={styles.pagerText}>{t('operations.showingCountMinOfTotalNoun', { count: (page - 1) * limit + 1, min: Math.min(page * limit, total), total, noun })}</Text>
       {pages > 1 ? (
         <>
-          <PageButton label="Previous page" disabled={page <= 1} onPress={() => onPage(page - 1)} flip />
+          <PageButton label={t('common.previousPage')} disabled={page <= 1} onPress={() => onPage(page - 1)} flip />
           <Text style={styles.pagerCount}>{`${page} / ${pages}`}</Text>
-          <PageButton label="Next page" disabled={page >= pages} onPress={() => onPage(page + 1)} />
+          <PageButton label={t('common.nextPage')} disabled={page >= pages} onPress={() => onPage(page + 1)} />
         </>
       ) : null}
     </View>
@@ -257,19 +261,20 @@ function PageButton({ label, disabled, onPress, flip }: { label: string; disable
 }
 
 const ACTION_LABEL: Record<string, string> = {
-  CREATE: 'Created',
-  UPDATE: 'Edited',
-  STATUS: 'Status changed',
-  DELETE: 'Deleted',
-  CANCEL: 'Cancelled',
-  PAYMENT: 'Payment recorded',
-  VOID_PAYMENT: 'Payment voided',
-  RETURN: 'Return recorded',
+  get CREATE() { return i18n.t('common.created'); },
+  get UPDATE() { return i18n.t('operations.edited'); },
+  get STATUS() { return i18n.t('common.statusChanged'); },
+  get DELETE() { return i18n.t('common.deleted'); },
+  get CANCEL() { return i18n.t('common.cancelled'); },
+  get PAYMENT() { return i18n.t('common.paymentRecorded'); },
+  get VOID_PAYMENT() { return i18n.t('common.paymentVoided'); },
+  get RETURN() { return i18n.t('common.returnRecorded'); },
 };
 
 /** Who changed what, newest first. */
 export function HistoryList({ entries }: { entries: LogEntry[] | undefined }) {
-  if (!entries?.length) return <Text style={styles.muted}>No changes yet.</Text>;
+  const { t } = useTranslation();
+  if (!entries?.length) return <Text style={styles.muted}>{t('operations.noChangesYet')}</Text>;
   return (
     <View style={styles.history}>
       {entries.map(e => (
@@ -289,7 +294,7 @@ export function HistoryList({ entries }: { entries: LogEntry[] | undefined }) {
 export function confirmAction(title: string, message: string | undefined, confirmLabel: string, destructive = false): Promise<boolean> {
   return new Promise(resolve =>
     NativeAlert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+      { text: i18n.t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
       { text: confirmLabel, style: destructive ? 'destructive' : 'default', onPress: () => resolve(true) },
     ]),
   );
@@ -300,7 +305,7 @@ export function ReasonSheet({
   visible,
   title,
   message,
-  label = 'Reason',
+  label = i18n.t('common.reason'),
   confirmLabel,
   required = true,
   maxLength = 500,
@@ -317,6 +322,7 @@ export function ReasonSheet({
   onClose: () => void;
   onConfirm: (reason: string) => Promise<void> | void;
 }) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -342,7 +348,7 @@ export function ReasonSheet({
           }}
           style={({ pressed }) => [styles.danger, (pressed || busy) && styles.dangerPressed, required && !reason.trim() && styles.disabled]}
         >
-          <Text style={styles.dangerText}>{busy ? 'Saving…' : confirmLabel}</Text>
+          <Text style={styles.dangerText}>{busy ? t('common.saving') : confirmLabel}</Text>
         </Pressable>
       }
     >
@@ -364,7 +370,7 @@ export interface PendingFile {
 export function PhotoAttachments({
   value,
   onChange,
-  label = 'Attachments',
+  label = i18n.t('common.attachments'),
   dirName,
   defaultKind = 'BILL',
   max = 10,
@@ -379,6 +385,7 @@ export function PhotoAttachments({
   /** Let each file be tagged Bill / Invoice / Receipt…. */
   kinds?: boolean;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
 
@@ -413,7 +420,7 @@ export function PhotoAttachments({
           {kinds ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`File type: ${ATTACHMENT_KIND_LABEL[f.kind]}`}
+              accessibilityLabel={t('operations.fileTypeAttachmentKindLabel', { ATTACHMENT_KIND_LABEL: ATTACHMENT_KIND_LABEL[f.kind] })}
               onPress={() => {
                 const next = kindKeys[(kindKeys.indexOf(f.kind) + 1) % kindKeys.length];
                 onChange(value.map((x, j) => (j === i ? { ...x, kind: next } : x)));
@@ -423,7 +430,7 @@ export function PhotoAttachments({
               <Text style={styles.kindText}>{ATTACHMENT_KIND_LABEL[f.kind]}</Text>
             </Pressable>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${f.name}`} hitSlop={8} onPress={() => onChange(value.filter((_, j) => j !== i))}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.removeName', { name: f.name })} hitSlop={8} onPress={() => onChange(value.filter((_, j) => j !== i))}>
             <CloseIcon size={16} color={colors.textMuted} />
           </Pressable>
         </View>
@@ -431,7 +438,7 @@ export function PhotoAttachments({
       {value.length < max ? (
         <Pressable accessibilityRole="button" disabled={uploading} onPress={add} style={({ pressed }) => [styles.addFile, pressed && styles.pressed]}>
           <ImageIcon size={16} color={colors.textSecondary} />
-          <Text style={styles.addFileText}>{uploading ? 'Uploading…' : 'Add a photo of the bill, invoice or receipt'}</Text>
+          <Text style={styles.addFileText}>{uploading ? t('common.uploading') : t('operations.addAPhotoOfTheBill')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -440,6 +447,7 @@ export function PhotoAttachments({
 
 /** Files already saved: tap to open. */
 export function FileLinks({ files, onRemove }: { files: ExpenseAttachment[]; onRemove?: (f: ExpenseAttachment) => void }) {
+  const { t } = useTranslation();
   if (!files.length) return null;
   return (
     <View style={styles.links}>
@@ -450,7 +458,7 @@ export function FileLinks({ files, onRemove }: { files: ExpenseAttachment[]; onR
             <Text style={styles.linkChipText} numberOfLines={1}>{`${f.fileName} · ${ATTACHMENT_KIND_LABEL[f.kind] ?? f.kind}`}</Text>
           </Pressable>
           {onRemove ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${f.fileName}`} hitSlop={8} onPress={() => onRemove(f)}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('operations.removeFilename', { fileName: f.fileName })} hitSlop={8} onPress={() => onRemove(f)}>
               <CloseIcon size={13} color={colors.textMuted} />
             </Pressable>
           ) : null}

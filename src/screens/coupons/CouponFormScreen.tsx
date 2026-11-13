@@ -23,11 +23,13 @@ import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { Choices, DateField, Field, Input, Section } from '../../components/form/Fields';
 import { AlertCircleIcon, TicketIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const fromISO = (s: string) => (s ? new Date(`${s}T00:00:00`) : undefined);
 
 /** Create or edit a coupon (the Seller Panel's coupon form). */
 export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const isEdit = !!id;
   const { hasPermission } = useAuth();
@@ -68,7 +70,7 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
     setError('');
     const problems = validateCoupon(values);
     if (Object.keys(problems).length) {
-      setError('Fix the highlighted fields.');
+      setError(t('coupons.fixTheHighlightedFields'));
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
@@ -76,10 +78,10 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
     try {
       if (isEdit && id) {
         await couponService.update(id, couponPayload(values, true));
-        toast('Coupon updated');
+        toast(t('coupons.couponUpdated'));
       } else {
         await couponService.create(couponPayload(values, false));
-        toast('Coupon created');
+        toast(t('coupons.couponCreated'));
       }
       navigation.goBack();
     } catch (err) {
@@ -90,13 +92,13 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
     }
   }
 
-  const heading = isEdit ? 'Edit Coupon' : 'Create Coupon';
+  const heading = isEdit ? t('coupons.editCoupon') : t('coupons.createCoupon');
 
   if (!allowed) {
     return (
       <View style={styles.screen}>
         <AppHeader title={heading} onBack={navigation.goBack} />
-        <ComingSoon label="Coupons" icon={TicketIcon} allowed={false} />
+        <ComingSoon label={t('coupons.coupons')} icon={TicketIcon} allowed={false} />
       </View>
     );
   }
@@ -119,7 +121,7 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
 
   return (
     <View style={styles.screen}>
-      <AppHeader title={heading} subtitle="Configure a discount coupon code and its eligibility rules." onBack={navigation.goBack} />
+      <AppHeader title={heading} subtitle={t('coupons.configureADiscountCouponCodeAnd')} onBack={navigation.goBack} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {error ? (
@@ -129,11 +131,11 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
             </View>
           ) : null}
 
-          <Section title="Basic Information" subtitle="Title, code and how the discount is calculated.">
-            <Field label="Title" required error={errors.title}>
+          <Section title={t('common.basicInformation')} subtitle={t('coupons.titleCodeAndHowTheDiscount')}>
+            <Field label={t('common.title')} required error={errors.title}>
               <Input value={values.title} onChangeText={v => update('title', v)} maxLength={255} placeholder="e.g. Diwali Sale" />
             </Field>
-            <Field label="Slug" required hint="URL-friendly identifier" error={errors.codeSlug}>
+            <Field label={t('common.slug')} required hint={t('coupons.urlFriendlyIdentifier')} error={errors.codeSlug}>
               <Input
                 value={values.codeSlug}
                 onChangeText={v => {
@@ -145,21 +147,21 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
                 maxLength={255}
               />
             </Field>
-            <Field label="Coupon Code" required hint="e.g. SUMMER20" error={errors.couponCode}>
+            <Field label={t('coupons.couponCode')} required hint="e.g. SUMMER20" error={errors.couponCode}>
               <Input value={values.couponCode} onChangeText={v => update('couponCode', v)} autoCapitalize="characters" autoCorrect={false} maxLength={100} />
             </Field>
-            <Field label="Discount Type">
+            <Field label={t('common.discountType')}>
               <Choices options={DISCOUNT_TYPES} value={values.discountType} onChange={v => update('discountType', v)} />
             </Field>
-            <Field label="Discount Value" required hint={percent ? 'Percent off, up to 100' : 'Rupees off the order'} error={errors.discountValue}>
+            <Field label={t('common.discountValue')} required hint={percent ? t('coupons.percentOffUpTo100') : t('coupons.rupeesOffTheOrder')} error={errors.discountValue}>
               <Input value={values.discountValue} onChangeText={v => update('discountValue', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" />
             </Field>
             {isEdit ? (
-              <Field label="Status">
+              <Field label={t('common.status')}>
                 <Choices
                   options={[
-                    { value: '1', label: 'Active' },
-                    { value: '0', label: 'Inactive' },
+                    { value: '1', label: t('common.active') },
+                    { value: '0', label: t('common.inactive') },
                   ]}
                   value={values.status}
                   onChange={v => update('status', v)}
@@ -169,57 +171,56 @@ export function CouponFormScreen({ navigation, route }: ScreenProps<'CouponForm'
           </Section>
 
           <View style={styles.tip}>
-            <Text style={styles.tipTitle}>Tip</Text>
+            <Text style={styles.tipTitle}>{t('coupons.tip')}</Text>
             <Text style={styles.tipText}>
-              Use a percentage discount with a max discount amount to cap high-value orders, or a flat discount for simple promotions.
-            </Text>
+              {t('coupons.useAPercentageDiscountWithA')}</Text>
           </View>
 
-          <Section title="Order Rules & Usage Limits" subtitle="Restrict when and how often this coupon can be used.">
-            <MoneyField label="Min Order Value" value={values.minOrderValue} error={errors.minOrderValue} onChange={v => update('minOrderValue', v)} />
-            <MoneyField label="Max Order Value" value={values.maxOrderValue} error={errors.maxOrderValue} onChange={v => update('maxOrderValue', v)} />
+          <Section title={t('coupons.orderRulesAndUsageLimits')} subtitle={t('coupons.restrictWhenAndHowOftenThis')}>
+            <MoneyField label={t('coupons.minOrderValue2')} value={values.minOrderValue} error={errors.minOrderValue} onChange={v => update('minOrderValue', v)} />
+            <MoneyField label={t('coupons.maxOrderValue2')} value={values.maxOrderValue} error={errors.maxOrderValue} onChange={v => update('maxOrderValue', v)} />
             <MoneyField
-              label="Max Discount Amount"
+              label={t('coupons.maxDiscountAmount2')}
               value={values.maxDiscountAmount}
               error={errors.maxDiscountAmount}
               onChange={v => update('maxDiscountAmount', v)}
             />
-            <Field label="Total Usage Limit" hint="Leave empty for unlimited" error={errors.usageLimitTotal}>
+            <Field label={t('coupons.totalUsageLimit2')} hint={t('coupons.leaveEmptyForUnlimited')} error={errors.usageLimitTotal}>
               <Input value={values.usageLimitTotal} onChangeText={v => update('usageLimitTotal', v.replace(/\D/g, ''))} keyboardType="number-pad" />
             </Field>
-            <Field label="Usage Limit Per User" error={errors.usageLimitPerUser}>
+            <Field label={t('coupons.usageLimitPerUser2')} error={errors.usageLimitPerUser}>
               <Input value={values.usageLimitPerUser} onChangeText={v => update('usageLimitPerUser', v.replace(/\D/g, ''))} keyboardType="number-pad" />
             </Field>
           </Section>
 
-          <Section title="Eligibility & Validity" subtitle="Which catalog items qualify and when the coupon is valid.">
-            <Field label="Categories">
+          <Section title={t('coupons.eligibilityAndValidity')} subtitle={t('coupons.whichCatalogItemsQualifyAndWhen')}>
+            <Field label={t('common.categories')}>
               <Choices options={SELECTION_OPTIONS} value={values.categoriesSelection} onChange={v => update('categoriesSelection', v)} />
             </Field>
-            <Field label="Brands">
+            <Field label={t('common.brands')}>
               <Choices options={SELECTION_OPTIONS} value={values.brandsSelection} onChange={v => update('brandsSelection', v)} />
             </Field>
-            <Field label="Products">
+            <Field label={t('common.products')}>
               <Choices options={SELECTION_OPTIONS} value={values.productSelection} onChange={v => update('productSelection', v)} />
             </Field>
-            <DateField label="Start Date" value={values.startDate} onChange={v => update('startDate', v)} />
-            <DateField label="End Date" value={values.endDate} onChange={v => update('endDate', v)} minimumDate={fromISO(values.startDate)} />
+            <DateField label={t('common.startDate')} value={values.startDate} onChange={v => update('startDate', v)} />
+            <DateField label={t('common.endDate')} value={values.endDate} onChange={v => update('endDate', v)} minimumDate={fromISO(values.startDate)} />
             {errors.endDate ? <Text style={styles.fieldError}>{errors.endDate}</Text> : null}
           </Section>
 
-          <Section title="Description & Terms">
-            <Field label="Description">
+          <Section title={t('common.descriptionAndTerms')}>
+            <Field label={t('common.description')}>
               <Input value={values.description} onChangeText={v => update('description', v)} multiline />
             </Field>
-            <Field label="Terms & Conditions">
+            <Field label={t('common.termsAndConditions')}>
               <Input value={values.termsAndConditions} onChangeText={v => update('termsAndConditions', v)} multiline />
             </Field>
           </Section>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-          <Button title="Cancel" variant="ghost" onPress={navigation.goBack} style={styles.flex} />
-          <Button title={isEdit ? 'Save Changes' : 'Create Coupon'} onPress={submit} loading={saving} style={styles.flex2} />
+          <Button title={t('common.cancel')} variant="ghost" onPress={navigation.goBack} style={styles.flex} />
+          <Button title={isEdit ? t('common.saveChanges') : t('coupons.createCoupon')} onPress={submit} loading={saving} style={styles.flex2} />
         </View>
       </KeyboardAvoidingView>
     </View>

@@ -19,6 +19,7 @@ import { Choices, Field, Input, Section, SelectField } from '../../../components
 import { SwitchRow } from '../../../components/products/ProductEditors';
 import { CloseIcon } from '../../../components/icons';
 import type { StepHandle } from './VariantsStep';
+import { useTranslation } from 'react-i18next';
 
 type Draft = Omit<SellingConfig, 'id'>;
 
@@ -116,6 +117,7 @@ const clean = (t: string) => t.replace(/[^0-9.]/g, '');
  * and the price basis. A preview checks and prices a quantity.
  */
 export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; productId: string | null }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const [uoms, setUoms] = useState<Uom[]>([]);
   const [view, setView] = useState<SellingConfigView | null>(null);
@@ -191,7 +193,7 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
       const next = await sellingConfigService.save(productId, { ...draft, productVariantId: scope || null });
       setView(next);
       load(next, scope);
-      toast('Selling configuration saved');
+      toast(tr('products.sellingConfigurationSaved'));
     } catch (err) {
       setError(extractErrorMessage(err));
       throw err;
@@ -221,7 +223,7 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
 
   async function runPreview() {
     if (!productId || !preview.variantId || !preview.quantity) return;
-    if (dirty) return setPreviewResult({ valid: false, message: 'Save the configuration first — the preview uses the saved rules.' });
+    if (dirty) return setPreviewResult({ valid: false, message: tr('products.saveTheConfigurationFirstThePreview') });
     try {
       setPreviewResult(await sellingConfigService.preview(productId, { productVariantId: preview.variantId, quantity: Number(preview.quantity), uom: preview.uom || undefined }));
     } catch (err) {
@@ -229,9 +231,9 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
     }
   }
 
-  if (!productId) return <Section title="Selling" subtitle="Save the basic information first." children={null} />;
+  if (!productId) return <Section title={tr('products.selling')} subtitle={tr('products.saveTheBasicInformationFirst')} children={null} />;
   if (error && !view) return <Alert message={error} />;
-  if (!view || !draft) return <Section title="Selling" subtitle="Loading…" children={null} />;
+  if (!view || !draft) return <Section title={tr('products.selling')} subtitle={tr('common.loading')} children={null} />;
 
   const variable = draft.sellingMethod === 'VARIABLE';
   const hasOwn = view.configs.some(c => (c.productVariantId ?? '') === scope);
@@ -242,17 +244,17 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
   return (
     <View style={styles.wrap}>
       <Section
-        title="How customers buy it"
-        subtitle={`Stock ${scope ? 'of this SKU ' : ''}is counted in ${stock?.baseUom} (${stockType.toLowerCase().replace('_', ' ')}) — change that in the Inventory step's stock settings.`}
+        title={tr('products.howCustomersBuyIt')}
+        subtitle={tr(scope ? 'products.skuStockCountedIn' : 'products.stockCountedIn', { uom: stock?.baseUom, type: stockType.toLowerCase().replace('_', ' ') })}
       >
         {view.variants.length > 1 ? (
           <SelectField
-            label="For"
+            label={tr('products.for')}
             value={scope}
-            allowClear="Every SKU of this product"
+            allowClear={tr('products.everySkuOfThisProduct')}
             options={view.variants.map(v => ({
               value: v.id,
-              label: `Only ${v.label} · ${v.sku}${view.configs.some(c => c.productVariantId === v.id) ? ' (own)' : ''}`,
+              label: `${tr('products.onlyVariant', { label: v.label })} · ${v.sku}${view.configs.some(c => c.productVariantId === v.id) ? ` ${tr('products.ownTag')}` : ''}`,
             }))}
             onChange={v => {
               setScope(v);
@@ -260,13 +262,13 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
             }}
           />
         ) : null}
-        {scope && hasOwn ? <Button title="Use the product's configuration for this SKU" variant="ghost" onPress={removeOwn} /> : null}
+        {scope && hasOwn ? <Button title={tr('products.useTheProductsConfigurationForThis')} variant="ghost" onPress={removeOwn} /> : null}
 
         <View style={styles.methods}>
           {(
             [
-              ['FIXED', 'Fixed quantity', 'Whole units — 1, 2, 3 PCS / BOX'],
-              ['VARIABLE', 'Variable quantity', 'Customer enters an amount — 500 GM, 1.5 KG'],
+              ['FIXED', tr('products.fixedQuantity'), tr('products.wholeUnits123Pcs')],
+              ['VARIABLE', tr('products.variableQuantity'), tr('products.customerEntersAnAmount500Gm')],
             ] as const
           ).map(([value, title, hint]) => {
             const possible = types.some(t => t.method === value);
@@ -287,18 +289,18 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
           })}
         </View>
 
-        <Field label="Sold as">
+        <Field label={tr('products.soldAs')}>
           <Choices
             options={types.filter(t => t.method === draft.sellingMethod).map(t => ({ value: t.value, label: t.label }))}
             value={draft.sellingType}
             onChange={v => update({ sellingType: v as Draft['sellingType'] })}
           />
         </Field>
-        <Field label="Selling unit">
+        <Field label={tr('products.sellingUnit')}>
           <Choices options={unitOptions} value={draft.sellingUom} onChange={sellingUom => update({ sellingUom, allowedUoms: draft.allowedUoms.filter(c => c !== sellingUom) })} />
         </Field>
         {variable && units.length > 1 ? (
-          <Field label="Customers may also enter" hint="Other units they can type an amount in.">
+          <Field label={tr('products.customersMayAlsoEnter')} hint={tr('products.otherUnitsTheyCanTypeAn')}>
             <View style={styles.chips}>
               {units
                 .filter(u => u.code !== draft.sellingUom)
@@ -322,17 +324,17 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
 
         <View style={styles.row}>
           <View style={styles.flex}>
-            <Field label={`Minimum (${draft.sellingUom})`}>
+            <Field label={tr('products.minimumSellinguom', { sellingUom: draft.sellingUom })}>
               <Input value={text(draft.minimumQuantity)} onChangeText={v => update({ minimumQuantity: toNum(clean(v)) })} keyboardType="decimal-pad" placeholder="—" />
             </Field>
           </View>
           <View style={styles.flex}>
-            <Field label="Maximum">
-              <Input value={text(draft.maximumQuantity)} onChangeText={v => update({ maximumQuantity: toNum(clean(v)) })} keyboardType="decimal-pad" placeholder="No limit" />
+            <Field label={tr('common.maximum')}>
+              <Input value={text(draft.maximumQuantity)} onChangeText={v => update({ maximumQuantity: toNum(clean(v)) })} keyboardType="decimal-pad" placeholder={tr('common.noLimit')} />
             </Field>
           </View>
           <View style={styles.flex}>
-            <Field label="Step">
+            <Field label={tr('products.step')}>
               <Input value={text(draft.quantityStep)} onChangeText={v => update({ quantityStep: toNum(clean(v)) })} keyboardType="decimal-pad" placeholder="—" />
             </Field>
           </View>
@@ -340,16 +342,16 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
 
         {variable ? (
           <>
-            <SwitchRow label="Allow decimals" hint="e.g. 1.5 KG" value={draft.allowDecimal} onChange={allowDecimal => update({ allowDecimal, decimalPrecision: allowDecimal ? Math.max(1, draft.decimalPrecision) : 0 })} />
+            <SwitchRow label={tr('products.allowDecimals')} hint="e.g. 1.5 KG" value={draft.allowDecimal} onChange={allowDecimal => update({ allowDecimal, decimalPrecision: allowDecimal ? Math.max(1, draft.decimalPrecision) : 0 })} />
             {draft.allowDecimal ? (
-              <Field label="Decimal places">
+              <Field label={tr('products.decimalPlaces')}>
                 <Choices options={['1', '2', '3'].map(v => ({ value: v, label: v }))} value={String(draft.decimalPrecision)} onChange={v => update({ decimalPrecision: Number(v) })} />
               </Field>
             ) : null}
           </>
         ) : null}
 
-        <Field label="Prices are for" hint={`Each SKU's price is per ${draft.priceQuantity === 1 ? `1 ${draft.priceUom}` : `${draft.priceQuantity} ${draft.priceUom}`}.`}>
+        <Field label={tr('products.pricesAreFor')} hint={tr('products.eachSkuPricePer', { quantity: `${draft.priceQuantity === 1 ? 1 : draft.priceQuantity} ${draft.priceUom}` })}>
           <View style={styles.row}>
             <Input value={text(draft.priceQuantity)} onChangeText={v => update({ priceQuantity: Number(clean(v)) || 1 })} keyboardType="decimal-pad" style={styles.priceQty} />
             <View style={styles.flex}>
@@ -359,21 +361,21 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
         </Field>
 
         {variable ? (
-          <Field label="Quick-select amounts" hint="Buttons customers tap instead of typing.">
+          <Field label={tr('products.quickSelectAmounts')} hint={tr('products.buttonsCustomersTapInsteadOfTyping')}>
             <View style={styles.chips}>
               {draft.quickSelect.map((q, i) => (
                 <View key={`${q.quantity}${q.uom}${i}`} style={styles.quick}>
                   <Text style={styles.quickText}>
                     {q.quantity} {q.uom}
                   </Text>
-                  <Pressable accessibilityLabel="Remove" hitSlop={8} onPress={() => update({ quickSelect: draft.quickSelect.filter((_, j) => j !== i) })}>
+                  <Pressable accessibilityLabel={tr('common.remove')} hitSlop={8} onPress={() => update({ quickSelect: draft.quickSelect.filter((_, j) => j !== i) })}>
                     <CloseIcon size={11} color={colors.primary} />
                   </Pressable>
                 </View>
               ))}
             </View>
             <View style={styles.row}>
-              <Input value={quick.quantity} onChangeText={v => setQuick(q => ({ ...q, quantity: clean(v) }))} keyboardType="decimal-pad" placeholder="Amount" style={styles.flex} />
+              <Input value={quick.quantity} onChangeText={v => setQuick(q => ({ ...q, quantity: clean(v) }))} keyboardType="decimal-pad" placeholder={tr('common.amount')} style={styles.flex} />
               <Pressable
                 disabled={!(Number(quick.quantity) > 0)}
                 onPress={() => {
@@ -382,7 +384,7 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
                 }}
                 style={[styles.addBtn, !(Number(quick.quantity) > 0) && styles.disabled]}
               >
-                <Text style={styles.addBtnText}>Add</Text>
+                <Text style={styles.addBtnText}>{tr('common.add')}</Text>
               </Pressable>
             </View>
             {units.length > 1 ? <Choices options={unitOptions} value={quick.uom || draft.sellingUom} onChange={uom => setQuick(q => ({ ...q, uom }))} /> : null}
@@ -390,10 +392,10 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
         ) : null}
 
         {error ? <Alert message={error} /> : null}
-        <Button title={dirty ? 'Save configuration' : 'Saved'} loading={saving} disabled={!dirty} onPress={() => save().catch(() => {})} />
+        <Button title={dirty ? tr('products.saveConfiguration') : tr('products.saved')} loading={saving} disabled={!dirty} onPress={() => save().catch(() => {})} />
       </Section>
 
-      <Section title="Prices per selling unit" subtitle="What each SKU costs as customers buy it.">
+      <Section title={tr('products.pricesPerSellingUnit')} subtitle={tr('products.whatEachSkuCostsAsCustomers')}>
         {view.variants.map(v => (
           <View key={v.id} style={styles.priceRow}>
             <Text style={styles.priceLabel}>
@@ -405,14 +407,14 @@ export function SellingStep({ ref, productId }: { ref?: Ref<StepHandle>; product
       </Section>
 
       {view.variants.length ? (
-        <Section title="Check a quantity" subtitle="Checked and priced with the same rules as the shop.">
+        <Section title={tr('products.checkAQuantity')} subtitle={tr('products.checkedAndPricedWithTheSame')}>
           {view.variants.length > 1 ? (
             <SelectField label="SKU" value={preview.variantId} options={view.variants.map(v => ({ value: v.id, label: `${v.label} · ${v.sku}` }))} onChange={variantId => setPreview(p => ({ ...p, variantId, uom: '' }))} />
           ) : null}
           <View style={styles.row}>
-            <Input value={preview.quantity} onChangeText={v => setPreview(p => ({ ...p, quantity: clean(v) }))} keyboardType="decimal-pad" placeholder="Quantity" style={styles.flex} />
+            <Input value={preview.quantity} onChangeText={v => setPreview(p => ({ ...p, quantity: clean(v) }))} keyboardType="decimal-pad" placeholder={tr('common.quantity')} style={styles.flex} />
             <Pressable onPress={runPreview} style={styles.addBtn}>
-              <Text style={styles.addBtnText}>Check & price</Text>
+              <Text style={styles.addBtnText}>{tr('products.checkAndPrice')}</Text>
             </Pressable>
           </View>
           {previewUnits.length > 1 ? (

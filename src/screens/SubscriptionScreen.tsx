@@ -27,6 +27,7 @@ import { opsStyles } from '../components/operations/OpsParts';
 import { ChangePlanSheet } from '../components/subscription/ChangePlanSheet';
 import { AlertCircleIcon, ArrowUpIcon, AwardIcon, BanIcon, CalendarIcon, CheckCircleIcon, ChevronDownIcon, ClockIcon, CreditCardIcon, LayersIcon, RefreshIcon, ShieldCheckIcon, WalletIcon, type IconProps } from '../components/icons';
 import type { ScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Subscription, as the Seller Panel's page: the plan and where it stands,
@@ -35,6 +36,7 @@ import type { ScreenProps } from '../navigation/types';
  * plan here.
  */
 export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data, error, loading, reload } = useFetch(() => subscriptionService.planDetails(), []);
   const renewal = useFetch(() => subscriptionService.renewal().catch(() => null), []);
@@ -42,7 +44,7 @@ export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) 
   const [changing, setChanging] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const header = <AppHeader title="Subscription" subtitle="Your plan and everything it includes" onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
+  const header = <AppHeader title={t('common.subscription')} subtitle={t('subscription.yourPlanAndEverythingItIncludes')} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />;
 
   async function refresh() {
     setRefreshing(true);
@@ -75,8 +77,8 @@ export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) 
         {header}
         <EmptyState
           icon={AwardIcon}
-          title={data?.isPlatformAdmin ? 'Platform admins hold no plan' : 'No plan found'}
-          text={data?.isPlatformAdmin ? "Subscriptions belong to seller accounts." : "We couldn't find a plan for this account. Contact support and we'll sort it out."}
+          title={data?.isPlatformAdmin ? t('subscription.platformAdminsHoldNoPlan') : t('subscription.noPlanFound')}
+          text={data?.isPlatformAdmin ? t('subscription.subscriptionsBelongToSellerAccounts') : t('subscription.weCouldnTFindAPlan')}
         />
       </View>
     );
@@ -95,7 +97,7 @@ export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) 
     status: sub?.status ?? null,
   };
   const canChange = canChangePlan(user?.userType);
-  const price = !sub ? 'Free' : sub.amount === null ? 'Custom pricing' : `${money(sub.amount, sub.currency)} / ${sub.billingCycle === 'YEARLY' ? 'year' : 'month'}`;
+  const price = !sub ? t('common.free') : sub.amount === null ? t('common.customPricing') : `${money(sub.amount, sub.currency)} / ${sub.billingCycle === 'YEARLY' ? 'year' : 'month'}`;
   const onTrial = sub?.status === 'TRIALING';
   const usage = data.usage ?? [];
 
@@ -108,16 +110,16 @@ export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) 
         {renewal.data ? <RenewalCard quote={renewal.data} urgent={planState(details, renewal.data).urgent} /> : null}
 
         <View style={styles.tiles}>
-          <Tile icon={CreditCardIcon} label="Price" value={price} hint={sub?.taxRatePercent ? `+ ${sub.taxRatePercent}% tax` : sub ? undefined : 'No charge'} />
-          <Tile icon={RefreshIcon} label="Billing cycle" value={sub ? titleCase(sub.billingCycle) : '—'} hint={sub ? (sub.autoRenew ? 'Auto-renew on' : 'Auto-renew off') : undefined} />
-          <Tile icon={CalendarIcon} label={onTrial ? 'First charge due' : 'Next charge due'} value={sub ? day(sub.nextBillingAt) : 'Nothing due'} />
-          <Tile icon={LayersIcon} label="Features included" value={`${included} of ${allFeatures.length}`} hint={`Across ${details.modules.length} module${details.modules.length === 1 ? '' : 's'}`} />
+          <Tile icon={CreditCardIcon} label={t('common.price')} value={price} hint={sub?.taxRatePercent ? t('subscription.taxratepercentPercentTax', { taxRatePercent: sub.taxRatePercent }) : sub ? undefined : t('subscription.noCharge')} />
+          <Tile icon={RefreshIcon} label={t('subscription.billingCycle')} value={sub ? titleCase(sub.billingCycle) : '—'} hint={sub ? (sub.autoRenew ? t('subscription.autoRenewOn') : t('subscription.autoRenewOff')) : undefined} />
+          <Tile icon={CalendarIcon} label={onTrial ? t('subscription.firstChargeDue') : t('subscription.nextChargeDue')} value={sub ? day(sub.nextBillingAt) : 'Nothing due'} />
+          <Tile icon={LayersIcon} label={t('subscription.featuresIncluded')} value={`${included} of ${allFeatures.length}`} hint={t('subscription.acrossModules', { count: details.modules.length })} />
         </View>
 
         {usage.length ? (
           <View style={groupStyles.group}>
-            <Text style={[groupStyles.title, styles.sectionTitle]}>USAGE</Text>
-            <Text style={[opsStyles.muted, styles.sectionHint]}>What you have used and what is still left on your plan.</Text>
+            <Text style={[groupStyles.title, styles.sectionTitle]}>{t('subscription.usage')}</Text>
+            <Text style={[opsStyles.muted, styles.sectionHint]}>{t('subscription.whatYouHaveUsedAndWhat')}</Text>
             {usage.map(u => (
               <UsageMeter key={u.featureCode} usage={u} />
             ))}
@@ -149,6 +151,7 @@ export function SubscriptionScreen({ navigation }: ScreenProps<'Subscription'>) 
 // ── The plan, on navy ────────────────────────────────────────────────────
 
 function PlanCard({ details, renewal, canChange, isDefault, onChange }: { details: PlanDetails; renewal: RenewalQuote | null; canChange: boolean; isDefault: boolean; onChange: () => void }) {
+  const { t } = useTranslation();
   const st = planState(details, renewal);
   const stage = st.stage ? STAGE[st.stage] : null;
   const StageIcon = st.urgent ? AlertCircleIcon : st.stage === 'TRIAL' || st.stage === 'COMPLIMENTARY' ? ClockIcon : st.stage ? CheckCircleIcon : ShieldCheckIcon;
@@ -162,7 +165,7 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
           <AwardIcon size={22} color={colors.primaryDeep} />
         </View>
         <View style={styles.flex}>
-          <Text style={styles.kicker}>YOUR PLAN</Text>
+          <Text style={styles.kicker}>{t('subscription.yourPlan')}</Text>
           <Text style={styles.planName} numberOfLines={1}>
             {details.plan.planName}
           </Text>
@@ -170,7 +173,7 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
       </View>
       <View style={[styles.stage, { backgroundColor: stage?.tint ?? 'rgba(255,255,255,0.1)' }]}>
         <StageIcon size={13} color={stage?.color ?? '#e2e8f0'} />
-        <Text style={[styles.stageText, { color: stage?.color ?? '#e2e8f0' }]}>{stage?.label ?? 'Free plan'}</Text>
+        <Text style={[styles.stageText, { color: stage?.color ?? '#e2e8f0' }]}>{stage?.label ?? t('subscription.freePlan')}</Text>
       </View>
       {blurb ? <Text style={styles.blurb}>{blurb}</Text> : null}
       <Text style={[styles.message, st.urgent && styles.urgent]}>{st.message}</Text>
@@ -179,7 +182,7 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
         <View style={styles.progressWrap}>
           <View style={styles.progressHead}>
             <Text style={styles.progressLabel}>{st.phase.label}</Text>
-            {st.left !== null ? <Text style={[styles.progressLeft, st.urgent && styles.urgent]}>{`${st.left} day${st.left === 1 ? '' : 's'} ${st.stage === 'RENEWAL_DUE' ? 'left to renew' : 'remaining'}`}</Text> : null}
+            {st.left !== null ? <Text style={[styles.progressLeft, st.urgent && styles.urgent]}>{t(st.stage === 'RENEWAL_DUE' ? 'subscription.daysLeftToRenew' : 'subscription.daysRemaining', { count: st.left })}</Text> : null}
           </View>
           <View style={styles.track}>
             <View style={[styles.fill, st.urgent && styles.fillUrgent, { width: `${Math.max(st.progress * 100, 2)}%` }]} />
@@ -196,7 +199,7 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
           {st.dates.map(d => (
             <View key={d.label} style={styles.dateBox}>
               <Text style={styles.dateLabel}>{d.label.toUpperCase()}</Text>
-              <Text style={[styles.dateValue, st.urgent && d.label !== 'Free trial' && styles.urgent]}>{d.value}</Text>
+              <Text style={[styles.dateValue, st.urgent && d.kind !== 'trial' && styles.urgent]}>{d.value}</Text>
             </View>
           ))}
         </View>
@@ -214,9 +217,9 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
       ) : null}
 
       {canChange ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={isDefault ? 'Choose a Plan' : 'Upgrade Plan'} onPress={onChange} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={isDefault ? t('subscription.chooseAPlan2') : t('subscription.upgradePlan')} onPress={onChange} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
           <ArrowUpIcon size={15} color={colors.white} />
-          <Text style={styles.ctaText}>{isDefault ? 'Choose a Plan' : 'Upgrade Plan'}</Text>
+          <Text style={styles.ctaText}>{isDefault ? t('subscription.chooseAPlan2') : t('subscription.upgradePlan')}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -224,23 +227,24 @@ function PlanCard({ details, renewal, canChange, isDefault, onChange }: { detail
 }
 
 function RenewalCard({ quote, urgent }: { quote: RenewalQuote; urgent: boolean }) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.card, urgent && styles.cardUrgent]}>
-      <Text style={styles.cardKicker}>RENEWAL</Text>
+      <Text style={styles.cardKicker}>{t('subscription.renewal')}</Text>
       <Text style={opsStyles.title}>{`${quote.planName} · ${quote.billingCycle === 'YEARLY' ? 'Yearly' : 'Monthly'}`}</Text>
       <Text style={styles.total}>{money(quote.totalAmount, quote.currency)}</Text>
-      <Text style={opsStyles.muted}>{`incl. GST · covers ${day(quote.periodStart)} – ${day(quote.periodEnd)}`}</Text>
+      <Text style={opsStyles.muted}>{t('subscription.inclGstCoversPeriod', { start: day(quote.periodStart), end: day(quote.periodEnd) })}</Text>
       <View style={styles.breakdown}>
         <View style={opsStyles.rowBetween}>
-          <Text style={opsStyles.meta}>Plan price</Text>
+          <Text style={opsStyles.meta}>{t('subscription.planPrice')}</Text>
           <Text style={styles.breakValue}>{money(quote.subtotal, quote.currency)}</Text>
         </View>
         <View style={opsStyles.rowBetween}>
-          <Text style={opsStyles.meta}>{`GST (${quote.taxRatePercent}%)`}</Text>
+          <Text style={opsStyles.meta}>{t('subscription.gstTaxratepercentPercent', { taxRatePercent: quote.taxRatePercent })}</Text>
           <Text style={styles.breakValue}>{money(quote.taxAmount, quote.currency)}</Text>
         </View>
         <View style={[opsStyles.rowBetween, styles.breakTotal]}>
-          <Text style={opsStyles.title}>Total</Text>
+          <Text style={opsStyles.title}>{t('common.total')}</Text>
           <Text style={opsStyles.amount}>{money(quote.totalAmount, quote.currency)}</Text>
         </View>
       </View>
@@ -248,8 +252,8 @@ function RenewalCard({ quote, urgent }: { quote: RenewalQuote; urgent: boolean }
         <WalletIcon size={15} color={urgent ? colors.warningDark : colors.textSecondary} />
         <Text style={[opsStyles.meta, styles.flex, urgent && styles.urgentDark]}>
           {quote.canRenew
-            ? `${quote.stage === 'EXPIRED' ? 'Renew & reactivate' : 'Renew'} on the Seller Panel (Subscription) — payment opens there. Nothing is charged automatically.`
-            : `Renewal opens on ${day(quote.opensAt)}.`}
+            ? t(quote.stage === 'EXPIRED' ? 'subscription.renewReactivateOnPanel' : 'subscription.renewOnPanel')
+            : t('subscription.renewalOpensOnOpensat', { opensAt: day(quote.opensAt) })}
         </Text>
       </View>
     </View>
@@ -278,6 +282,7 @@ function Tile({ icon: Icon, label, value, hint }: { icon: ComponentType<IconProp
 const LEVEL_COLOR = { off: '#cbd5e1', unlimited: '#10b981', full: '#f43f5e', near: '#f59e0b', ok: '#10b981' } as const;
 
 function UsageMeter({ usage }: { usage: FeatureUsage }) {
+  const { t } = useTranslation();
   const level = usageLevel(usage);
   const share = spentShare(usage);
   return (
@@ -292,9 +297,9 @@ function UsageMeter({ usage }: { usage: FeatureUsage }) {
           <Text style={styles.of}>{` / ${usage.allowed === null ? 'Unlimited' : usage.allowed.toLocaleString('en-IN')}`}</Text>
         </Text>
       ) : (
-        <Text style={opsStyles.muted}>Not included</Text>
+        <Text style={opsStyles.muted}>{t('common.notIncluded')}</Text>
       )}
-      {usage.scope === 'STORE' && usage.limitValue !== null && usage.isEnabled ? <Text style={opsStyles.muted}>{`${usage.limitValue.toLocaleString('en-IN')} per store`}</Text> : null}
+      {usage.scope === 'STORE' && usage.limitValue !== null && usage.isEnabled ? <Text style={opsStyles.muted}>{t('subscription.perStore', { value: usage.limitValue.toLocaleString('en-IN') })}</Text> : null}
       <View style={styles.meterTrack}>
         <View style={[styles.meterFill, { backgroundColor: LEVEL_COLOR[level], width: `${Math.max(share * 100, usage.used > 0 ? 4 : 0)}%` }]} />
       </View>
@@ -306,62 +311,64 @@ function UsageMeter({ usage }: { usage: FeatureUsage }) {
                 {s.storeName}
               </Text>
               <Text style={[styles.storeUse, s.remaining === 0 && opsStyles.danger]}>
-                {`${s.used.toLocaleString('en-IN')}${usage.limitValue !== null ? ` / ${usage.limitValue.toLocaleString('en-IN')}` : ''}${s.remaining !== null ? ` · ${s.remaining.toLocaleString('en-IN')} left` : ''}`}
+                {`${s.used.toLocaleString('en-IN')}${usage.limitValue !== null ? ` / ${usage.limitValue.toLocaleString('en-IN')}` : ''}${s.remaining !== null ? ` · ${t('subscription.valueLeft', { value: s.remaining.toLocaleString('en-IN') })}` : ''}`}
               </Text>
             </View>
           ))}
         </View>
       ) : null}
-      {level === 'full' ? <Text style={[opsStyles.muted, opsStyles.danger]}>You have used your whole allowance. Upgrade your plan to add more.</Text> : null}
+      {level === 'full' ? <Text style={[opsStyles.muted, opsStyles.danger]}>{t('subscription.youHaveUsedYourWholeAllowance')}</Text> : null}
     </View>
   );
 }
 
 function BillingGroup({ details }: { details: PlanDetails }) {
+  const { t } = useTranslation();
   const { plan, subscription: sub } = details;
   const planRows = (last: boolean) => (
     <>
-      <Row label="Plan code" value={plan.planCode} />
-      <Row label="Plan tier" value={`Tier ${plan.tier}`} />
-      <Row label="Entitlements from" value={details.source === 'SUBSCRIPTION' ? 'Your subscription' : 'Default free plan'} last={last} />
+      <Row label={t('subscription.planCode')} value={plan.planCode} />
+      <Row label={t('subscription.planTier')} value={t('subscription.tierNumber', { tier: plan.tier })} />
+      <Row label={t('subscription.entitlementsFrom')} value={details.source === 'SUBSCRIPTION' ? 'Your subscription' : 'Default free plan'} last={last} />
     </>
   );
   if (!sub) {
     return (
-      <Group title="Billing details">
-        <Row label="Amount" value="No charge" />
-        <Row label="Free trial on paid plans" value={plan.trialDays > 0 ? `${plan.trialDays} days` : '—'} />
+      <Group title={t('subscription.billingDetails')}>
+        <Row label={t('common.amount')} value="No charge" />
+        <Row label={t('subscription.freeTrialOnPaidPlans')} value={plan.trialDays > 0 ? t('common.dayCount', { count: plan.trialDays }) : '—'} />
         {planRows(true)}
       </Group>
     );
   }
   return (
-    <Group title={`Billing details · ${sub.idd}`}>
-      <Row label="Started on" value={day(sub.startedAt)} />
-      {sub.status === 'TRIALING' ? <Row label="Free trial ends" value={day(sub.trialEndAt)} /> : null}
-      <Row label="Current period" value={`${day(sub.currentPeriodStart)} – ${day(sub.currentPeriodEnd)}`} />
-      {sub.taxRatePercent ? <Row label="Tax" value={`${sub.taxRatePercent}% on top`} /> : null}
-      <Row label="Auto-renew" value={<Text style={[groupStyles.value, sub.autoRenew ? groupStyles.ok : groupStyles.muted]}>{sub.autoRenew ? 'On' : 'Off — nothing is charged automatically'}</Text>} />
+    <Group title={t('subscription.billingDetailsIdd', { idd: sub.idd })}>
+      <Row label={t('subscription.startedOn')} value={day(sub.startedAt)} />
+      {sub.status === 'TRIALING' ? <Row label={t('subscription.freeTrialEnds')} value={day(sub.trialEndAt)} /> : null}
+      <Row label={t('subscription.currentPeriod')} value={`${day(sub.currentPeriodStart)} – ${day(sub.currentPeriodEnd)}`} />
+      {sub.taxRatePercent ? <Row label={t('common.tax')} value={t('subscription.percentOnTop', { percent: sub.taxRatePercent })} /> : null}
+      <Row label="Auto-renew" value={<Text style={[groupStyles.value, sub.autoRenew ? groupStyles.ok : groupStyles.muted]}>{sub.autoRenew ? t('common.on') : t('subscription.offNothingIsChargedAutomatically')}</Text>} />
       {planRows(true)}
     </Group>
   );
 }
 
 function PaymentsGroup({ payments, loading }: { payments: MyPayment[]; loading: boolean }) {
+  const { t } = useTranslation();
   const awaiting = payments.find(p => p.status === 'AWAITING_VERIFICATION');
   return (
     <View style={groupStyles.group}>
-      <Text style={[groupStyles.title, styles.sectionTitle]}>PAYMENTS</Text>
+      <Text style={[groupStyles.title, styles.sectionTitle]}>{t('subscription.payments')}</Text>
       {awaiting ? (
         <View style={styles.awaiting}>
           <ClockIcon size={15} color={colors.warningDark} />
           <Text style={[styles.awaitingText, styles.flex]}>
-            {`Your cash payment of ${money(Number(awaiting.amount), awaiting.currency)} for ${awaiting.planName} is being verified. Your plan activates as soon as it is confirmed.`}
+            {t('subscription.yourCashPaymentOfAmountFor', { amount: money(Number(awaiting.amount), awaiting.currency), planName: awaiting.planName })}
           </Text>
         </View>
       ) : null}
       {loading && !payments.length ? (
-        <Text style={[opsStyles.muted, styles.sectionHint]}>Loading…</Text>
+        <Text style={[opsStyles.muted, styles.sectionHint]}>{t('common.loading')}</Text>
       ) : payments.length ? (
         <View style={groupStyles.body}>
           {payments.map((p, i) => {
@@ -370,8 +377,8 @@ function PaymentsGroup({ payments, loading }: { payments: MyPayment[]; loading: 
               <View key={p.idd} style={[styles.payment, i < payments.length - 1 && groupStyles.line]}>
                 <View style={styles.flex}>
                   <Text style={opsStyles.title}>{`${p.planName} · ${p.billingCycle === 'YEARLY' ? 'Yearly' : 'Monthly'}`}</Text>
-                  <Text style={opsStyles.muted}>{`${day(p.paidAt ?? p.createdAt)} · ${PAYMENT_METHOD[p.method]}${p.invoiceNumber ? ` · Invoice ${p.invoiceNumber}` : ''}`}</Text>
-                  {Number(p.discountAmount) ? <Text style={[opsStyles.muted, opsStyles.success]}>{`${money(Number(p.discountAmount), p.currency)} off`}</Text> : null}
+                  <Text style={opsStyles.muted}>{`${day(p.paidAt ?? p.createdAt)} · ${PAYMENT_METHOD[p.method]}${p.invoiceNumber ? ` · ${t('subscription.invoiceNumber', { number: p.invoiceNumber })}` : ''}`}</Text>
+                  {Number(p.discountAmount) ? <Text style={[opsStyles.muted, opsStyles.success]}>{t('common.amountOff', { amount: money(Number(p.discountAmount), p.currency) })}</Text> : null}
                 </View>
                 <View style={styles.payRight}>
                   <Text style={opsStyles.amount}>{money(Number(p.amount), p.currency)}</Text>
@@ -384,8 +391,8 @@ function PaymentsGroup({ payments, loading }: { payments: MyPayment[]; loading: 
       ) : (
         <View style={[groupStyles.body, styles.noPayments]}>
           <WalletIcon size={22} color={colors.border} />
-          <Text style={opsStyles.title}>No payments yet</Text>
-          <Text style={opsStyles.muted}>Payments for your plan will show here.</Text>
+          <Text style={opsStyles.title}>{t('subscription.noPaymentsYet')}</Text>
+          <Text style={opsStyles.muted}>{t('subscription.paymentsForYourPlanWillShow')}</Text>
         </View>
       )}
     </View>
@@ -393,19 +400,20 @@ function PaymentsGroup({ payments, loading }: { payments: MyPayment[]; loading: 
 }
 
 function FeaturesGroup({ details }: { details: PlanDetails }) {
+  const { t } = useTranslation();
   const [includedOnly, setIncludedOnly] = useState(false);
   const [open, setOpen] = useState<string | null>(details.modules[0]?.module ?? null);
   return (
     <View style={groupStyles.group}>
       <View style={groupStyles.head}>
-        <Text style={groupStyles.title}>WHAT YOUR PLAN INCLUDES</Text>
+        <Text style={groupStyles.title}>{t('subscription.whatYourPlanIncludes')}</Text>
       </View>
       {details.modules.length ? (
         <>
           <View accessibilityRole="tablist" style={styles.toggle}>
             {[
-              [false, 'All features'],
-              [true, 'Included'],
+              [false, t('subscription.allFeatures')],
+              [true, t('subscription.included')],
             ].map(([value, label]) => {
               const on = includedOnly === value;
               return (
@@ -424,14 +432,14 @@ function FeaturesGroup({ details }: { details: PlanDetails }) {
             const full = inc.length === group.features.length;
             return (
               <View key={group.module} style={styles.module}>
-                <Pressable accessibilityRole="button" accessibilityState={{ expanded }} accessibilityLabel={`${group.module}, ${inc.length} of ${group.features.length} included`} onPress={() => setOpen(expanded ? null : group.module)} style={styles.moduleHead}>
+                <Pressable accessibilityRole="button" accessibilityState={{ expanded }} accessibilityLabel={t('subscription.moduleInccountOfFeaturescountIncluded', { module: group.module, incCount: inc.length, featuresCount: group.features.length })} onPress={() => setOpen(expanded ? null : group.module)} style={styles.moduleHead}>
                   <View style={styles.moduleIcon}>
                     <CreditCardIcon size={14} color={colors.textSecondary} />
                   </View>
                   <Text style={[opsStyles.title, styles.flex]} numberOfLines={1}>
                     {group.module}
                   </Text>
-                  <Text style={[styles.count, full && styles.countFull]}>{`${inc.length} of ${group.features.length}`}</Text>
+                  <Text style={[styles.count, full && styles.countFull]}>{t('subscription.inccountOfFeaturescount', { incCount: inc.length, featuresCount: group.features.length })}</Text>
                   <View style={expanded ? styles.flip : null}>
                     <ChevronDownIcon size={16} color={colors.textMuted} />
                   </View>
@@ -461,7 +469,7 @@ function FeaturesGroup({ details }: { details: PlanDetails }) {
       ) : (
         <View style={[groupStyles.body, styles.noPayments]}>
           <AwardIcon size={22} color={colors.border} />
-          <Text style={opsStyles.title}>No features listed</Text>
+          <Text style={opsStyles.title}>{t('subscription.noFeaturesListed')}</Text>
         </View>
       )}
     </View>

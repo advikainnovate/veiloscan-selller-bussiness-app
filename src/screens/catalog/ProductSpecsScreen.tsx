@@ -19,6 +19,7 @@ import { ActionSheet, compactStyles, CountTiles, Fab, ListTop, RowCard, Separato
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { EditIcon, EyeIcon, SlidersIcon, TrashIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 const NO_FILTERS = { search: '', productId: '', specificationId: '', status: '' };
@@ -51,6 +52,7 @@ export function useSpecLookups(allowed: boolean) {
 
 /** Catalog › Product Specs: the specification values assigned to each product. */
 export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const listPadding = useListPadding();
@@ -87,17 +89,17 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Product Specs" onBack={navigation.goBack} />
-        <ComingSoon label="Product Specs" icon={SlidersIcon} allowed={false} />
+        <AppHeader title={t('common.productSpecs')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.productSpecs')} icon={SlidersIcon} allowed={false} />
       </View>
     );
   }
 
   async function remove(row: Row) {
-    if (!(await confirmAction('Remove this specification from the product?', undefined, 'Remove', true))) return;
+    if (!(await confirmAction(t('catalog.removeThisSpecificationFromTheProduct'), undefined, t('common.remove'), true))) return;
     try {
       await productSpecificationService.remove(row.id);
-      toast('Product specification removed');
+      toast(t('catalog.productSpecificationRemoved'));
       refresh();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -106,30 +108,30 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Product Specs" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('common.productSpecs')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder="Search by product or specification…" />
+        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder={t('catalog.searchByProductOrSpecification')} />
         <CountTiles
           tiles={[
-            { key: '1', label: 'Active', count: items.filter(isActiveRow).length, ...TILE_COLORS.green },
-            { key: '0', label: 'Inactive', count: items.filter(r => !isActiveRow(r)).length, ...TILE_COLORS.red },
-            { key: 'products', label: 'Products', count: new Set(items.map(r => r.productId)).size, info: true, ...TILE_COLORS.amber },
+            { key: '1', label: t('common.active'), count: items.filter(isActiveRow).length, ...TILE_COLORS.green },
+            { key: '0', label: t('common.inactive'), count: items.filter(r => !isActiveRow(r)).length, ...TILE_COLORS.red },
+            { key: 'products', label: t('common.products'), count: new Set(items.map(r => r.productId)).size, info: true, ...TILE_COLORS.amber },
           ]}
           value={filters.status}
           onSelect={k => set('status', k)}
           loading={loading && !data}
         />
         <SummaryLine
-          hint="Specification values assigned to each product."
+          hint={t('catalog.specificationValuesAssignedToEachProduct')}
           filtered={isFiltered}
           shown={rows.length}
           total={items.length}
           noun="assignment"
           onClear={() => setFilters(NO_FILTERS)}
           extra={
-            <Pressable accessibilityRole="button" accessibilityLabel="More filters" hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.moreFilters')} hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
               <SlidersIcon size={14} color={extra ? colors.secondary : colors.textSecondary} />
-              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? `Filters (${extra})` : 'Filters'}</Text>
+              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? t('common.filtersExtra', { extra }) : t('common.filters')}</Text>
             </Pressable>
           }
         />
@@ -151,7 +153,7 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
               <ListSkeleton rows={4} height={80} />
             ) : (
               <View style={compactStyles.empty}>
-                <EmptyState icon={SlidersIcon} title={isFiltered ? 'No assignments match' : 'No product specifications found'} text={isFiltered ? 'Try another filter or search term.' : 'Add a specification value to a product.'} />
+                <EmptyState icon={SlidersIcon} title={isFiltered ? t('catalog.noAssignmentsMatch') : t('catalog.noProductSpecificationsFound')} text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('catalog.addASpecificationValueToA')} />
               </View>
             )
           }
@@ -161,13 +163,13 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
               .map(v => specValueLabel(v, look.optionTitle))
               .filter(Boolean);
             return (
-              <RowCard label={`Open ${look.productName(item.productId)} ${look.specTitle(item.specificationId)}`} onPress={() => navigation.navigate('ProductSpecDetail', { id: item.id })}>
+              <RowCard label={t('catalog.openProductidSpecificationid', { productId: look.productName(item.productId), specificationId: look.specTitle(item.specificationId) })} onPress={() => navigation.navigate('ProductSpecDetail', { id: item.id })}>
                 <View style={compactStyles.head}>
                   <Text style={compactStyles.name} numberOfLines={1}>
                     {look.specTitle(item.specificationId) || '—'}
                   </Text>
-                  <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
-                  <Pressable accessibilityRole="button" accessibilityLabel={`More for ${look.specTitle(item.specificationId)}`} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
+                  <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.moreForSpecificationid', { specificationId: look.specTitle(item.specificationId) })} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
                     <Text style={compactStyles.dots}>⋮</Text>
                   </Pressable>
                 </View>
@@ -182,7 +184,7 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
                       </Text>
                     ))
                   ) : (
-                    <Text style={compactStyles.meta}>No values</Text>
+                    <Text style={compactStyles.meta}>{t('catalog.noValues')}</Text>
                   )}
                 </View>
               </RowCard>
@@ -191,17 +193,17 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
         />
       )}
 
-      <Fab label="Add Specification" onPress={() => navigation.navigate('ProductSpecForm')} />
+      <Fab label={t('catalog.addSpecification')} onPress={() => navigation.navigate('ProductSpecForm')} />
 
-      <Sheet visible={moreFilters} title="Filters" onClose={() => setMoreFilters(false)}>
-        <SelectField label="Product" value={filters.productId} options={look.products.map(p => ({ value: p.id, label: String(p.productName ?? p.id) }))} onChange={v => set('productId', v)} allowClear="All Products" placeholder="All Products" />
+      <Sheet visible={moreFilters} title={t('common.filters')} onClose={() => setMoreFilters(false)}>
+        <SelectField label={t('common.product')} value={filters.productId} options={look.products.map(p => ({ value: p.id, label: String(p.productName ?? p.id) }))} onChange={v => set('productId', v)} allowClear={t('catalog.allProducts')} placeholder={t('catalog.allProducts')} />
         <SelectField
-          label="Specification"
+          label={t('catalog.specification')}
           value={filters.specificationId}
           options={look.specs.map(s => ({ value: s.id, label: String(s.specificationTitle ?? s.id) }))}
           onChange={v => set('specificationId', v)}
-          allowClear="All Specifications"
-          placeholder="All Specifications"
+          allowClear={t('catalog.allSpecifications')}
+          placeholder={t('catalog.allSpecifications')}
         />
       </Sheet>
 
@@ -213,9 +215,9 @@ export function ProductSpecsScreen({ navigation }: ScreenProps<'ProductSpecs'>) 
         actions={
           actionsFor
             ? [
-                { label: 'View', icon: EyeIcon, onPress: () => navigation.navigate('ProductSpecDetail', { id: actionsFor.id }) },
-                { label: 'Edit', icon: EditIcon, onPress: () => navigation.navigate('ProductSpecForm', { id: actionsFor.id }) },
-                { label: 'Remove', icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
+                { label: t('common.view'), icon: EyeIcon, onPress: () => navigation.navigate('ProductSpecDetail', { id: actionsFor.id }) },
+                { label: t('common.edit'), icon: EditIcon, onPress: () => navigation.navigate('ProductSpecForm', { id: actionsFor.id }) },
+                { label: t('common.remove'), icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
               ]
             : []
         }

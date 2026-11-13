@@ -3,6 +3,7 @@
 // store-wizard-types, store-edit-sections) and the backend's store DTOs.
 import type { BadgeTone } from '../components/ui/Badge';
 import type { DocumentRequirement, Rec, StoreRecord } from '../services/store-manage-service';
+import i18n from '../i18n';
 
 export interface Opt {
   value: string;
@@ -10,44 +11,44 @@ export interface Opt {
 }
 
 export const BUSINESS_TYPES: Opt[] = [
-  { value: 'RETAIL', label: 'Retail' },
-  { value: 'WHOLESALE', label: 'Wholesale' },
-  { value: 'MANUFACTURER', label: 'Manufacturer' },
-  { value: 'DISTRIBUTOR', label: 'Distributor' },
-  { value: 'RESELLER', label: 'Reseller' },
-  { value: 'SERVICE', label: 'Service' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'RETAIL', get label() { return i18n.t('store.retail'); } },
+  { value: 'WHOLESALE', get label() { return i18n.t('store.wholesale'); } },
+  { value: 'MANUFACTURER', get label() { return i18n.t('common.manufacturer'); } },
+  { value: 'DISTRIBUTOR', get label() { return i18n.t('store.distributor'); } },
+  { value: 'RESELLER', get label() { return i18n.t('store.reseller'); } },
+  { value: 'SERVICE', get label() { return i18n.t('store.service'); } },
+  { value: 'OTHER', get label() { return i18n.t('common.other'); } },
 ];
 
 export const BUSINESS_CONSTITUTIONS: Opt[] = [
-  { value: 'PROPRIETORSHIP', label: 'Proprietorship' },
-  { value: 'PARTNERSHIP', label: 'Partnership' },
+  { value: 'PROPRIETORSHIP', get label() { return i18n.t('store.proprietorship'); } },
+  { value: 'PARTNERSHIP', get label() { return i18n.t('store.partnership'); } },
   { value: 'LLP', label: 'LLP' },
-  { value: 'PRIVATE_LIMITED', label: 'Private Limited' },
-  { value: 'PUBLIC_LIMITED', label: 'Public Limited' },
+  { value: 'PRIVATE_LIMITED', get label() { return i18n.t('store.privateLimited'); } },
+  { value: 'PUBLIC_LIMITED', get label() { return i18n.t('store.publicLimited'); } },
   { value: 'HUF', label: 'HUF' },
-  { value: 'TRUST', label: 'Trust' },
-  { value: 'SOCIETY', label: 'Society' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'TRUST', get label() { return i18n.t('store.trust'); } },
+  { value: 'SOCIETY', get label() { return i18n.t('store.society'); } },
+  { value: 'OTHER', get label() { return i18n.t('common.other'); } },
 ];
 
 export const GST_STATUSES: Opt[] = [
-  { value: 'ACTIVE', label: 'Active' },
-  { value: 'SUSPENDED', label: 'Suspended' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'INACTIVE', label: 'Inactive' },
+  { value: 'ACTIVE', get label() { return i18n.t('common.active'); } },
+  { value: 'SUSPENDED', get label() { return i18n.t('common.suspended'); } },
+  { value: 'CANCELLED', get label() { return i18n.t('common.cancelled'); } },
+  { value: 'INACTIVE', get label() { return i18n.t('common.inactive'); } },
 ];
 
 export const DOCUMENT_TYPES: Opt[] = [
   { value: 'PAN', label: 'PAN' },
-  { value: 'GST_CERTIFICATE', label: 'GST Certificate' },
-  { value: 'BUSINESS_REGISTRATION', label: 'Business Registration' },
-  { value: 'SHOP_LICENSE', label: 'Shop License' },
-  { value: 'TRADE_LICENSE', label: 'Trade License' },
-  { value: 'ADDRESS_PROOF', label: 'Address Proof' },
-  { value: 'BANK_PROOF', label: 'Bank Proof' },
-  { value: 'OWNER_ID', label: 'Owner ID' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'GST_CERTIFICATE', get label() { return i18n.t('store.gstCertificate'); } },
+  { value: 'BUSINESS_REGISTRATION', get label() { return i18n.t('store.businessRegistration'); } },
+  { value: 'SHOP_LICENSE', get label() { return i18n.t('store.shopLicense'); } },
+  { value: 'TRADE_LICENSE', get label() { return i18n.t('store.tradeLicense'); } },
+  { value: 'ADDRESS_PROOF', get label() { return i18n.t('common.addressProof'); } },
+  { value: 'BANK_PROOF', get label() { return i18n.t('store.bankProof'); } },
+  { value: 'OWNER_ID', get label() { return i18n.t('store.ownerId'); } },
+  { value: 'OTHER', get label() { return i18n.t('common.other'); } },
 ];
 
 export const CATEGORY_OPTIONS: Opt[] = [
@@ -70,57 +71,57 @@ export const CATEGORY_OPTIONS: Opt[] = [
 ].map(label => ({ value: label, label }));
 
 export const CURRENCIES: Opt[] = [
-  { value: 'INR', label: 'INR - Indian Rupee (₹)' },
-  { value: 'USD', label: 'USD - US Dollar ($)' },
-  { value: 'EUR', label: 'EUR - Euro (€)' },
-  { value: 'GBP', label: 'GBP - British Pound (£)' },
-  { value: 'AED', label: 'AED - UAE Dirham (د.إ)' },
-  { value: 'SGD', label: 'SGD - Singapore Dollar (S$)' },
+  { value: 'INR', get label() { return i18n.t('store.inrIndianRupeeRs'); } },
+  { value: 'USD', get label() { return i18n.t('store.usdUsDollar'); } },
+  { value: 'EUR', get label() { return i18n.t('store.eurEuro'); } },
+  { value: 'GBP', get label() { return i18n.t('store.gbpBritishPound'); } },
+  { value: 'AED', get label() { return i18n.t('store.aedUaeDirham'); } },
+  { value: 'SGD', get label() { return i18n.t('store.sgdSingaporeDollarS'); } },
 ];
 
 export const TIMEZONES: Opt[] = [
-  { value: 'Asia/Kolkata', label: 'Asia/Kolkata (GMT +05:30)' },
-  { value: 'Asia/Dubai', label: 'Asia/Dubai (GMT +04:00)' },
-  { value: 'Asia/Singapore', label: 'Asia/Singapore (GMT +08:00)' },
-  { value: 'Europe/London', label: 'Europe/London (GMT +00:00)' },
-  { value: 'Europe/Berlin', label: 'Europe/Berlin (GMT +01:00)' },
-  { value: 'America/New_York', label: 'America/New_York (GMT -05:00)' },
-  { value: 'America/Los_Angeles', label: 'America/Los_Angeles (GMT -08:00)' },
-  { value: 'UTC', label: 'UTC (GMT +00:00)' },
+  { value: 'Asia/Kolkata', get label() { return i18n.t('store.asiaKolkataGmt0530'); } },
+  { value: 'Asia/Dubai', get label() { return i18n.t('store.asiaDubaiGmt0400'); } },
+  { value: 'Asia/Singapore', get label() { return i18n.t('store.asiaSingaporeGmt0800'); } },
+  { value: 'Europe/London', get label() { return i18n.t('store.europeLondonGmt0000'); } },
+  { value: 'Europe/Berlin', get label() { return i18n.t('store.europeBerlinGmt0100'); } },
+  { value: 'America/New_York', get label() { return i18n.t('store.americaNewYorkGmt0500'); } },
+  { value: 'America/Los_Angeles', get label() { return i18n.t('store.americaLosAngelesGmt0800'); } },
+  { value: 'UTC', get label() { return i18n.t('store.utcGmt0000'); } },
 ];
 
 export const WEEK_DAYS = [
-  { value: 'MONDAY', label: 'Monday' },
-  { value: 'TUESDAY', label: 'Tuesday' },
-  { value: 'WEDNESDAY', label: 'Wednesday' },
-  { value: 'THURSDAY', label: 'Thursday' },
-  { value: 'FRIDAY', label: 'Friday' },
-  { value: 'SATURDAY', label: 'Saturday' },
-  { value: 'SUNDAY', label: 'Sunday' },
+  { value: 'MONDAY', get label() { return i18n.t('store.monday'); } },
+  { value: 'TUESDAY', get label() { return i18n.t('store.tuesday'); } },
+  { value: 'WEDNESDAY', get label() { return i18n.t('store.wednesday'); } },
+  { value: 'THURSDAY', get label() { return i18n.t('store.thursday'); } },
+  { value: 'FRIDAY', get label() { return i18n.t('store.friday'); } },
+  { value: 'SATURDAY', get label() { return i18n.t('store.saturday'); } },
+  { value: 'SUNDAY', get label() { return i18n.t('store.sunday'); } },
 ];
 
 export const ONBOARDING_STEPS = [
-  { key: 'BUSINESS_DETAILS', label: 'Business Details' },
-  { key: 'STORE_DETAILS', label: 'Store Details' },
-  { key: 'ADDRESS_CONTACT', label: 'Address & Contact' },
-  { key: 'GST_DETAILS', label: 'GST Details', optional: true },
-  { key: 'DOCUMENTS', label: 'Documents', optional: true },
-  { key: 'REVIEW', label: 'Review & Create' },
+  { key: 'BUSINESS_DETAILS', get label() { return i18n.t('store.businessDetails'); } },
+  { key: 'STORE_DETAILS', get label() { return i18n.t('store.storeDetails'); } },
+  { key: 'ADDRESS_CONTACT', get label() { return i18n.t('store.addressAndContact'); } },
+  { key: 'GST_DETAILS', get label() { return i18n.t('store.gstDetails'); }, optional: true },
+  { key: 'DOCUMENTS', get label() { return i18n.t('common.documents'); }, optional: true },
+  { key: 'REVIEW', get label() { return i18n.t('store.reviewAndCreate'); } },
 ];
 
 export const COMMERCE_MODES = [
-  { value: 'STANDARD', label: 'Standard shop', description: 'Customers see prices, add to cart, check out and pay.', customerSees: 'Prices · Cart · Checkout · Payment' },
+  { value: 'STANDARD', get label() { return i18n.t('store.standardShop'); }, get description() { return i18n.t('store.customersSeePricesAddToCart'); }, get customerSees() { return i18n.t('store.pricesCartCheckoutPayment'); } },
   {
     value: 'ORDER_REQUEST',
-    label: 'Order requests',
-    description: 'Customers send a list of products without prices. You confirm availability and the price, bill it, and they pay at the store.',
-    customerSees: 'Availability · Cart · Order request — no prices or online payment',
+    get label() { return i18n.t('store.orderRequests'); },
+    get description() { return i18n.t('store.customersSendAListOfProducts'); },
+    get customerSees() { return i18n.t('store.availabilityCartOrderRequestNoPrices'); },
   },
   {
     value: 'CATALOG_ONLY',
-    label: 'Catalogue only',
-    description: 'A product showcase. Customers browse products and availability, then visit or call you.',
-    customerSees: 'Products · Availability — no prices, cart or ordering',
+    get label() { return i18n.t('store.catalogueOnly'); },
+    get description() { return i18n.t('store.aProductShowcaseCustomersBrowseProducts'); },
+    get customerSees() { return i18n.t('store.productsAvailabilityNoPricesCartOr'); },
   },
 ];
 
@@ -129,14 +130,14 @@ export const labelFor = (options: Opt[], value: unknown) => options.find(o => o.
 // One status per store, combining onboarding, approval and the store's own lifecycle.
 export type DisplayStatus = 'DRAFT' | 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'INACTIVE' | 'CLOSED';
 export const DISPLAY_STATUS: Record<DisplayStatus, { label: string; hint: string; tone: BadgeTone }> = {
-  DRAFT: { label: 'Draft', hint: 'Onboarding in progress', tone: 'blue' },
-  PENDING: { label: 'Pending Approval', hint: 'Awaiting review', tone: 'amber' },
-  IN_REVIEW: { label: 'In Review', hint: 'Under verification', tone: 'blue' },
-  APPROVED: { label: 'Approved', hint: 'Active store', tone: 'green' },
-  REJECTED: { label: 'Rejected', hint: 'Changes requested', tone: 'red' },
-  SUSPENDED: { label: 'Suspended', hint: 'Suspended by admin', tone: 'red' },
-  INACTIVE: { label: 'Inactive', hint: 'Not taking orders', tone: 'slate' },
-  CLOSED: { label: 'Closed', hint: 'Store closed', tone: 'slate' },
+  DRAFT: { get label() { return i18n.t('common.draft'); }, get hint() { return i18n.t('store.onboardingInProgress'); }, tone: 'blue' },
+  PENDING: { get label() { return i18n.t('store.pendingApproval'); }, get hint() { return i18n.t('common.awaitingReview'); }, tone: 'amber' },
+  IN_REVIEW: { get label() { return i18n.t('common.inReview'); }, get hint() { return i18n.t('store.underVerification'); }, tone: 'blue' },
+  APPROVED: { get label() { return i18n.t('common.approved'); }, get hint() { return i18n.t('store.activeStore'); }, tone: 'green' },
+  REJECTED: { get label() { return i18n.t('common.rejected'); }, get hint() { return i18n.t('common.changesRequested'); }, tone: 'red' },
+  SUSPENDED: { get label() { return i18n.t('common.suspended'); }, get hint() { return i18n.t('store.suspendedByAdmin'); }, tone: 'red' },
+  INACTIVE: { get label() { return i18n.t('common.inactive'); }, get hint() { return i18n.t('store.notTakingOrders'); }, tone: 'slate' },
+  CLOSED: { get label() { return i18n.t('common.closed'); }, get hint() { return i18n.t('store.storeClosed'); }, tone: 'slate' },
 };
 
 const reviewed = (s: unknown) => s === 'VERIFIED' || s === 'REJECTED';
@@ -158,9 +159,9 @@ export function displayStatus(store: StoreRecord): DisplayStatus {
 }
 
 export const VERIFICATION: Record<string, { label: string; tone: BadgeTone }> = {
-  VERIFIED: { label: 'Verified', tone: 'green' },
-  PENDING: { label: 'Pending', tone: 'amber' },
-  REJECTED: { label: 'Rejected', tone: 'red' },
+  VERIFIED: { get label() { return i18n.t('common.verified'); }, tone: 'green' },
+  PENDING: { get label() { return i18n.t('common.pending'); }, tone: 'amber' },
+  REJECTED: { get label() { return i18n.t('common.rejected'); }, tone: 'red' },
 };
 
 /** The store's page in the shop (the slug, or the code's short link). */
@@ -231,16 +232,16 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** The panel's required fields, then the backend's formats. */
 export function contactProblem(f: ContactForm): string | null {
   const missing = REQUIRED.filter(([k]) => !f[k].trim()).map(([, label]) => label);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (!EMAIL.test(f.email.trim())) return 'Enter a valid store email';
-  if (!PHONE.test(f.phone.trim())) return 'Store phone must be 7 to 15 digits, optionally starting with +';
-  if (f.alternatePhone.trim() && !PHONE.test(f.alternatePhone.trim())) return 'Alternate phone must be 7 to 15 digits, optionally starting with +';
-  if (f.website.trim() && !/^https?:\/\/\S+\.\S+/.test(f.website.trim())) return 'The website must start with http:// or https://';
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (!EMAIL.test(f.email.trim())) return i18n.t('store.enterAValidStoreEmail');
+  if (!PHONE.test(f.phone.trim())) return i18n.t('store.storePhoneMustBe7To');
+  if (f.alternatePhone.trim() && !PHONE.test(f.alternatePhone.trim())) return i18n.t('store.alternatePhoneMustBe7To');
+  if (f.website.trim() && !/^https?:\/\/\S+\.\S+/.test(f.website.trim())) return i18n.t('store.theWebsiteMustStartWithHttp');
   const lat = f.latitude.trim();
   const lng = f.longitude.trim();
-  if (lat && !(Number(lat) >= -90 && Number(lat) <= 90)) return 'Latitude must be between -90 and 90';
-  if (lng && !(Number(lng) >= -180 && Number(lng) <= 180)) return 'Longitude must be between -180 and 180';
-  if (f.openingTime && f.closingTime && f.openingTime >= f.closingTime) return 'Closing time must be after opening time';
+  if (lat && !(Number(lat) >= -90 && Number(lat) <= 90)) return i18n.t('common.latitudeMustBeBetween90And');
+  if (lng && !(Number(lng) >= -180 && Number(lng) <= 180)) return i18n.t('common.longitudeMustBeBetween180And');
+  if (f.openingTime && f.closingTime && f.openingTime >= f.closingTime) return i18n.t('store.closingTimeMustBeAfterOpening');
   return null;
 }
 
@@ -272,8 +273,8 @@ export function gstFromRecord(tax: Rec | null | undefined): GstForm {
 
 export function gstProblem(f: GstForm): string | null {
   if (!f.gstRegistered) return null;
-  if (!GSTIN_PATTERN.test(f.gstin.trim().toUpperCase())) return 'Enter a valid 15-character GSTIN';
-  if (!f.legalBusinessName.trim()) return 'Legal business name is required when GST registered';
+  if (!GSTIN_PATTERN.test(f.gstin.trim().toUpperCase())) return i18n.t('store.enterAValid15CharacterGstin');
+  if (!f.legalBusinessName.trim()) return i18n.t('store.legalBusinessNameIsRequiredWhen');
   return null;
 }
 
@@ -295,17 +296,17 @@ export function gstPayload(f: GstForm): Rec {
 // ── Documents ────────────────────────────────────────────────────────────
 
 const SLOTS = [
-  { key: 'PAN', types: ['PAN'], label: 'PAN Card' },
-  { key: 'BUSINESS_REGISTRATION', types: ['BUSINESS_REGISTRATION'], label: 'Business Registration' },
-  { key: 'SHOP_LICENSE', types: ['SHOP_LICENSE', 'TRADE_LICENSE'], label: 'Shop/Trade License' },
-  { key: 'ADDRESS_PROOF', types: ['ADDRESS_PROOF'], label: 'Address Proof' },
-  { key: 'BANK_PROOF', types: ['BANK_PROOF'], label: 'Bank Proof' },
-  { key: 'OTHER', types: ['OTHER', 'OWNER_ID'], label: 'Other Document' },
+  { key: 'PAN', types: ['PAN'], get label() { return i18n.t('store.panCard'); } },
+  { key: 'BUSINESS_REGISTRATION', types: ['BUSINESS_REGISTRATION'], get label() { return i18n.t('store.businessRegistration'); } },
+  { key: 'SHOP_LICENSE', types: ['SHOP_LICENSE', 'TRADE_LICENSE'], get label() { return i18n.t('store.shopTradeLicense'); } },
+  { key: 'ADDRESS_PROOF', types: ['ADDRESS_PROOF'], get label() { return i18n.t('common.addressProof'); } },
+  { key: 'BANK_PROOF', types: ['BANK_PROOF'], get label() { return i18n.t('store.bankProof'); } },
+  { key: 'OTHER', types: ['OTHER', 'OWNER_ID'], get label() { return i18n.t('store.otherDocument'); } },
 ];
 
 /** The platform defaults, until the admin's requirements load. */
 export const DEFAULT_DOCUMENT_REQUIREMENTS: DocumentRequirement[] = [
-  { key: 'GST_CERTIFICATE', label: 'GST Certificate', types: ['GST_CERTIFICATE'], gstOnly: true, requiredWithGst: true, requiredWithoutGst: false },
+  { key: 'GST_CERTIFICATE', get label() { return i18n.t('store.gstCertificate'); }, types: ['GST_CERTIFICATE'], gstOnly: true, requiredWithGst: true, requiredWithoutGst: false },
   ...SLOTS.map(s => ({
     key: s.key,
     label: s.label,
@@ -348,7 +349,7 @@ export function hoursFromRecord(hours: Rec[]): HourRow[] {
 
 export function hoursProblem(rows: HourRow[]): string | null {
   const bad = rows.find(h => h.isOpen && (!h.openTime || !h.closeTime || h.openTime >= h.closeTime));
-  return bad ? `${WEEK_DAYS.find(d => d.value === bad.dayOfWeek)?.label ?? bad.dayOfWeek}: closing time must be after opening time` : null;
+  return bad ? i18n.t('store.labelClosingTimeMustBeAfter', { label: WEEK_DAYS.find(d => d.value === bad.dayOfWeek)?.label ?? bad.dayOfWeek }) : null;
 }
 
 // ── Business details (the store itself) ─────────────────────────────────
@@ -374,11 +375,11 @@ export function businessFromStore(s: StoreRecord): BusinessForm {
 }
 
 export function businessProblem(f: BusinessForm): string | null {
-  const missing = [!f.name.trim() ? 'Store Name' : null, !f.businessType ? 'Business Type' : null, !f.businessCategory.trim() ? 'Business Category' : null].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (f.name.trim().length > 150) return 'The store name can be at most 150 characters';
-  if (f.slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(f.slug.trim())) return 'The slug can only have lowercase letters, numbers and dashes';
-  if (f.businessCategory.trim().length > 100) return 'The business category can be at most 100 characters';
+  const missing = [!f.name.trim() ? i18n.t('store.storeName') : null, !f.businessType ? i18n.t('store.businessType') : null, !f.businessCategory.trim() ? i18n.t('store.businessCategory') : null].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (f.name.trim().length > 150) return i18n.t('store.theStoreNameCanBeAt');
+  if (f.slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(f.slug.trim())) return i18n.t('store.theSlugCanOnlyHaveLowercase');
+  if (f.businessCategory.trim().length > 100) return i18n.t('store.theBusinessCategoryCanBeAt');
   return null;
 }
 
@@ -418,10 +419,10 @@ export function configFromRecord(c: Rec | null | undefined): ConfigForm {
 
 export function configProblem(f: ConfigForm): string | null {
   const days = Number(f.maxCreditDays);
-  if (f.allowCustomerCredit && (!Number.isInteger(days) || days < 1 || days > 365)) return 'Maximum credit period must be between 1 and 365 days.';
-  if (f.currencySymbol.length > 5) return 'The currency symbol can be at most 5 characters';
-  if (f.orderPrefix.length > 10) return 'The order prefix can be at most 10 characters';
-  if (f.minOrderAmount.trim() && !(Number(f.minOrderAmount) >= 0)) return 'The minimum order must be an amount';
+  if (f.allowCustomerCredit && (!Number.isInteger(days) || days < 1 || days > 365)) return i18n.t('store.maximumCreditPeriodMustBeBetween');
+  if (f.currencySymbol.length > 5) return i18n.t('store.theCurrencySymbolCanBeAt');
+  if (f.orderPrefix.length > 10) return i18n.t('store.theOrderPrefixCanBeAt');
+  if (f.minOrderAmount.trim() && !(Number(f.minOrderAmount) >= 0)) return i18n.t('store.theMinimumOrderMustBeAn');
   return null;
 }
 
@@ -439,21 +440,21 @@ export function configPayload(f: ConfigForm): Rec {
 export const isColor = (v: string) => !v.trim() || /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v.trim());
 
 export const STORE_IMAGE_RULES = {
-  logo: { maxMb: 2, min: { width: 200, height: 200 }, text: 'Ratio 1:1 (square) · 512 × 512 px recommended · Min 200 × 200 px · PNG, JPG, WEBP · Max 2 MB' },
-  banner: { maxMb: 5, min: { width: 1200, height: 450 }, text: 'Ratio 8:3 (wide) · 1600 × 600 px recommended · Min 1200 × 450 px · PNG, JPG, WEBP · Max 5 MB' },
+  logo: { maxMb: 2, min: { width: 200, height: 200 }, get text() { return i18n.t('store.ratio11Square512512'); } },
+  banner: { maxMb: 5, min: { width: 1200, height: 450 }, get text() { return i18n.t('store.ratio83Wide1600600'); } },
 } as const;
 
 /** Why a picked photo can't be the logo / banner (the panel's checks), or null. */
 export function storeImageProblem(kind: 'logo' | 'banner', file: { type?: string; fileSize?: number; width?: number; height?: number }): string | null {
   const rule = STORE_IMAGE_RULES[kind];
-  const name = kind === 'logo' ? 'Logo' : 'Banner';
-  if (file.type && !['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) return 'Use a PNG, JPG or WEBP image';
-  if (file.fileSize && file.fileSize > rule.maxMb * 1024 * 1024) return `${name} must be ${rule.maxMb} MB or smaller`;
+  const name = kind === 'logo' ? i18n.t('store.logo') : i18n.t('store.banner');
+  if (file.type && !['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) return i18n.t('store.useAPngJpgOrWebp');
+  if (file.fileSize && file.fileSize > rule.maxMb * 1024 * 1024) return i18n.t('store.nameMustBeMaxmbMbOr', { name, maxMb: rule.maxMb });
   if (file.width && file.height) {
     // A banner of any shape is fine as long as an 8:3 crop of it is big enough.
     const w = kind === 'banner' ? Math.min(file.width, (file.height * 8) / 3) : file.width;
     const h = kind === 'banner' ? Math.min(file.height, (file.width * 3) / 8) : file.height;
-    if (w < rule.min.width || h < rule.min.height) return `${name} must be at least ${rule.min.width} × ${rule.min.height} px`;
+    if (w < rule.min.width || h < rule.min.height) return i18n.t('store.nameMustBeAtLeastWidth', { name, width: rule.min.width, height: rule.min.height });
   }
   return null;
 }
@@ -518,10 +519,10 @@ export function storeStats(stores: StoreRecord[]) {
 
 /** Four screens over the backend's six onboarding steps. */
 export const WIZARD_STEPS = [
-  { step: 1, label: 'Business Details', backendSteps: [1, 2] },
-  { step: 2, label: 'Store Setup', backendSteps: [3] },
-  { step: 3, label: 'GST & Documents', backendSteps: [4, 5], optional: true },
-  { step: 4, label: 'Review & Submit', backendSteps: [6] },
+  { step: 1, get label() { return i18n.t('store.businessDetails'); }, backendSteps: [1, 2] },
+  { step: 2, get label() { return i18n.t('store.storeSetup'); }, backendSteps: [3] },
+  { step: 3, get label() { return i18n.t('store.gstAndDocuments'); }, backendSteps: [4, 5], optional: true },
+  { step: 4, get label() { return i18n.t('store.reviewAndSubmit'); }, backendSteps: [6] },
 ];
 export const BACKEND_REVIEW_STEP = 6;
 export const wizardStepFor = (backendStep: number) => WIZARD_STEPS.find(s => s.backendSteps.includes(backendStep))?.step ?? 1;
@@ -583,12 +584,12 @@ export function newStoreFromRecord(s: StoreRecord): NewStoreForm {
 /** The panel's validateBusiness: a description of 100+ words first, then the required fields. */
 export function newStoreProblem(f: NewStoreForm): string | null {
   const words = countWords(f.description);
-  if (!words) return 'Store description is required';
-  if (words < DESCRIPTION_MIN_WORDS) return `Store description must be at least ${DESCRIPTION_MIN_WORDS} words (currently ${words})`;
-  if (plainText(f.description).length > DESCRIPTION_MAX) return `Description can be at most ${DESCRIPTION_MAX} characters`;
-  const missing = [!f.name.trim() ? 'Store Name' : null, !f.businessType ? 'Business Type' : null, !f.businessCategory.trim() ? 'Business Category' : null].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (f.name.trim().length > 150) return 'The store name can be at most 150 characters';
+  if (!words) return i18n.t('store.storeDescriptionIsRequired');
+  if (words < DESCRIPTION_MIN_WORDS) return i18n.t('store.storeDescriptionMustBeAtLeast', { DESCRIPTION_MIN_WORDS, words });
+  if (plainText(f.description).length > DESCRIPTION_MAX) return i18n.t('store.descriptionCanBeAtMostDescription', { DESCRIPTION_MAX });
+  const missing = [!f.name.trim() ? i18n.t('store.storeName') : null, !f.businessType ? i18n.t('store.businessType') : null, !f.businessCategory.trim() ? i18n.t('store.businessCategory') : null].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (f.name.trim().length > 150) return i18n.t('store.theStoreNameCanBeAt');
   return null;
 }
 
@@ -608,8 +609,8 @@ export interface BrandingRequirement {
 
 /** The platform defaults: required with GST, optional without. */
 export const DEFAULT_BRANDING_REQUIREMENTS: BrandingRequirement[] = [
-  { key: 'STORE_LOGO', label: 'Store Logo', requiredWithGst: true, requiredWithoutGst: false },
-  { key: 'STORE_BANNER', label: 'Store Banner', requiredWithGst: true, requiredWithoutGst: false },
+  { key: 'STORE_LOGO', get label() { return i18n.t('store.storeLogo'); }, requiredWithGst: true, requiredWithoutGst: false },
+  { key: 'STORE_BANNER', get label() { return i18n.t('store.storeBanner'); }, requiredWithGst: true, requiredWithoutGst: false },
 ];
 
 /** Required images not added yet; with `gst` null (not chosen yet) only those required either way. */
@@ -625,10 +626,10 @@ export function brandingHint(rule: BrandingRequirement | undefined, gst: boolean
   if (!rule) return undefined;
   if (gst !== null) {
     const required = gst ? rule.requiredWithGst : rule.requiredWithoutGst;
-    return required ? `Required for stores ${gst ? 'registered with' : 'without'} GST.` : 'Optional';
+    return required ? (gst ? i18n.t('store.requiredForGstStores') : i18n.t('store.requiredForNonGstStores')) : i18n.t('common.optional2');
   }
-  if (rule.requiredWithGst && rule.requiredWithoutGst) return 'Required';
-  if (rule.requiredWithGst) return 'Required if you register with GST (next step); optional without GST.';
-  if (rule.requiredWithoutGst) return 'Required if you register without GST (next step).';
-  return 'Optional';
+  if (rule.requiredWithGst && rule.requiredWithoutGst) return i18n.t('common.required');
+  if (rule.requiredWithGst) return i18n.t('store.requiredIfYouRegisterWithGst');
+  if (rule.requiredWithoutGst) return i18n.t('store.requiredIfYouRegisterWithoutGst');
+  return i18n.t('common.optional2');
 }

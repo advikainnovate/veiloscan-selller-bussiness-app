@@ -17,15 +17,18 @@ import { confirmAction, Detail, HistoryList, OpsCard, opsStyles } from '../../co
 import { SupplierFormSheet } from '../../components/expenses/SupplierFormSheet';
 import { TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { Trans, useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const TYPE_META: Record<'BILL' | 'PAYMENT' | 'RETURN', { label: string; tone: BadgeTone; sign: string }> = {
-  BILL: { label: 'Bill', tone: 'slate', sign: '+' },
-  PAYMENT: { label: 'Payment', tone: 'green', sign: '−' },
-  RETURN: { label: 'Return', tone: 'violet', sign: '−' },
+  BILL: { get label() { return i18n.t('common.bill'); }, tone: 'slate', sign: '+' },
+  PAYMENT: { get label() { return i18n.t('common.payment'); }, tone: 'green', sign: '−' },
+  RETURN: { get label() { return i18n.t('common.return'); }, tone: 'violet', sign: '−' },
 };
 
 /** A supplier's ledger: totals, every bill, and all money in and out. */
 export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'SupplierLedger'>) {
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-expenses:view');
@@ -47,21 +50,21 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Supplier" onBack={navigation.goBack} />
-        <ComingSoon label="Expenses" icon={TruckIcon} allowed={false} />
+        <AppHeader title={tr('common.supplier')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.expenses')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
   if (loading || !s) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Supplier" onBack={navigation.goBack} />
+        <AppHeader title={tr('common.supplier')} onBack={navigation.goBack} />
         {loading ? (
           <View style={opsStyles.content}>
             <ListSkeleton rows={4} height={110} />
           </View>
         ) : (
-          <ErrorState message={error ?? 'Not found.'} onRetry={() => reload()} />
+          <ErrorState message={error ?? tr('common.notFound')} onRetry={() => reload()} />
         )}
       </View>
     );
@@ -70,7 +73,7 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
   async function toggleActive() {
     try {
       await expensesService.updateSupplier(storeId, s!.id, { isActive: !s!.isActive });
-      toast(s!.isActive ? 'Supplier marked inactive' : 'Supplier active again');
+      toast(s!.isActive ? tr('expenses.supplierMarkedInactive') : tr('expenses.supplierActiveAgain'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -78,10 +81,10 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
   }
 
   async function remove() {
-    if (!(await confirmAction(`Delete ${s!.name}?`, 'Only a supplier with no bills can be deleted.', 'Delete', true))) return;
+    if (!(await confirmAction(tr('expenses.deleteName3', { name: s!.name }), tr('expenses.onlyASupplierWithNoBills'), tr('common.delete'), true))) return;
     try {
       await expensesService.removeSupplier(storeId, s!.id);
-      toast('Supplier deleted');
+      toast(tr('expenses.supplierDeleted'));
       navigation.goBack();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -98,50 +101,50 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
         <View style={styles.head}>
           <View style={opsStyles.row}>
             <Text style={styles.name}>{s.name}</Text>
-            {!s.isActive ? <Badge label="Inactive" tone="slate" /> : null}
+            {!s.isActive ? <Badge label={tr('common.inactive')} tone="slate" /> : null}
           </View>
-          <Text style={opsStyles.meta}>{`${s.idd}${s.phone ? ` · ${s.phone}` : ''}${s.gstNumber ? ` · GST ${s.gstNumber}` : ''}`}</Text>
+          <Text style={opsStyles.meta}>{[s.idd, s.phone, s.gstNumber ? tr('expenses.gstNumber', { gst: s.gstNumber }) : null].filter(Boolean).join(' · ')}</Text>
         </View>
         <View style={opsStyles.chipRow}>
           {hasPermission('store-expenses:create') ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Add Expense" onPress={() => navigation.navigate('ExpenseForm', { supplierId: s.id })} style={opsStyles.primaryBtn}>
-              <Text style={opsStyles.primaryBtnText}>Add Expense</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={tr('expenses.addExpense')} onPress={() => navigation.navigate('ExpenseForm', { supplierId: s.id })} style={opsStyles.primaryBtn}>
+              <Text style={opsStyles.primaryBtnText}>{tr('expenses.addExpense')}</Text>
             </Pressable>
           ) : null}
           {hasPermission('store-expenses:edit') ? (
             <>
               <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={opsStyles.smallBtn}>
-                <Text style={opsStyles.smallBtnText}>Edit</Text>
+                <Text style={opsStyles.smallBtnText}>{tr('common.edit')}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" onPress={toggleActive} style={opsStyles.smallBtn}>
-                <Text style={opsStyles.smallBtnText}>{s.isActive ? 'Mark inactive' : 'Mark active'}</Text>
+                <Text style={opsStyles.smallBtnText}>{s.isActive ? tr('expenses.markInactive') : tr('expenses.markActive')}</Text>
               </Pressable>
             </>
           ) : null}
           {hasPermission('store-expenses:delete') && !s.bills.length ? (
             <Pressable accessibilityRole="button" onPress={remove} style={opsStyles.smallBtn}>
-              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Delete</Text>
+              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{tr('common.delete')}</Text>
             </Pressable>
           ) : null}
         </View>
 
         <View style={styles.totals}>
-          <Total label="Credit Expenses" value={money(s.creditTotal)} />
-          <Total label="Total Payments" value={money(s.paid)} color={colors.successDark} />
-          <Total label="Returns / Credit Notes" value={money(s.returned)} color="#6d28d9" />
-          <Total label="Outstanding Balance" value={money(s.outstanding)} color={s.outstanding ? colors.warningDark : undefined} />
+          <Total label={tr('expenses.creditExpenses')} value={money(s.creditTotal)} />
+          <Total label={tr('expenses.totalPayments')} value={money(s.paid)} color={colors.successDark} />
+          <Total label={tr('expenses.returnsCreditNotes')} value={money(s.returned)} color="#6d28d9" />
+          <Total label={tr('expenses.outstandingBalance')} value={money(s.outstanding)} color={s.outstanding ? colors.warningDark : undefined} />
           <Total
-            label="Overdue Balance"
+            label={tr('expenses.overdueBalance')}
             value={money(s.overdue)}
             color={s.overdue ? colors.error : undefined}
-            sub={s.refundDue ? `${money(s.refundDue)} refund due to you` : undefined}
+            sub={s.refundDue ? tr('expenses.refunddueRefundDueToYou', { refundDue: money(s.refundDue) }) : undefined}
           />
         </View>
 
         <FilterChips
           options={[
-            { value: 'bills', label: 'Bills', count: s.bills.length },
-            { value: 'transactions', label: 'Transaction History', count: s.transactions.length },
+            { value: 'bills', label: tr('expenses.bills'), count: s.bills.length },
+            { value: 'transactions', label: tr('expenses.transactionHistory'), count: s.transactions.length },
           ]}
           value={tab}
           onChange={v => setTab(v as 'bills' | 'transactions')}
@@ -149,7 +152,7 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
         <OpsCard>
           {tab === 'bills' ? (
             !s.bills.length ? (
-              <Text style={opsStyles.muted}>No bills from this supplier.</Text>
+              <Text style={opsStyles.muted}>{tr('expenses.noBillsFromThisSupplier')}</Text>
             ) : (
               s.bills.map((b, i) => {
                 const st = expenseStatus(b.status);
@@ -162,19 +165,22 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
                       <Badge label={st.label} tone={st.tone} />
                     </View>
                     <Text style={opsStyles.meta}>
-                      {`${b.idd} · ${day(b.expenseDate)}${b.kind === 'PURCHASE' ? ' · stock purchase' : ''}${b.referenceNumber ? ` · bill ${b.referenceNumber}` : ''}`}
+                      {[b.idd, day(b.expenseDate), b.kind === 'PURCHASE' ? tr('expenses.stockPurchase') : null, b.referenceNumber ? tr('expenses.billRef', { ref: b.referenceNumber }) : null].filter(Boolean).join(' · ')}
                     </Text>
                     <Text style={opsStyles.meta}>
-                      {`${money(b.amount)} · paid ${money(b.paidAmount)} · returned ${money(b.returnedAmount)} · `}
-                      <Text style={b.outstandingAmount ? styles.owed : undefined}>{`owed ${money(b.outstandingAmount)}`}</Text>
-                      {b.dueDate ? <Text style={b.status === 'OVERDUE' ? opsStyles.danger : undefined}>{` · due ${day(b.dueDate)}`}</Text> : null}
+                      <Trans
+                        i18nKey="expenses.billAmountsLine"
+                        values={{ amount: money(b.amount), paid: money(b.paidAmount), returned: money(b.returnedAmount), owed: money(b.outstandingAmount) }}
+                        components={{ owed: <Text style={b.outstandingAmount ? styles.owed : undefined} /> }}
+                      />
+                      {b.dueDate ? <Text style={b.status === 'OVERDUE' ? opsStyles.danger : undefined}>{tr('expenses.dueDuedate', { dueDate: day(b.dueDate) })}</Text> : null}
                     </Text>
                   </Pressable>
                 );
               })
             )
           ) : !s.transactions.length ? (
-            <Text style={opsStyles.muted}>Nothing recorded yet.</Text>
+            <Text style={opsStyles.muted}>{tr('expenses.nothingRecordedYet')}</Text>
           ) : (
             s.transactions.map((t, i) => {
               const meta = TYPE_META[t.type];
@@ -198,22 +204,22 @@ export function SupplierLedgerScreen({ navigation, route }: ScreenProps<'Supplie
                   <Text style={opsStyles.meta} numberOfLines={1}>
                     {`${t.reference}${t.detail ? ` · ${t.detail.replace('BANK_TRANSFER', 'Bank transfer')}` : ''}${t.void ? ' · not counted' : ''}`}
                   </Text>
-                  <Text style={styles.balance}>{`Balance owed ${money(t.balance)}`}</Text>
+                  <Text style={styles.balance}>{tr('expenses.balanceOwedBalance', { balance: money(t.balance) })}</Text>
                 </Pressable>
               );
             })
           )}
         </OpsCard>
 
-        <OpsCard title="Supplier Details">
-          <Detail label="Mobile" value={s.phone} />
-          <Detail label="Email" value={s.email} />
-          <Detail label="GST Number" value={s.gstNumber} />
-          <Detail label="Address" value={s.address} />
-          <Detail label="Notes" value={s.notes} />
-          <Detail label="Last Bill" value={s.lastBillDate ? day(s.lastBillDate) : null} />
+        <OpsCard title={tr('expenses.supplierDetails')}>
+          <Detail label={tr('common.mobile')} value={s.phone} />
+          <Detail label={tr('common.email')} value={s.email} />
+          <Detail label={tr('expenses.gstNumber')} value={s.gstNumber} />
+          <Detail label={tr('common.address')} value={s.address} />
+          <Detail label={tr('common.notes')} value={s.notes} />
+          <Detail label={tr('expenses.lastBill')} value={s.lastBillDate ? day(s.lastBillDate) : null} />
         </OpsCard>
-        <OpsCard title="Changes">
+        <OpsCard title={tr('common.changes')}>
           <HistoryList entries={s.history} />
         </OpsCard>
       </ScrollView>

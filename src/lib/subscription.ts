@@ -3,6 +3,7 @@
 // change-plan, payment-history).
 import type { BadgeTone } from '../components/ui/Badge';
 import type { BillingCycle, CataloguePlan, FeatureUsage, MyPayment, PlanDetails, RenewalQuote, SubscriptionStage } from '../services/subscription-service';
+import i18n from '../i18n';
 
 const DAY = 86_400_000;
 
@@ -26,14 +27,14 @@ export function elapsed(from: string | null | undefined, to: string | null | und
 
 /** Each stage on the navy plan card: label and a colour that reads on navy. */
 export const STAGE: Record<SubscriptionStage, { label: string; color: string; tint: string }> = {
-  PENDING: { label: 'Awaiting payment', color: '#fde68a', tint: 'rgba(251,191,36,0.16)' },
-  TRIAL: { label: 'Free trial', color: '#bae6fd', tint: 'rgba(56,189,248,0.16)' },
-  COMPLIMENTARY: { label: 'Complimentary month', color: '#a7f3d0', tint: 'rgba(52,211,153,0.16)' },
-  ACTIVE: { label: 'Active', color: '#a7f3d0', tint: 'rgba(52,211,153,0.16)' },
-  RENEWAL_DUE: { label: 'Renewal due', color: '#fde68a', tint: 'rgba(251,191,36,0.16)' },
-  CANCELLED: { label: 'Cancelled', color: '#e2e8f0', tint: 'rgba(255,255,255,0.1)' },
-  PAUSED: { label: 'Paused', color: '#e2e8f0', tint: 'rgba(255,255,255,0.1)' },
-  EXPIRED: { label: 'Expired', color: '#fecdd3', tint: 'rgba(251,113,133,0.16)' },
+  PENDING: { get label() { return i18n.t('common.awaitingPayment'); }, color: '#fde68a', tint: 'rgba(251,191,36,0.16)' },
+  TRIAL: { get label() { return i18n.t('subscription.freeTrial'); }, color: '#bae6fd', tint: 'rgba(56,189,248,0.16)' },
+  COMPLIMENTARY: { get label() { return i18n.t('subscription.complimentaryMonth'); }, color: '#a7f3d0', tint: 'rgba(52,211,153,0.16)' },
+  ACTIVE: { get label() { return i18n.t('common.active'); }, color: '#a7f3d0', tint: 'rgba(52,211,153,0.16)' },
+  RENEWAL_DUE: { get label() { return i18n.t('subscription.renewalDue'); }, color: '#fde68a', tint: 'rgba(251,191,36,0.16)' },
+  CANCELLED: { get label() { return i18n.t('common.cancelled'); }, color: '#e2e8f0', tint: 'rgba(255,255,255,0.1)' },
+  PAUSED: { get label() { return i18n.t('common.paused'); }, color: '#e2e8f0', tint: 'rgba(255,255,255,0.1)' },
+  EXPIRED: { get label() { return i18n.t('common.expired'); }, color: '#fecdd3', tint: 'rgba(251,113,133,0.16)' },
 };
 
 export interface PlanState {
@@ -44,7 +45,8 @@ export interface PlanState {
   phase: { label: string; from: string | null | undefined; to: string | null | undefined } | null;
   progress: number | null;
   left: number | null;
-  dates: { label: string; value: string }[];
+  /** `trial` marks the free-trial dates, which never show as urgent. */
+  dates: { label: string; value: string; kind?: 'trial' }[];
 }
 
 /** Where the plan stands — trial, complimentary, paid, renewal due or expired — as the panel's plan card. */
@@ -56,36 +58,36 @@ export function planState(details: PlanDetails, renewal: RenewalQuote | null, no
   const graceEnd = sub?.graceEndAt ?? renewal?.graceEndAt ?? null;
   const phase =
     stage === 'TRIAL'
-      ? { label: 'Free trial', from: sub?.trialStartAt, to: sub?.trialEndAt }
+      ? { label: i18n.t('subscription.freeTrial'), from: sub?.trialStartAt, to: sub?.trialEndAt }
       : stage === 'COMPLIMENTARY'
-        ? { label: 'Complimentary month', from: sub?.complimentaryStartAt, to: sub?.complimentaryEndAt }
+        ? { label: i18n.t('subscription.complimentaryMonth'), from: sub?.complimentaryStartAt, to: sub?.complimentaryEndAt }
         : stage === 'RENEWAL_DUE'
-          ? { label: 'Grace period', from: accessEnd, to: graceEnd }
+          ? { label: i18n.t('subscription.gracePeriod'), from: accessEnd, to: graceEnd }
           : stage === 'EXPIRED' || !stage
             ? null
-            : { label: 'Current period', from: sub?.currentPeriodStart, to: accessEnd };
+            : { label: i18n.t('subscription.currentPeriod'), from: sub?.currentPeriodStart, to: accessEnd };
   const messages: Record<SubscriptionStage, string> = {
     TRIAL: sub?.complimentaryStartAt
-      ? 'Free trial active. Your complimentary month starts after your trial ends.'
-      : 'Free trial active. Your paid plan period starts after your trial ends.',
-    COMPLIMENTARY: `Complimentary access active. Renew your plan before ${day(accessEnd)} to continue without interruption.`,
+      ? i18n.t('subscription.freeTrialActiveYourComplimentaryMonth')
+      : i18n.t('subscription.freeTrialActiveYourPaidPlan'),
+    COMPLIMENTARY: i18n.t('subscription.complimentaryAccessActiveRenewYourPlan', { accessEnd: day(accessEnd) }),
     // An assigned free plan has no end date.
-    ACTIVE: accessEnd ? `Your plan is active until ${day(accessEnd)}.` : 'Your plan is active, with nothing to pay and no end date.',
-    RENEWAL_DUE: `Your free access has ended. Renew your subscription to restore or continue paid-plan access${graceEnd ? ` — your plan stays until ${day(graceEnd)}` : ''}.`,
-    EXPIRED: 'Your subscription has expired and paid-plan features are switched off. Renew to reactivate it.',
-    PENDING: 'Your plan purchase is awaiting payment or approval.',
-    CANCELLED: `Your plan is cancelled and runs until ${day(accessEnd)}.`,
-    PAUSED: 'Your plan is paused. Contact support to resume it.',
+    ACTIVE: accessEnd ? i18n.t('subscription.yourPlanIsActiveUntilAccessend', { accessEnd: day(accessEnd) }) : i18n.t('subscription.yourPlanIsActiveWithNothing'),
+    RENEWAL_DUE: graceEnd ? i18n.t('subscription.freeAccessEndedGraceUntil', { date: day(graceEnd) }) : i18n.t('subscription.freeAccessEnded'),
+    EXPIRED: i18n.t('subscription.yourSubscriptionHasExpiredAndPaid'),
+    PENDING: i18n.t('subscription.yourPlanPurchaseIsAwaitingPayment'),
+    CANCELLED: i18n.t('subscription.yourPlanIsCancelledAndRuns', { accessEnd: day(accessEnd) }),
+    PAUSED: i18n.t('subscription.yourPlanIsPausedContactSupport'),
   };
   const dates = [
-    sub?.trialStartAt ? { label: 'Free trial', value: `${day(sub.trialStartAt)} – ${day(sub.trialEndAt)}` } : null,
-    sub?.complimentaryStartAt ? { label: 'Complimentary month', value: `${day(sub.complimentaryStartAt)} – ${day(sub.complimentaryEndAt)}` } : null,
-    stage ? { label: stage === 'EXPIRED' ? 'Expired after' : 'Renewal due', value: day(sub?.nextBillingAt ?? accessEnd) } : null,
-  ].filter((d): d is { label: string; value: string } => d !== null);
+    sub?.trialStartAt ? { label: i18n.t('subscription.freeTrial'), value: `${day(sub.trialStartAt)} – ${day(sub.trialEndAt)}`, kind: 'trial' as const } : null,
+    sub?.complimentaryStartAt ? { label: i18n.t('subscription.complimentaryMonth'), value: `${day(sub.complimentaryStartAt)} – ${day(sub.complimentaryEndAt)}` } : null,
+    stage ? { label: stage === 'EXPIRED' ? i18n.t('subscription.expiredAfter') : i18n.t('subscription.renewalDue'), value: day(sub?.nextBillingAt ?? accessEnd) } : null,
+  ].filter((d): d is { label: string; value: string; kind?: 'trial' } => d !== null);
   return {
     stage,
     urgent: stage === 'RENEWAL_DUE' || stage === 'EXPIRED',
-    message: stage ? messages[stage] : "You're on the free plan. Choose a paid plan to unlock higher limits and more features.",
+    message: stage ? messages[stage] : i18n.t('subscription.youReOnTheFreePlan'),
     phase,
     progress: phase ? elapsed(phase.from, phase.to, now) : null,
     left: phase ? daysLeft(phase.to, now) : null,
@@ -112,21 +114,21 @@ export function usageLevel(u: FeatureUsage): UsageLevel {
 }
 
 /** "3 of 5 used" / "12 used · unlimited" / "Not included". */
-export const usageLabel = (u: FeatureUsage) => (!u.isEnabled ? 'Not included' : u.allowed === null ? `${n(u.used)} used · unlimited` : `${n(u.used)} of ${n(u.allowed)} used`);
+export const usageLabel = (u: FeatureUsage) => (!u.isEnabled ? i18n.t('common.notIncluded') : u.allowed === null ? i18n.t('subscription.usedUsedUnlimited', { used: n(u.used) }) : i18n.t('common.usedOfAllowedUsed', { used: n(u.used), allowed: n(u.allowed) }));
 /** "2 left". */
-export const pendingLabel = (u: FeatureUsage) => (!u.isEnabled ? '—' : u.remaining === null ? 'No limit' : u.remaining === 0 ? 'None left' : `${n(u.remaining)} left`);
+export const pendingLabel = (u: FeatureUsage) => (!u.isEnabled ? '—' : u.remaining === null ? i18n.t('common.noLimit') : u.remaining === 0 ? i18n.t('common.noneLeft') : i18n.t('common.remainingLeft', { remaining: n(u.remaining) }));
 
 // ── Payments ─────────────────────────────────────────────────────────────
 
-export const PAYMENT_METHOD: Record<MyPayment['method'], string> = { ONLINE: 'Online', CASH: 'Cash', COMPLIMENTARY: 'Complimentary' };
+export const PAYMENT_METHOD: Record<MyPayment['method'], string> = { get ONLINE() { return i18n.t('subscription.online'); }, get CASH() { return i18n.t('common.cash'); }, get COMPLIMENTARY() { return i18n.t('subscription.complimentary'); } };
 export const PAYMENT_STATUS: Record<MyPayment['status'], { label: string; tone: BadgeTone }> = {
-  PAID: { label: 'Paid', tone: 'green' },
-  PENDING: { label: 'Awaiting payment', tone: 'amber' },
-  AWAITING_VERIFICATION: { label: 'Awaiting verification', tone: 'amber' },
-  REJECTED: { label: 'Not accepted', tone: 'red' },
-  FAILED: { label: 'Failed', tone: 'red' },
-  REFUNDED: { label: 'Refunded', tone: 'slate' },
-  PARTIALLY_REFUNDED: { label: 'Part refunded', tone: 'slate' },
+  PAID: { get label() { return i18n.t('common.paid'); }, tone: 'green' },
+  PENDING: { get label() { return i18n.t('common.awaitingPayment'); }, tone: 'amber' },
+  AWAITING_VERIFICATION: { get label() { return i18n.t('subscription.awaitingVerification'); }, tone: 'amber' },
+  REJECTED: { get label() { return i18n.t('subscription.notAccepted'); }, tone: 'red' },
+  FAILED: { get label() { return i18n.t('common.failed'); }, tone: 'red' },
+  REFUNDED: { get label() { return i18n.t('common.refunded'); }, tone: 'slate' },
+  PARTIALLY_REFUNDED: { get label() { return i18n.t('subscription.partRefunded'); }, tone: 'slate' },
 };
 
 // ── Changing plan ────────────────────────────────────────────────────────
@@ -143,12 +145,12 @@ export interface CurrentPlan {
 
 export type Move = 'current' | 'upgrade' | 'downgrade' | 'cycle' | 'custom' | 'unavailable';
 export const MOVE_LABEL: Record<Move, string> = {
-  current: 'Current plan',
-  upgrade: 'Upgrade',
-  downgrade: 'Downgrade',
+  get current() { return i18n.t('subscription.currentPlan'); },
+  get upgrade() { return i18n.t('common.upgrade'); },
+  get downgrade() { return i18n.t('subscription.downgrade'); },
   cycle: 'Switch billing',
-  custom: 'Contact sales',
-  unavailable: 'Not available',
+  get custom() { return i18n.t('subscription.contactSales'); },
+  get unavailable() { return i18n.t('subscription.notAvailable'); },
 };
 
 export const priceOn = (plan: CataloguePlan, cycle: BillingCycle) => plan.prices.find(p => p.billingCycle === cycle && p.amount !== null);

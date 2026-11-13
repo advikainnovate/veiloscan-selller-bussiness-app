@@ -11,14 +11,16 @@ import { BarChartIcon, ChartTrendIcon, ClipboardListIcon, LayersIcon, RefreshIco
 import type { ExpenseTab, ScreenProps } from '../../navigation/types';
 import { ExpenseDashboardTab, ExpenseReportsTab } from './ExpenseOverviewTabs';
 import { CategoriesTab, ExpenseListTab, RecurringTab, SuppliersTab } from './ExpenseListTabs';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const TABS: { key: ExpenseTab; label: string; icon: ComponentType<IconProps> }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: ChartTrendIcon },
-  { key: 'list', label: 'All Expenses', icon: ClipboardListIcon },
-  { key: 'suppliers', label: 'Suppliers', icon: TruckIcon },
-  { key: 'recurring', label: 'Recurring', icon: RefreshIcon },
-  { key: 'reports', label: 'Reports', icon: BarChartIcon },
-  { key: 'categories', label: 'Categories', icon: LayersIcon },
+  { key: 'dashboard', get label() { return i18n.t('expenses.dashboard'); }, icon: ChartTrendIcon },
+  { key: 'list', get label() { return i18n.t('expenses.allExpenses'); }, icon: ClipboardListIcon },
+  { key: 'suppliers', get label() { return i18n.t('expenses.suppliers'); }, icon: TruckIcon },
+  { key: 'recurring', get label() { return i18n.t('expenses.recurring'); }, icon: RefreshIcon },
+  { key: 'reports', get label() { return i18n.t('common.reports'); }, icon: BarChartIcon },
+  { key: 'categories', get label() { return i18n.t('common.categories'); }, icon: LayersIcon },
 ];
 
 export interface ListPreset {
@@ -30,6 +32,7 @@ export interface ListPreset {
 
 /** Operations › Expenses: what it costs to run the store, what's paid and what's owed to suppliers. */
 export function ExpensesScreen({ navigation, route }: ScreenProps<'Expenses'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-expenses:view');
   const { current: store } = useStore();
@@ -52,8 +55,8 @@ export function ExpensesScreen({ navigation, route }: ScreenProps<'Expenses'>) {
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Expenses" onBack={navigation.goBack} />
-        <ComingSoon label="Expenses" icon={WalletIcon} allowed={false} />
+        <AppHeader title={tr('common.expenses')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.expenses')} icon={WalletIcon} allowed={false} />
       </View>
     );
   }
@@ -66,9 +69,9 @@ export function ExpensesScreen({ navigation, route }: ScreenProps<'Expenses'>) {
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Expenses" subtitle={store?.name} onBack={navigation.goBack} />
+      <AppHeader title={tr('common.expenses')} subtitle={store?.name} onBack={navigation.goBack} />
       {!store ? (
-        <EmptyState icon={StoreIcon} title="You don't have a store yet" />
+        <EmptyState icon={StoreIcon} title={tr('common.youDonTHaveAStore')} />
       ) : (
         <>
           <View style={styles.tabsWrap}>

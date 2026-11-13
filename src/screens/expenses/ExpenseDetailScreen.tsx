@@ -19,14 +19,17 @@ import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { confirmAction, Detail, FileLinks, HistoryList, LinkButton, OpsCard, opsStyles, PhotoAttachments, ReasonSheet, type PendingFile } from '../../components/operations/OpsParts';
 import { WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
-const REMINDER_LABEL: Record<string, string> = { DUE_SOON: '3 days before', DUE: 'On the due date', OVERDUE: 'When overdue', CUSTOM: 'Your reminder' };
+const REMINDER_LABEL: Record<string, string> = { get DUE_SOON() { return i18n.t('expenses.n3DaysBefore'); }, get DUE() { return i18n.t('expenses.onTheDueDate'); }, get OVERDUE() { return i18n.t('expenses.whenOverdue'); }, get CUSTOM() { return i18n.t('expenses.yourReminder'); } };
 const fromISO = (s: string) => new Date(`${s.slice(0, 10)}T00:00:00`);
 
 type Reason = { kind: 'cancel' } | { kind: 'void'; paymentId: string; label: string } | { kind: 'cancelReturn'; returnId: string; label: string };
 
 /** One expense: what was billed, paid, returned and still owed, with its history. */
 export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseDetail'>) {
+  const { t } = useTranslation();
   const { id, action } = route.params;
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-expenses:view');
@@ -69,21 +72,21 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Expense" onBack={navigation.goBack} />
-        <ComingSoon label="Expenses" icon={WalletIcon} allowed={false} />
+        <AppHeader title={t('common.expense')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.expenses')} icon={WalletIcon} allowed={false} />
       </View>
     );
   }
   if (loading || !e) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Expense" onBack={navigation.goBack} />
+        <AppHeader title={t('common.expense')} onBack={navigation.goBack} />
         {loading ? (
           <View style={opsStyles.content}>
             <ListSkeleton rows={4} height={120} />
           </View>
         ) : (
-          <ErrorState message={error ?? 'Not found.'} onRetry={() => reload()} />
+          <ErrorState message={error ?? t('common.notFound')} onRetry={() => reload()} />
         )}
       </View>
     );
@@ -98,11 +101,11 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
   const livePayments = e.payments.filter(p => !p.voidedAt).length;
 
   async function remove() {
-    if (!(await confirmAction(`Delete ${e!.idd}?`, 'It was entered by mistake and nothing was paid. It stays in the audit log.', 'Delete', true))) return;
+    if (!(await confirmAction(t('expenses.deleteIdd', { idd: e!.idd }), t('expenses.itWasEnteredByMistakeAnd'), t('common.delete'), true))) return;
     setBusy(true);
     try {
       await expensesService.remove(storeId, e!.id);
-      toast('Expense deleted');
+      toast(t('expenses.expenseDeleted'));
       navigation.goBack();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -114,7 +117,7 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
     setBusy(true);
     try {
       const copy = await expensesService.duplicate(storeId, e!.id);
-      toast('Copied to today');
+      toast(t('expenses.copiedToToday'));
       navigation.replace('ExpenseDetail', { id: copy.id });
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -125,9 +128,9 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
   async function confirmReason(text: string) {
     if (!reason) return;
     let ok = false;
-    if (reason.kind === 'cancel') ok = await run(() => expensesService.cancel(storeId, e!.id, text), 'Expense cancelled');
-    else if (reason.kind === 'void') ok = await run(() => expensesService.voidPayment(storeId, e!.id, reason.paymentId, text), 'Payment voided');
-    else ok = await run(() => expensesService.cancelReturn(storeId, e!.id, reason.returnId, text || undefined), 'Return cancelled');
+    if (reason.kind === 'cancel') ok = await run(() => expensesService.cancel(storeId, e!.id, text), t('expenses.expenseCancelled'));
+    else if (reason.kind === 'void') ok = await run(() => expensesService.voidPayment(storeId, e!.id, reason.paymentId, text), t('common.paymentVoided'));
+    else ok = await run(() => expensesService.cancelReturn(storeId, e!.id, reason.returnId, text || undefined), t('expenses.returnCancelled'));
     if (ok) setReason(null);
   }
 
@@ -142,74 +145,74 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
           <Text style={[styles.headTitle, cancelled && styles.struck]}>{e.title || e.description || e.categoryName}</Text>
           <View style={styles.badges}>
             <Badge label={status.label} tone={status.tone} />
-            <Badge label={isCredit ? 'Credit' : 'Paid'} tone={isCredit ? 'blue' : 'slate'} />
-            {e.kind === 'PURCHASE' ? <Badge label="Stock purchase" tone="violet" /> : null}
+            <Badge label={isCredit ? t('common.credit') : t('common.paid')} tone={isCredit ? 'blue' : 'slate'} />
+            {e.kind === 'PURCHASE' ? <Badge label={t('expenses.stockPurchase')} tone="violet" /> : null}
           </View>
           <Text style={opsStyles.meta}>
-            {`${e.idd} · ${e.categoryName} · ${day(e.expenseDate)}${e.stockOrderIdd ? ` · stock order ${e.stockOrderIdd}` : ''}${e.recurringTitle ? ` · from recurring "${e.recurringTitle}"` : ''}`}
+            {[e.idd, e.categoryName, day(e.expenseDate), e.stockOrderIdd ? t('expenses.stockOrderRef', { ref: e.stockOrderIdd }) : null, e.recurringTitle ? t('expenses.fromRecurring', { title: e.recurringTitle }) : null].filter(Boolean).join(' · ')}
           </Text>
         </View>
 
         {!cancelled ? (
           <View style={styles.actions}>
-            {canCreate && open ? <Button title="Add Payment" onPress={() => setSheet('pay')} style={styles.fullBtn} /> : null}
+            {canCreate && open ? <Button title={t('expenses.addPayment')} onPress={() => setSheet('pay')} style={styles.fullBtn} /> : null}
             <View style={opsStyles.chipRow}>
-              {canCreate && e.status !== 'RETURNED' ? <SmallButton label="Record Return" onPress={() => setSheet('return')} /> : null}
-              {canEdit ? <SmallButton label="Edit" onPress={() => navigation.navigate('ExpenseForm', { id: e.id })} /> : null}
-              {canCreate && e.kind === 'OPERATING' ? <SmallButton label="Duplicate" disabled={busy} onPress={duplicate} /> : null}
-              {canEdit ? <SmallButton label="Cancel" danger disabled={busy} onPress={() => setReason({ kind: 'cancel' })} /> : null}
-              {canDelete && !e.payments.length && !e.returns.length ? <SmallButton label="Delete" danger disabled={busy} onPress={remove} /> : null}
+              {canCreate && e.status !== 'RETURNED' ? <SmallButton label={t('expenses.recordReturn')} onPress={() => setSheet('return')} /> : null}
+              {canEdit ? <SmallButton label={t('common.edit')} onPress={() => navigation.navigate('ExpenseForm', { id: e.id })} /> : null}
+              {canCreate && e.kind === 'OPERATING' ? <SmallButton label={t('common.duplicate')} disabled={busy} onPress={duplicate} /> : null}
+              {canEdit ? <SmallButton label={t('common.cancel')} danger disabled={busy} onPress={() => setReason({ kind: 'cancel' })} /> : null}
+              {canDelete && !e.payments.length && !e.returns.length ? <SmallButton label={t('common.delete')} danger disabled={busy} onPress={remove} /> : null}
             </View>
           </View>
         ) : (
           <View style={styles.cancelledBox}>
             <Text style={styles.cancelledText}>
-              {`Cancelled ${e.cancelledAt ? dateTime(e.cancelledAt) : ''} by ${e.cancelledByName ?? 'someone'} — ${e.cancelReason ?? ''}. It doesn't count in any total.`}
+              {t('expenses.cancelledByReason', { when: e.cancelledAt ? dateTime(e.cancelledAt) : '', name: e.cancelledByName ?? t('expenses.someone'), reason: e.cancelReason ?? '' })}
             </Text>
           </View>
         )}
 
         <View style={styles.figures}>
-          <Figure label="Original Amount" value={money(e.amount)} sub={e.taxAmount ? `incl. ${money(e.taxAmount)} GST` : undefined} />
-          <Figure label="Paid" value={money(e.paidAmount)} sub={`${livePayments} payment(s)`} color={colors.successDark} />
-          <Figure label="Returns" value={money(e.returnedAmount)} sub={pendingReturns ? `${money(pendingReturns)} awaiting supplier` : 'Approved credit notes'} color="#6d28d9" />
+          <Figure label={t('expenses.originalAmount')} value={money(e.amount)} sub={e.taxAmount ? t('expenses.inclGstAmount', { amount: money(e.taxAmount) }) : undefined} />
+          <Figure label={t('common.paid')} value={money(e.paidAmount)} sub={t('expenses.livepaymentsPaymentS', { livePayments })} color={colors.successDark} />
+          <Figure label={t('common.returns')} value={money(e.returnedAmount)} sub={pendingReturns ? t('expenses.pendingreturnsAwaitingSupplier', { pendingReturns: money(pendingReturns) }) : t('expenses.approvedCreditNotes')} color="#6d28d9" />
           {e.refundDue ? (
-            <Figure label="Refund Due to You" value={money(e.refundDue)} sub="Returned after paying" color={colors.successDark} />
+            <Figure label={t('expenses.refundDueToYou')} value={money(e.refundDue)} sub={t('expenses.returnedAfterPaying')} color={colors.successDark} />
           ) : (
             <Figure
-              label="Outstanding"
+              label={t('common.outstanding')}
               value={money(e.outstandingAmount)}
-              sub={due ?? (open ? 'No due date' : 'Nothing owed')}
+              sub={due ?? (open ? t('expenses.noDueDate') : t('expenses.nothingOwed'))}
               color={e.status === 'OVERDUE' ? colors.error : open ? colors.warningDark : colors.text}
             />
           )}
         </View>
-        <Text style={opsStyles.muted}>Outstanding = original amount − approved returns − payments. Payments and returns never change the original amount.</Text>
+        <Text style={opsStyles.muted}>{t('expenses.outstandingOriginalAmountApprovedReturnsPayments')}</Text>
 
-        <OpsCard title="Details">
-          <Detail label="Category" value={e.categoryName} />
-          <Detail label="Expense Date" value={day(e.expenseDate)} />
-          <Detail label="Invoice / Bill No." value={e.referenceNumber} />
-          <Detail label="Invoice Date" value={e.invoiceDate ? day(e.invoiceDate) : null} />
-          <Detail label="Base Amount" value={money(e.baseAmount)} />
-          <Detail label="Discount" value={e.discountAmount ? money(e.discountAmount) : null} />
+        <OpsCard title={t('common.details')}>
+          <Detail label={t('common.category')} value={e.categoryName} />
+          <Detail label={t('expenses.expenseDate')} value={day(e.expenseDate)} />
+          <Detail label={t('expenses.invoiceBillNo')} value={e.referenceNumber} />
+          <Detail label={t('expenses.invoiceDate')} value={e.invoiceDate ? day(e.invoiceDate) : null} />
+          <Detail label={t('expenses.baseAmount')} value={money(e.baseAmount)} />
+          <Detail label={t('common.discount')} value={e.discountAmount ? money(e.discountAmount) : null} />
           <Detail label="GST" value={e.taxAmount ? `${money(e.taxAmount)}${e.taxRate !== null ? ` (${e.taxRate}%)` : ''}` : null} />
-          <Detail label="Final Amount" value={money(e.amount)} />
-          {!isCredit ? <Detail label="Paid To" value={e.paidTo ?? e.supplier?.name} /> : null}
-          <Detail label="Description" value={e.description} />
-          {e.notes ? <Detail label="Notes" value={e.notes} /> : null}
-          <Detail label="Added By" value={`${e.createdByName ?? '—'} · ${dateTime(e.createdAt)}`} />
+          <Detail label={t('expenses.finalAmount')} value={money(e.amount)} />
+          {!isCredit ? <Detail label={t('expenses.paidTo')} value={e.paidTo ?? e.supplier?.name} /> : null}
+          <Detail label={t('common.description')} value={e.description} />
+          {e.notes ? <Detail label={t('common.notes')} value={e.notes} /> : null}
+          <Detail label={t('expenses.addedBy')} value={`${e.createdByName ?? '—'} · ${dateTime(e.createdAt)}`} />
         </OpsCard>
 
         {isCredit || e.supplier ? (
-          <OpsCard title={isCredit ? 'Credit Details' : 'Supplier'}>
+          <OpsCard title={isCredit ? t('expenses.creditDetails') : t('common.supplier')}>
             {e.supplier ? (
               <Detail
-                label="Supplier"
+                label={t('common.supplier')}
                 value={
                   <View>
                     <LinkButton label={e.supplier.name} onPress={() => navigation.navigate('SupplierLedger', { id: e.supplier!.id })} />
-                    {[e.supplier.phone, e.supplier.gstNumber ? `GST ${e.supplier.gstNumber}` : null, e.supplier.address].filter(Boolean).map(line => (
+                    {[e.supplier.phone, e.supplier.gstNumber ? t('expenses.gstGstnumber', { gstNumber: e.supplier.gstNumber }) : null, e.supplier.address].filter(Boolean).map(line => (
                       <Text key={line} style={opsStyles.meta}>
                         {line}
                       </Text>
@@ -218,24 +221,24 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
                 }
               />
             ) : (
-              <Detail label="Owed To" value={e.paidTo ?? 'No supplier linked'} />
+              <Detail label={t('expenses.owedTo')} value={e.paidTo ?? 'No supplier linked'} />
             )}
             {isCredit ? (
               <>
-                <Detail label="Credit Date" value={e.creditDate ? day(e.creditDate) : null} />
-                <Detail label="Credit Terms" value={e.creditTermsDays !== null ? `${e.creditTermsDays} days` : 'Custom'} />
-                <Detail label="Payment Due Date" value={`${e.dueDate ? day(e.dueDate) : 'No due date'}${due ? ` · ${due}` : ''}`} />
-                <Detail label="Reminder Date" value={e.reminderDate ? day(e.reminderDate) : null} />
+                <Detail label={t('expenses.creditDate')} value={e.creditDate ? day(e.creditDate) : null} />
+                <Detail label={t('expenses.creditTerms')} value={e.creditTermsDays !== null ? t('common.dayCount', { count: e.creditTermsDays }) : t('common.custom')} />
+                <Detail label={t('expenses.paymentDueDate')} value={`${e.dueDate ? day(e.dueDate) : 'No due date'}${due ? ` · ${due}` : ''}`} />
+                <Detail label={t('expenses.reminderDate')} value={e.reminderDate ? day(e.reminderDate) : null} />
               </>
             ) : null}
             {e.reminders.length ? (
               <View style={[opsStyles.divider, styles.reminders]}>
-                <Text style={opsStyles.sectionLabel}>REMINDERS</Text>
+                <Text style={opsStyles.sectionLabel}>{t('expenses.reminders')}</Text>
                 {e.reminders.map(r => (
                   <View key={r.type} style={opsStyles.rowBetween}>
                     <Text style={opsStyles.meta}>{`${REMINDER_LABEL[r.type] ?? r.type} · ${day(r.remindOn)}`}</Text>
                     <Text style={[opsStyles.meta, r.status === 'SENT' ? opsStyles.success : r.status === 'PENDING' ? styles.amber : null]}>
-                      {r.status === 'PENDING' ? 'Scheduled' : r.status === 'SENT' ? 'Sent' : 'Not needed'}
+                      {r.status === 'PENDING' ? t('common.scheduled') : r.status === 'SENT' ? t('common.sent') : t('expenses.notNeeded')}
                     </Text>
                   </View>
                 ))}
@@ -244,27 +247,27 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
           </OpsCard>
         ) : null}
 
-        <OpsCard title="Payment History" description="Every payment against this expense; a mistake is voided, never edited">
+        <OpsCard title={t('common.paymentHistory')} description={t('expenses.everyPaymentAgainstThisExpenseA')}>
           {!e.payments.length ? (
-            <Text style={opsStyles.muted}>No payments yet.</Text>
+            <Text style={opsStyles.muted}>{t('expenses.noPaymentsYet')}</Text>
           ) : (
             e.payments.map((p, i) => (
               <View key={p.id} style={[i > 0 && opsStyles.listRow, styles.entry, p.voidedAt ? styles.voided : null]}>
                 <View style={opsStyles.rowBetween}>
                   <Text style={[opsStyles.amount, p.voidedAt ? styles.struck : null]}>{money(p.amount)}</Text>
                   {p.voidedAt ? (
-                    <Badge label="Void" tone="red" />
+                    <Badge label={t('expenses.void')} tone="red" />
                   ) : !cancelled && canEdit ? (
-                    <Pressable accessibilityRole="button" accessibilityLabel={`Void payment ${p.idd}`} disabled={busy} onPress={() => setReason({ kind: 'void', paymentId: p.id, label: p.idd })}>
-                      <Text style={[styles.actionText, opsStyles.danger]}>Void</Text>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('expenses.voidPaymentIdd', { idd: p.idd })} disabled={busy} onPress={() => setReason({ kind: 'void', paymentId: p.id, label: p.idd })}>
+                      <Text style={[styles.actionText, opsStyles.danger]}>{t('expenses.void')}</Text>
                     </Pressable>
                   ) : null}
                 </View>
                 <Text style={opsStyles.meta}>
-                  {`${day(p.paymentDate)} · ${paymentModeLabel(p.method)} · ${p.idd}${p.accountLabel ? ` · ${p.accountLabel}` : ''}${p.transactionReference ? ` · Ref ${p.transactionReference}` : ''}`}
+                  {`${day(p.paymentDate)} · ${paymentModeLabel(p.method)} · ${p.idd}${p.accountLabel ? ` · ${p.accountLabel}` : ''}${p.transactionReference ? ` · ${t('common.refNumber', { ref: p.transactionReference })}` : ''}`}
                 </Text>
                 {p.notes ? <Text style={opsStyles.meta}>{p.notes}</Text> : null}
-                {p.voidedAt ? <Text style={[opsStyles.meta, opsStyles.danger]}>{`Voided by ${p.voidedByName ?? 'someone'}: ${p.voidReason ?? ''}`}</Text> : null}
+                {p.voidedAt ? <Text style={[opsStyles.meta, opsStyles.danger]}>{t('expenses.voidedBy', { name: p.voidedByName ?? t('expenses.someone'), reason: p.voidReason ?? '' })}</Text> : null}
                 <Text style={opsStyles.muted}>{`${p.createdByName ?? 'Automatic'} · ${dateTime(p.createdAt)}`}</Text>
                 <FileLinks files={p.attachments} />
               </View>
@@ -272,9 +275,9 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
           )}
         </OpsCard>
 
-        <OpsCard title="Returns & Credit Notes" description="Lower what is owed to the supplier — not recorded as payments">
+        <OpsCard title={t('expenses.returnsAndCreditNotes')} description={t('expenses.lowerWhatIsOwedToThe')}>
           {!e.returns.length ? (
-            <Text style={opsStyles.muted}>No returns.</Text>
+            <Text style={opsStyles.muted}>{t('expenses.noReturns')}</Text>
           ) : (
             e.returns.map((r, i) => {
               const rs = RETURN_STATUS[r.status];
@@ -288,19 +291,19 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
                     {!cancelled && canEdit && r.status !== 'CANCELLED' ? (
                       <View style={opsStyles.row}>
                         {r.status === 'PENDING' ? (
-                          <LinkButton label="Approve" onPress={() => run(() => expensesService.approveReturn(storeId, e.id, r.id), 'Return approved')} />
+                          <LinkButton label={t('common.approve')} onPress={() => run(() => expensesService.approveReturn(storeId, e.id, r.id), t('expenses.returnApproved'))} />
                         ) : null}
-                        <Pressable accessibilityRole="button" accessibilityLabel={`Cancel return ${r.idd}`} disabled={busy} onPress={() => setReason({ kind: 'cancelReturn', returnId: r.id, label: r.idd })}>
-                          <Text style={[styles.actionText, opsStyles.danger]}>Cancel</Text>
+                        <Pressable accessibilityRole="button" accessibilityLabel={t('expenses.cancelReturnIdd', { idd: r.idd })} disabled={busy} onPress={() => setReason({ kind: 'cancelReturn', returnId: r.id, label: r.idd })}>
+                          <Text style={[styles.actionText, opsStyles.danger]}>{t('common.cancel')}</Text>
                         </Pressable>
                       </View>
                     ) : null}
                   </View>
                   <Text style={opsStyles.meta}>
-                    {`${day(r.returnDate)} · ${r.idd}${r.creditNoteNumber ? ` · credit note ${r.creditNoteNumber}` : ''}${r.referenceNumber ? ` · ref ${r.referenceNumber}` : ''}${r.quantity ? ` · qty ${r.quantity}` : ''}`}
+                    {`${day(r.returnDate)} · ${r.idd}${r.creditNoteNumber ? ` · ${t('expenses.creditNoteRef', { ref: r.creditNoteNumber })}` : ''}${r.referenceNumber ? ` · ${t('expenses.refLower', { ref: r.referenceNumber })}` : ''}${r.quantity ? ` · ${t('expenses.qtyValue', { quantity: r.quantity })}` : ''}`}
                   </Text>
                   {r.reason || r.description ? <Text style={opsStyles.meta}>{[r.reason, r.description].filter(Boolean).join(' — ')}</Text> : null}
-                  {r.cancelReason ? <Text style={[opsStyles.meta, opsStyles.danger]}>{`Cancelled: ${r.cancelReason}`}</Text> : null}
+                  {r.cancelReason ? <Text style={[opsStyles.meta, opsStyles.danger]}>{t('common.cancelledCancelreason', { cancelReason: r.cancelReason })}</Text> : null}
                   <FileLinks files={r.attachments} />
                 </View>
               );
@@ -308,18 +311,18 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
           )}
         </OpsCard>
 
-        <OpsCard title="Attachments" description="Bills, invoices and receipts">
-          <FileLinks files={e.attachments} onRemove={canEdit && !cancelled ? f => run(() => expensesService.removeAttachment(storeId, e.id, f.id), 'Attachment removed') : undefined} />
-          {!e.attachments.length ? <Text style={opsStyles.muted}>No files on the expense itself.</Text> : null}
+        <OpsCard title={t('common.attachments')} description={t('expenses.billsInvoicesAndReceipts')}>
+          <FileLinks files={e.attachments} onRemove={canEdit && !cancelled ? f => run(() => expensesService.removeAttachment(storeId, e.id, f.id), t('expenses.attachmentRemoved')) : undefined} />
+          {!e.attachments.length ? <Text style={opsStyles.muted}>{t('expenses.noFilesOnTheExpenseItself')}</Text> : null}
           {canEdit && !cancelled ? (
             <View style={styles.addFiles}>
-              <PhotoAttachments label="Add files" value={newFiles} onChange={setNewFiles} dirName="store-expenses" />
+              <PhotoAttachments label={t('expenses.addFiles')} value={newFiles} onChange={setNewFiles} dirName="store-expenses" />
               {newFiles.length ? (
                 <Button
-                  title={`Attach ${newFiles.length} file${newFiles.length === 1 ? '' : 's'}`}
+                  title={t('expenses.attachFiles', { count: newFiles.length })}
                   loading={busy}
                   onPress={async () => {
-                    if (await run(() => expensesService.addAttachments(storeId, e.id, newFiles.map(f => ({ fileId: f.fileId, kind: f.kind }))), 'Files attached')) setNewFiles([]);
+                    if (await run(() => expensesService.addAttachments(storeId, e.id, newFiles.map(f => ({ fileId: f.fileId, kind: f.kind }))), t('expenses.filesAttached'))) setNewFiles([]);
                   }}
                 />
               ) : null}
@@ -327,7 +330,7 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
           ) : null}
         </OpsCard>
 
-        <OpsCard title="Audit Trail">
+        <OpsCard title={t('expenses.auditTrail')}>
           <HistoryList entries={e.history} />
         </OpsCard>
       </ScrollView>
@@ -338,7 +341,7 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
         onClose={() => setSheet(null)}
         onSaved={() => {
           setSheet(null);
-          toast('Payment recorded');
+          toast(t('common.paymentRecorded'));
           reload();
         }}
       />
@@ -349,23 +352,23 @@ export function ExpenseDetailScreen({ navigation, route }: ScreenProps<'ExpenseD
         onClose={() => setSheet(null)}
         onSaved={() => {
           setSheet(null);
-          toast('Return recorded');
+          toast(t('common.returnRecorded'));
           reload();
         }}
       />
       <ReasonSheet
         visible={!!reason}
-        title={reason?.kind === 'cancel' ? `Cancel ${e.idd}` : reason?.kind === 'void' ? `Void payment ${reason.label}` : `Cancel return ${reason?.label ?? ''}`}
+        title={reason?.kind === 'cancel' ? t('expenses.cancelIdd', { idd: e.idd }) : reason?.kind === 'void' ? t('expenses.voidPaymentLabel', { label: reason.label }) : t('expenses.cancelReturnLabel', { label: reason?.label ?? '' })}
         message={
           reason?.kind === 'cancel'
-            ? 'Its payments are voided and returns cancelled, so it no longer counts anywhere. It stays in the history.'
+            ? t('expenses.itsPaymentsAreVoidedAndReturns')
             : reason?.kind === 'void'
-              ? 'The payment stays in the history, marked void, and the amount is owed again.'
+              ? t('expenses.thePaymentStaysInTheHistory')
               : undefined
         }
-        label={reason?.kind === 'cancelReturn' ? 'Reason (optional)' : 'Reason'}
+        label={reason?.kind === 'cancelReturn' ? t('common.reasonOptional') : t('common.reason')}
         required={reason?.kind !== 'cancelReturn'}
-        confirmLabel={reason?.kind === 'cancel' ? 'Cancel expense' : reason?.kind === 'void' ? 'Void payment' : 'Cancel return'}
+        confirmLabel={reason?.kind === 'cancel' ? t('expenses.cancelExpense') : reason?.kind === 'void' ? t('expenses.voidPayment') : t('expenses.cancelReturn')}
         onClose={() => setReason(null)}
         onConfirm={confirmReason}
       />
@@ -399,6 +402,7 @@ function Figure({ label, value, sub, color = colors.text }: { label: string; val
 
 /** Add a payment: never more than is outstanding; the key stops a double tap recording two. */
 function PaymentSheet({ storeId, expense, onClose, onSaved }: { storeId: string; expense: ExpenseDetail | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const today = todayDay();
   const [key, setKey] = useState(newKey);
   const [form, setForm] = useState({ amount: '', paymentDate: today, method: 'CASH' as PaymentMode, accountLabel: '', transactionReference: '', notes: '' });
@@ -425,10 +429,10 @@ function PaymentSheet({ storeId, expense, onClose, onSaved }: { storeId: string;
   const after = Math.max(Math.round((expense.outstandingAmount - (amount || 0)) * 100) / 100, 0);
 
   async function save() {
-    if (!(amount > 0)) return setError('Enter an amount above ₹0');
-    if (amount > expense!.outstandingAmount) return setError(`Only ${money(expense!.outstandingAmount)} is outstanding`);
-    if (!form.paymentDate || form.paymentDate > today) return setError('Pick a payment date up to today');
-    if (form.paymentDate < expense!.expenseDate.slice(0, 10)) return setError("The payment can't be before the expense date");
+    if (!(amount > 0)) return setError(t('common.enterAnAmountAboveRs0'));
+    if (amount > expense!.outstandingAmount) return setError(t('expenses.onlyOutstandingamountIsOutstanding', { outstandingAmount: money(expense!.outstandingAmount) }));
+    if (!form.paymentDate || form.paymentDate > today) return setError(t('expenses.pickAPaymentDateUpTo'));
+    if (form.paymentDate < expense!.expenseDate.slice(0, 10)) return setError(t('expenses.thePaymentCanTBeBefore'));
     setError('');
     setSaving(true);
     try {
@@ -451,32 +455,32 @@ function PaymentSheet({ storeId, expense, onClose, onSaved }: { storeId: string;
   }
 
   return (
-    <Sheet visible title={`Add Payment · ${expense.idd}`} onClose={onClose} footer={<Button title="Record Payment" onPress={save} loading={saving} />}>
+    <Sheet visible title={t('expenses.addPaymentIdd', { idd: expense.idd })} onClose={onClose} footer={<Button title={t('expenses.recordPayment')} onPress={save} loading={saving} />}>
       <View style={styles.summary}>
-        <SummaryCell label="Outstanding" value={money(expense.outstandingAmount)} />
-        <SummaryCell label="Paying" value={money(amount || 0)} color={colors.successDark} />
-        <SummaryCell label="Left after" value={money(after)} color={colors.warningDark} />
+        <SummaryCell label={t('common.outstanding')} value={money(expense.outstandingAmount)} />
+        <SummaryCell label={t('expenses.paying')} value={money(amount || 0)} color={colors.successDark} />
+        <SummaryCell label={t('expenses.leftAfter')} value={money(after)} color={colors.warningDark} />
       </View>
-      <Field label="Payment Amount (₹)" required>
-        <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Payment amount" />
+      <Field label={t('expenses.paymentAmountRs')} required>
+        <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('common.paymentAmount')} />
         <View style={styles.quick}>
-          <LinkButton label="Full" onPress={() => set('amount', expense.outstandingAmount.toFixed(2))} />
+          <LinkButton label={t('expenses.full')} onPress={() => set('amount', expense.outstandingAmount.toFixed(2))} />
         </View>
       </Field>
-      <DateField label="Payment Date" required value={form.paymentDate} onChange={v => set('paymentDate', v)} minimumDate={fromISO(expense.expenseDate)} maximumDate={new Date()} />
-      <Field label="Payment Method">
+      <DateField label={t('common.paymentDate')} required value={form.paymentDate} onChange={v => set('paymentDate', v)} minimumDate={fromISO(expense.expenseDate)} maximumDate={new Date()} />
+      <Field label={t('common.paymentMethod')}>
         <Choices options={PAYMENT_MODES} value={form.method} onChange={v => set('method', v)} />
       </Field>
-      <Field label="Payment Account">
+      <Field label={t('expenses.paymentAccount')}>
         <Input value={form.accountLabel} onChangeText={v => set('accountLabel', v)} placeholder="e.g. Cash drawer, HDFC current" maxLength={100} />
       </Field>
-      <Field label="Transaction Reference">
-        <Input value={form.transactionReference} onChangeText={v => set('transactionReference', v)} placeholder="UTR / UPI / cheque no." maxLength={100} />
+      <Field label={t('common.transactionReference')}>
+        <Input value={form.transactionReference} onChangeText={v => set('transactionReference', v)} placeholder={t('expenses.utrUpiChequeNo')} maxLength={100} />
       </Field>
-      <Field label="Notes">
+      <Field label={t('common.notes')}>
         <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={1000} multiline />
       </Field>
-      <PhotoAttachments label="Receipt" value={files} onChange={setFiles} dirName="store-expenses" defaultKind="RECEIPT" max={5} kinds={false} />
+      <PhotoAttachments label={t('common.receipt')} value={files} onChange={setFiles} dirName="store-expenses" defaultKind="RECEIPT" max={5} kinds={false} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </Sheet>
   );
@@ -505,6 +509,7 @@ function ReturnSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const today = todayDay();
   const [key, setKey] = useState(newKey);
   const blank = { amount: '', returnDate: today, quantity: '', referenceNumber: '', creditNoteNumber: '', reason: '', description: '', status: 'APPROVED' as 'APPROVED' | 'PENDING' };
@@ -528,9 +533,9 @@ function ReturnSheet({
   const refund = form.status === 'APPROVED' && amount > 0 ? Math.max(Math.round((amount - expense.outstandingAmount) * 100) / 100, 0) : 0;
 
   async function save() {
-    if (!(amount > 0)) return setError('Enter the return amount');
-    if (amount > room) return setError(`At most ${money(room)} can still be returned`);
-    if (form.quantity && !(Number(form.quantity) > 0)) return setError('The quantity must be above 0');
+    if (!(amount > 0)) return setError(t('expenses.enterTheReturnAmount'));
+    if (amount > room) return setError(t('expenses.atMostRoomCanStillBe', { room: money(room) }));
+    if (form.quantity && !(Number(form.quantity) > 0)) return setError(t('expenses.theQuantityMustBeAbove0'));
     setError('');
     setSaving(true);
     try {
@@ -557,45 +562,45 @@ function ReturnSheet({
   return (
     <Sheet
       visible
-      title={`Record Return · ${expense.idd}`}
-      subtitle={`A return lowers what you owe ${expense.supplierName ?? 'the supplier'}; it isn't a payment. Up to ${money(room)} can still be returned.`}
+      title={t('expenses.recordReturnIdd', { idd: expense.idd })}
+      subtitle={t('expenses.returnLowersOwed', { supplier: expense.supplierName ?? t('expenses.theSupplier'), amount: money(room) })}
       onClose={onClose}
-      footer={<Button title="Record Return" onPress={save} loading={saving} />}
+      footer={<Button title={t('expenses.recordReturn')} onPress={save} loading={saving} />}
     >
-      {refund ? <Text style={[opsStyles.meta, opsStyles.success]}>{`${money(refund)} of it is more than you owe — the supplier owes you that back.`}</Text> : null}
-      <Field label="Return Amount (₹)" required>
-        <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Return amount" />
+      {refund ? <Text style={[opsStyles.meta, opsStyles.success]}>{t('expenses.refundOfItIsMoreThan', { refund: money(refund) })}</Text> : null}
+      <Field label={t('expenses.returnAmountRs')} required>
+        <Input value={form.amount} onChangeText={v => set('amount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('expenses.returnAmount')} />
         <View style={styles.quick}>
-          <LinkButton label="Full" onPress={() => set('amount', room.toFixed(2))} />
+          <LinkButton label={t('expenses.full')} onPress={() => set('amount', room.toFixed(2))} />
         </View>
       </Field>
-      <DateField label="Return Date" value={form.returnDate} onChange={v => set('returnDate', v)} minimumDate={fromISO(expense.expenseDate)} maximumDate={new Date()} />
-      <Field label="Return Quantity (optional)">
+      <DateField label={t('expenses.returnDate')} value={form.returnDate} onChange={v => set('returnDate', v)} minimumDate={fromISO(expense.expenseDate)} maximumDate={new Date()} />
+      <Field label={t('expenses.returnQuantityOptional')}>
         <Input value={form.quantity} onChangeText={v => set('quantity', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" />
       </Field>
-      <Field label="Return Reference No.">
+      <Field label={t('expenses.returnReferenceNo')}>
         <Input value={form.referenceNumber} onChangeText={v => set('referenceNumber', v)} maxLength={100} />
       </Field>
-      <Field label="Supplier Credit Note No.">
+      <Field label={t('expenses.supplierCreditNoteNo')}>
         <Input value={form.creditNoteNumber} onChangeText={v => set('creditNoteNumber', v)} maxLength={100} />
       </Field>
-      <Field label="Adjustment Status">
+      <Field label={t('expenses.adjustmentStatus')}>
         <Choices
           options={[
-            { value: 'APPROVED', label: 'Approved — lower the balance now' },
-            { value: 'PENDING', label: 'Awaiting supplier — approve later' },
+            { value: 'APPROVED', label: t('expenses.approvedLowerTheBalanceNow') },
+            { value: 'PENDING', label: t('expenses.awaitingSupplierApproveLater') },
           ]}
           value={form.status}
           onChange={v => set('status', v)}
         />
       </Field>
-      <Field label="Return Reason">
+      <Field label={t('expenses.returnReason')}>
         <Input value={form.reason} onChangeText={v => set('reason', v)} placeholder="e.g. Damaged on arrival" maxLength={500} />
       </Field>
-      <Field label="Description">
-        <Input value={form.description} onChangeText={v => set('description', v)} placeholder="What was returned" maxLength={500} multiline />
+      <Field label={t('common.description')}>
+        <Input value={form.description} onChangeText={v => set('description', v)} placeholder={t('expenses.whatWasReturned')} maxLength={500} multiline />
       </Field>
-      <PhotoAttachments label="Supporting Documents" value={files} onChange={setFiles} dirName="store-expenses" defaultKind="CREDIT_NOTE" max={5} />
+      <PhotoAttachments label={t('expenses.supportingDocuments')} value={files} onChange={setFiles} dirName="store-expenses" defaultKind="CREDIT_NOTE" max={5} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </Sheet>
   );

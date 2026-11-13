@@ -16,6 +16,7 @@ import { openMenuKey } from '../../navigation/navigationRef';
 import { ArrowLeftIcon, BellIcon, MenuIcon } from '../icons';
 import { Avatar } from './Avatar';
 import { StoreBar } from './StoreSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const markColor = require('../../assets/brand/logo-mark-color.png');
 
@@ -36,6 +37,7 @@ type AppHeaderProps =
  * store, the store switcher sits underneath.
  */
 export function AppHeader(props: AppHeaderProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { open } = useDrawer();
   const { user } = useAuth();
@@ -48,7 +50,7 @@ export function AppHeader(props: AppHeaderProps) {
         <StatusBar barStyle="dark-content" />
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={onBack ? 'Back' : 'Open menu'}
+          accessibilityLabel={onBack ? t('common.back') : t('layout.openMenu')}
           onPress={onBack ?? open}
           hitSlop={6}
           style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
@@ -64,7 +66,7 @@ export function AppHeader(props: AppHeaderProps) {
           <View
             style={styles.brand}
             accessibilityRole="header"
-            accessibilityLabel="VeiloScan Business"
+            accessibilityLabel={t('common.veiloscanBusiness')}
           >
             <Image
               source={markColor}
@@ -78,9 +80,9 @@ export function AppHeader(props: AppHeaderProps) {
                 adjustsFontSizeToFit
                 minimumFontScale={0.8}
               >
-                Veilo<Text style={styles.wordmarkAccent}>Scan</Text>
+                {t('common.veilo')}<Text style={styles.wordmarkAccent}>{t('common.scan')}</Text>
               </Text>
-              <Text style={styles.brandTag}>BUSINESS</Text>
+              <Text style={styles.brandTag}>{t('common.business')}</Text>
             </View>
           </View>
         ) : (
@@ -104,8 +106,8 @@ export function AppHeader(props: AppHeaderProps) {
           accessibilityRole="button"
           accessibilityLabel={
             unreadCount
-              ? `Notifications, ${unreadCount} unread`
-              : 'Notifications'
+              ? t('layout.notificationsUnreadcountUnread', { unreadCount })
+              : t('common.notifications')
           }
           onPress={() => openMenuKey('notifications')}
           hitSlop={6}
@@ -120,7 +122,7 @@ export function AppHeader(props: AppHeaderProps) {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="My profile"
+          accessibilityLabel={t('layout.myProfile')}
           onPress={() => openMenuKey('profile')}
           hitSlop={6}
           style={({ pressed }) => [styles.avatarRing, pressed && styles.pressedRing]}

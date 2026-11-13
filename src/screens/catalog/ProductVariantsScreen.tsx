@@ -20,6 +20,7 @@ import { ActionSheet, compactStyles, CountTiles, Fab, ListTop, RowCard, Separato
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { BanIcon, BoxIcon, CheckCircleIcon, EditIcon, EyeIcon, LayersIcon, SlidersIcon, TrashIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ function ValueSwatch({ value }: { value: Row }) {
 
 /** Catalog › Product Variants: which variant values (size, colour…) each product is offered in. */
 export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVariants'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const listPadding = useListPadding();
@@ -92,8 +94,8 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Product Variants" onBack={navigation.goBack} />
-        <ComingSoon label="Product Variants" icon={LayersIcon} allowed={false} />
+        <AppHeader title={t('common.productVariants')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.productVariants')} icon={LayersIcon} allowed={false} />
       </View>
     );
   }
@@ -101,7 +103,7 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
   async function setStatus(row: Row, status: 0 | 1) {
     try {
       await productVariantService.update(row.id, { status });
-      toast(status === 1 ? 'Variant mapping activated' : 'Variant mapping deactivated');
+      toast(status === 1 ? t('catalog.variantMappingActivated') : t('catalog.variantMappingDeactivated'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -109,10 +111,10 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
   }
 
   async function remove(row: Row) {
-    if (!(await confirmAction('Remove this variant mapping?', 'The product will no longer offer this variant value.', 'Remove', true))) return;
+    if (!(await confirmAction(t('catalog.removeThisVariantMapping'), t('catalog.theProductWillNoLongerOffer'), t('common.remove'), true))) return;
     try {
       await productVariantService.remove(row.id);
-      toast('Variant mapping removed');
+      toast(t('catalog.variantMappingRemoved'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -121,31 +123,31 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Product Variants" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('common.productVariants')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder="Search by product, SKU, variant type or value..." />
+        <SearchBar value={filters.search} onChange={v => set('search', v)} placeholder={t('catalog.searchByProductSkuVariantType')} />
         <CountTiles
           tiles={[
-            { key: '1', label: 'Active', count: stats.active, ...TILE_COLORS.green },
-            { key: '0', label: 'Inactive', count: stats.inactive, ...TILE_COLORS.slate },
-            { key: 'products', label: 'Products', count: stats.products, info: true, ...TILE_COLORS.blue },
-            { key: 'types', label: 'Types', count: stats.types, info: true, ...TILE_COLORS.violet },
+            { key: '1', label: t('common.active'), count: stats.active, ...TILE_COLORS.green },
+            { key: '0', label: t('common.inactive'), count: stats.inactive, ...TILE_COLORS.slate },
+            { key: 'products', label: t('common.products'), count: stats.products, info: true, ...TILE_COLORS.blue },
+            { key: 'types', label: t('catalog.types'), count: stats.types, info: true, ...TILE_COLORS.violet },
           ]}
           value={filters.status}
           onSelect={k => set('status', k)}
           loading={loading && !data}
         />
         <SummaryLine
-          hint="Which variant values (size, colour…) each product is offered in."
+          hint={t('catalog.whichVariantValuesSizeColourEach')}
           filtered={isFiltered}
           shown={rows.length}
           total={items.length}
           noun="mapping"
           onClear={() => setFilters(VARIANT_FILTERS)}
           extra={
-            <Pressable accessibilityRole="button" accessibilityLabel="More filters" hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.moreFilters')} hitSlop={8} onPress={() => setMoreFilters(true)} style={styles.filterBtn}>
               <SlidersIcon size={14} color={extra ? colors.secondary : colors.textSecondary} />
-              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? `Filters (${extra})` : 'Filters'}</Text>
+              <Text style={[styles.filterText, extra ? styles.accent : null]}>{extra ? t('common.filtersExtra', { extra }) : t('common.filters')}</Text>
             </Pressable>
           }
         />
@@ -169,8 +171,8 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={LayersIcon}
-                  title={isFiltered ? 'No variant mappings match' : 'No product variants yet'}
-                  text={isFiltered ? 'Try another filter or search term.' : "They're added from a product's Variants step, or with Add Mapping."}
+                  title={isFiltered ? t('catalog.noVariantMappingsMatch') : t('catalog.noProductVariantsYet')}
+                  text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('catalog.theyReAddedFromAProducts')}
                 />
               </View>
             )
@@ -181,7 +183,7 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
             const cover = coverByProduct.get(String(item.productId));
             const active = isActiveRow(item);
             return (
-              <RowCard label={`Edit ${String(p.productName ?? 'mapping')} ${String(v.variantData ?? '')}`} onPress={() => navigation.navigate('ProductVariantForm', { id: item.id })}>
+              <RowCard label={t('catalog.editMappingNamed', { name: `${String(p.productName ?? t('catalog.mapping'))} ${String(v.variantData ?? '')}`.trim() })} onPress={() => navigation.navigate('ProductVariantForm', { id: item.id })}>
                 <View style={compactStyles.head}>
                   <View style={compactStyles.thumb}>{cover ? <Image source={{ uri: cover }} style={compactStyles.thumbImage} /> : <BoxIcon size={17} color={colors.textMuted} />}</View>
                   <View style={styles.flex}>
@@ -189,11 +191,11 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
                       {String(p.productName ?? '—')}
                     </Text>
                     <Text style={compactStyles.meta} numberOfLines={1}>
-                      {`SKU ${String(p.skuItemNumber ?? '—')} · #${String(item.sequence ?? '—')} · ${formatDay(item.createdAt)}`}
+                      {t('catalog.skuValueValue2Createdat', { value: String(p.skuItemNumber ?? '—'), value2: String(item.sequence ?? '—'), createdAt: formatDay(item.createdAt) })}
                     </Text>
                   </View>
-                  <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
-                  <Pressable accessibilityRole="button" accessibilityLabel={`More for ${String(p.productName ?? '')} ${String(v.variantData ?? '')}`} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
+                  <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.moreForValueValue2', { value: String(p.productName ?? ''), value2: String(v.variantData ?? '') })} hitSlop={10} onPress={() => setActionsFor(item)} style={compactStyles.more}>
                     <Text style={compactStyles.dots}>⋮</Text>
                   </Pressable>
                 </View>
@@ -209,11 +211,11 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
         />
       )}
 
-      <Fab label="Add Mapping" accessibilityLabel="Add Variant Mapping" onPress={() => navigation.navigate('ProductVariantForm')} />
+      <Fab label={t('catalog.addMapping')} accessibilityLabel={t('catalog.addVariantMapping')} onPress={() => navigation.navigate('ProductVariantForm')} />
 
-      <Sheet visible={moreFilters} title="Filters" onClose={() => setMoreFilters(false)}>
-        <SelectField label="Product" value={filters.productId} options={options.products} onChange={v => set('productId', v)} allowClear="All Products" placeholder="All Products" />
-        <SelectField label="Variant Type" value={filters.variantId} options={options.variants} onChange={v => set('variantId', v)} allowClear="All Types" placeholder="All Types" />
+      <Sheet visible={moreFilters} title={t('common.filters')} onClose={() => setMoreFilters(false)}>
+        <SelectField label={t('common.product')} value={filters.productId} options={options.products} onChange={v => set('productId', v)} allowClear={t('catalog.allProducts')} placeholder={t('catalog.allProducts')} />
+        <SelectField label={t('catalog.variantType2')} value={filters.variantId} options={options.variants} onChange={v => set('variantId', v)} allowClear={t('common.allTypes')} placeholder={t('common.allTypes')} />
       </Sheet>
 
       <ActionSheet
@@ -224,11 +226,11 @@ export function ProductVariantsScreen({ navigation }: ScreenProps<'ProductVarian
         actions={
           actionsFor
             ? [
-                { label: 'View Product', icon: EyeIcon, onPress: () => navigation.navigate('ProductDetail', { id: String(actionsFor.productId) }) },
-                { label: 'Edit Mapping', icon: EditIcon, onPress: () => navigation.navigate('ProductVariantForm', { id: actionsFor.id }) },
-                { label: 'Activate', icon: CheckCircleIcon, hidden: isActiveRow(actionsFor), onPress: () => setStatus(actionsFor, 1) },
-                { label: 'Deactivate', icon: BanIcon, hidden: !isActiveRow(actionsFor), onPress: () => setStatus(actionsFor, 0) },
-                { label: 'Remove', icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
+                { label: t('common.viewProduct'), icon: EyeIcon, onPress: () => navigation.navigate('ProductDetail', { id: String(actionsFor.productId) }) },
+                { label: t('catalog.editMapping'), icon: EditIcon, onPress: () => navigation.navigate('ProductVariantForm', { id: actionsFor.id }) },
+                { label: t('common.activate'), icon: CheckCircleIcon, hidden: isActiveRow(actionsFor), onPress: () => setStatus(actionsFor, 1) },
+                { label: t('common.deactivate'), icon: BanIcon, hidden: !isActiveRow(actionsFor), onPress: () => setStatus(actionsFor, 0) },
+                { label: t('common.remove'), icon: TrashIcon, danger: true, onPress: () => remove(actionsFor) },
               ]
             : []
         }

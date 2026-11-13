@@ -12,6 +12,7 @@ import { stockService, type Lot, type StockBalance } from '../../services/stock-
 import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { Choices, DateField, Field, Input, SelectField } from '../form/Fields';
+import { useTranslation } from 'react-i18next';
 
 const round = (v: number) => Math.round(v * 1000) / 1000;
 const optional = (v: string) => (v.trim() ? v.trim() : undefined);
@@ -34,6 +35,7 @@ export function StockOperationSheet({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const visible = operation !== null;
   const uoms = useFetch(() => (visible ? inventoryService.uoms() : Promise.resolve([])), [visible]);
@@ -143,7 +145,7 @@ export function StockOperationSheet({
           manufactureDate: optional(values.manufactureDate),
         });
       } else if (!balance) {
-        throw new Error('No stock record');
+        throw new Error(t('inventory.noStockRecord'));
       } else if (operation === 'adjust') {
         await stockService.adjust(balance.id, { ...meta, mode: values.mode as 'COUNT' | 'IN' | 'OUT', quantity, uom, reason: values.reason.trim(), lotId: optional(values.lotId) });
       } else if (operation === 'block') {
@@ -164,7 +166,7 @@ export function StockOperationSheet({
         const num = (v: string) => (v.trim() === '' ? null : Number(v));
         await stockService.setLevels(balance.id, { minimum: num(values.minimum) ?? 0, maximum: num(values.maximum), reorder: num(values.reorder) ?? 0, uom: balance.salesUom });
       }
-      toast(`${OPERATION_TITLES[operation!]} saved`);
+      toast(t('inventory.operationTitlesSaved', { OPERATION_TITLES: OPERATION_TITLES[operation!] }));
       onDone();
     } catch (err) {
       setError(err instanceof Error && !('response' in err) ? err.message : extractErrorMessage(err));
@@ -177,30 +179,30 @@ export function StockOperationSheet({
   const quantityRow = (label: string, hint?: string) => (
     <>
       <Field label={label} required hint={hint}>
-        <Input value={values.quantity} onChangeText={v => set('quantity', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Quantity" />
+        <Input value={values.quantity} onChangeText={v => set('quantity', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('common.quantity')} />
       </Field>
       {unitChoices.length > 1 ? (
-        <Field label="Unit">
+        <Field label={t('inventory.unit')}>
           <Choices options={unitChoices} value={values.uom} onChange={v => set('uom', v)} />
         </Field>
       ) : null}
     </>
   );
   const reasonField = (placeholder: string, required = true) => (
-    <Field label="Reason" required={required}>
-      <Input value={values.reason} onChangeText={v => set('reason', v)} placeholder={placeholder} maxLength={255} accessibilityLabel="Reason" />
+    <Field label={t('common.reason')} required={required}>
+      <Input value={values.reason} onChangeText={v => set('reason', v)} placeholder={placeholder} maxLength={255} accessibilityLabel={t('common.reason')} />
     </Field>
   );
   const lotSelect = activeLots.length ? (
     <SelectField
-      label="Lot (optional)"
-      hint="Leave empty to use lots by the product's FIFO / FEFO rule"
+      label={t('inventory.lotOptional')}
+      hint={t('inventory.leaveEmptyToUseLotsBy')}
       value={values.lotId}
-      allowClear="Automatic"
-      placeholder="Automatic"
+      allowClear={t('inventory.automatic')}
+      placeholder={t('inventory.automatic')}
       options={activeLots.map(l => ({
         value: l.id,
-        label: `${l.lotNumber ?? l.batchNumber ?? l.idd} · ${balance ? formatQty(l.remainingQty, balance) : l.remainingQty} left${l.expiryDate ? ` · exp ${l.expiryDate}` : ''}`,
+        label: [t('inventory.lotQuantityLeft', { lot: l.lotNumber ?? l.batchNumber ?? l.idd, quantity: balance ? formatQty(l.remainingQty, balance) : l.remainingQty }), l.expiryDate ? t('inventory.expiresShort', { date: l.expiryDate }) : null].filter(Boolean).join(' · '),
       }))}
       onChange={v => set('lotId', v)}
     />
@@ -212,25 +214,25 @@ export function StockOperationSheet({
       title={OPERATION_TITLES[operation]}
       subtitle={
         balance
-          ? `${balance.productName} · ${balance.sku} · ${balance.warehouseTitle}\nOn hand ${formatQty(balance.onHand, balance)} · Reserved ${formatQty(balance.reserved, balance)} · Blocked ${formatQty(
+          ? t('inventory.productnameSkuWarehousetitleOnHandOnhand', { productName: balance.productName, sku: balance.sku, warehouseTitle: balance.warehouseTitle, onHand: formatQty(balance.onHand, balance), reserved: formatQty(balance.reserved, balance), blocked: formatQty(
               balance.blocked,
               balance,
-            )} · Available ${formatQty(balance.available, balance)}`
+            ), available: formatQty(balance.available, balance) })
           : undefined
       }
       onClose={onClose}
-      footer={<Button title="Save" onPress={submit} loading={saving} disabled={noOtherWarehouse} />}
+      footer={<Button title={t('common.save')} onPress={submit} loading={saving} disabled={noOtherWarehouse} />}
     >
       {operation === 'receive' ? (
         <>
           {!balance ? (
             <>
               <SelectField
-                label="Product"
+                label={t('common.product')}
                 required
-                placeholder="Select product"
+                placeholder={t('common.selectProduct')}
                 value={productId}
-                options={(products.data ?? []).map(p => ({ value: String(p.id), label: String(p.productName ?? 'Product') }))}
+                options={(products.data ?? []).map(p => ({ value: String(p.id), label: String(p.productName ?? t('common.product')) }))}
                 onChange={v => {
                   setProductId(v);
                   setVariantId('');
@@ -239,72 +241,72 @@ export function StockOperationSheet({
               <SelectField
                 label="SKU"
                 required
-                placeholder={productId ? 'Select SKU' : 'Pick a product first'}
+                placeholder={productId ? t('inventory.selectSku') : t('inventory.pickAProductFirst')}
                 value={variantId}
                 options={variants.map(v => ({ value: v.id, label: `${v.label} · ${v.sku}` }))}
                 onChange={setVariantId}
                 disabled={!productId}
               />
               <SelectField
-                label="Warehouse"
+                label={t('common.warehouse')}
                 required
-                placeholder="Select warehouse"
+                placeholder={t('common.selectWarehouse')}
                 value={warehouseId}
-                options={allWarehouses.map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? 'Warehouse') }))}
+                options={allWarehouses.map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? t('common.warehouse')) }))}
                 onChange={setWarehouseId}
               />
             </>
           ) : null}
-          <Field label="Type">
+          <Field label={t('common.type')}>
             <Choices
               options={[
-                { value: 'PURCHASE_RECEIPT', label: 'Purchase receipt' },
-                { value: 'OPENING_STOCK', label: 'Opening stock' },
+                { value: 'PURCHASE_RECEIPT', label: t('inventory.purchaseReceipt') },
+                { value: 'OPENING_STOCK', label: t('common.openingStock') },
               ]}
               value={values.type}
               onChange={v => set('type', v)}
             />
           </Field>
-          {quantityRow('Quantity received', units ? `Stored in ${units.baseUom}` : undefined)}
-          <Field label="Cost per unit (optional)">
+          {quantityRow(t('inventory.quantityReceived'), units ? t('inventory.storedInBaseuom', { baseUom: units.baseUom }) : undefined)}
+          <Field label={t('inventory.costPerUnitOptional')}>
             <Input value={values.unitCost} onChangeText={v => set('unitCost', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" />
           </Field>
-          <Field label="Receipt / PO reference" hint="The same reference is never received twice">
+          <Field label={t('inventory.receiptPoReference')} hint={t('inventory.theSameReferenceIsNeverReceived')}>
             <Input value={values.referenceId} onChangeText={v => set('referenceId', v)} maxLength={100} />
           </Field>
           <View style={styles.group}>
             <Text style={styles.groupTitle}>
-              {'Lot / batch '}
-              {balance?.tracksLots ? <Text style={styles.required}>(tracked for this product)</Text> : '(optional)'}
+              {t('inventory.lotBatch')}
+              {balance?.tracksLots ? <Text style={styles.required}>{t('inventory.trackedForThisProduct')}</Text> : t('common.optional')}
             </Text>
-            <Field label="Lot number" required={!!balance?.trackLot}>
+            <Field label={t('inventory.lotNumber')} required={!!balance?.trackLot}>
               <Input value={values.lotNumber} onChangeText={v => set('lotNumber', v)} maxLength={100} />
             </Field>
-            <Field label="Batch number" required={!!balance?.trackBatch}>
+            <Field label={t('common.batchNumber')} required={!!balance?.trackBatch}>
               <Input value={values.batchNumber} onChangeText={v => set('batchNumber', v)} maxLength={100} />
             </Field>
-            <DateField label="Manufactured" value={values.manufactureDate} onChange={v => set('manufactureDate', v)} maximumDate={new Date()} />
-            <DateField label="Expiry" required={!!balance?.trackExpiry} value={values.expiryDate} onChange={v => set('expiryDate', v)} />
+            <DateField label={t('inventory.manufactured')} value={values.manufactureDate} onChange={v => set('manufactureDate', v)} maximumDate={new Date()} />
+            <DateField label={t('inventory.expiry')} required={!!balance?.trackExpiry} value={values.expiryDate} onChange={v => set('expiryDate', v)} />
           </View>
         </>
       ) : null}
 
       {operation === 'adjust' ? (
         <>
-          <Field label="Mode">
+          <Field label={t('inventory.mode')}>
             <Choices
               options={[
-                { value: 'COUNT', label: 'Physical count' },
-                { value: 'IN', label: 'Add' },
-                { value: 'OUT', label: 'Remove' },
+                { value: 'COUNT', label: t('inventory.physicalCount') },
+                { value: 'IN', label: t('common.add') },
+                { value: 'OUT', label: t('common.remove') },
               ]}
               value={values.mode}
               onChange={v => set('mode', v)}
             />
           </Field>
           {quantityRow(
-            values.mode === 'COUNT' ? 'Counted on hand' : values.mode === 'IN' ? 'Quantity to add' : 'Quantity to remove',
-            values.mode === 'COUNT' ? 'On hand is brought to this number with an adjustment entry — never overwritten' : undefined,
+            values.mode === 'COUNT' ? t('inventory.countedOnHand') : values.mode === 'IN' ? t('inventory.quantityToAdd') : t('inventory.quantityToRemove'),
+            values.mode === 'COUNT' ? t('inventory.onHandIsBroughtToThis') : undefined,
           )}
           {values.mode === 'OUT' ? lotSelect : null}
           {reasonField('e.g. Physical stock count')}
@@ -313,18 +315,18 @@ export function StockOperationSheet({
 
       {operation === 'block' ? (
         <>
-          <Field label="Action">
+          <Field label={t('inventory.action')}>
             <Choices
               options={[
-                { value: 'BLOCK', label: 'Block — not sellable' },
-                { value: 'UNBLOCK', label: 'Unblock — sellable again' },
-                { value: 'WRITE_OFF', label: 'Write off — removed for good' },
+                { value: 'BLOCK', label: t('inventory.blockNotSellable') },
+                { value: 'UNBLOCK', label: t('inventory.unblockSellableAgain') },
+                { value: 'WRITE_OFF', label: t('inventory.writeOffRemovedForGood') },
               ]}
               value={values.action}
               onChange={v => set('action', v)}
             />
           </Field>
-          {quantityRow('Quantity')}
+          {quantityRow(t('common.quantity'))}
           {values.action === 'WRITE_OFF' ? lotSelect : null}
           {reasonField('e.g. Damaged in storage')}
         </>
@@ -334,20 +336,20 @@ export function StockOperationSheet({
         <>
           {noOtherWarehouse ? (
             <Text style={styles.warn}>
-              {`There's no other active warehouse to move this stock to — ${balance?.warehouseTitle ?? 'this warehouse'} is the only one. Add a warehouse on the Seller Panel to transfer stock between locations.`}
+              {t('inventory.noOtherWarehouseToTransfer', { warehouse: balance?.warehouseTitle ?? t('inventory.thisWarehouse') })}
             </Text>
           ) : (
             <SelectField
-              label="To warehouse"
+              label={t('inventory.toWarehouse')}
               required
-              placeholder={warehouses.loading ? 'Loading warehouses…' : 'Select…'}
+              placeholder={warehouses.loading ? t('inventory.loadingWarehouses') : t('common.select')}
               value={values.toWarehouseId}
-              options={otherWarehouses.map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? 'Warehouse') }))}
+              options={otherWarehouses.map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? t('common.warehouse')) }))}
               onChange={v => set('toWarehouseId', v)}
             />
           )}
-          {quantityRow('Quantity', 'Lots move with their numbers and expiry dates')}
-          <Field label="Transfer reference" hint="Optional — the same transfer is never processed twice">
+          {quantityRow(t('common.quantity'), t('inventory.lotsMoveWithTheirNumbersAnd'))}
+          <Field label={t('inventory.transferReference')} hint={t('inventory.optionalTheSameTransferIsNever')}>
             <Input value={values.referenceId} onChangeText={v => set('referenceId', v)} maxLength={100} />
           </Field>
           {reasonField('e.g. Restock branch', false)}
@@ -356,23 +358,23 @@ export function StockOperationSheet({
 
       {operation === 'return' ? (
         <>
-          <Field label="Type">
+          <Field label={t('common.type')}>
             <Choices
               options={[
-                { value: 'CUSTOMER_RETURN', label: 'Customer return — back into stock' },
-                { value: 'PURCHASE_RETURN', label: 'Purchase return — to the supplier' },
+                { value: 'CUSTOMER_RETURN', label: t('inventory.customerReturnBackIntoStock') },
+                { value: 'PURCHASE_RETURN', label: t('inventory.purchaseReturnToTheSupplier') },
               ]}
               value={values.type}
               onChange={v => set('type', v)}
             />
           </Field>
-          {quantityRow('Quantity')}
+          {quantityRow(t('common.quantity'))}
           {values.type === 'CUSTOMER_RETURN' ? (
-            <Field label="Condition" hint="Damaged returns go to blocked stock, not back on sale">
+            <Field label={t('common.condition')} hint={t('inventory.damagedReturnsGoToBlockedStock')}>
               <Choices
                 options={[
-                  { value: 'yes', label: 'Sellable' },
-                  { value: 'no', label: 'Damaged' },
+                  { value: 'yes', label: t('inventory.sellable') },
+                  { value: 'no', label: t('inventory.damaged') },
                 ]}
                 value={values.sellable}
                 onChange={v => set('sellable', v)}
@@ -381,7 +383,7 @@ export function StockOperationSheet({
           ) : (
             lotSelect
           )}
-          <Field label="Return reference" hint="The same return is never processed twice">
+          <Field label={t('inventory.returnReference')} hint={t('inventory.theSameReturnIsNeverProcessed')}>
             <Input value={values.referenceId} onChangeText={v => set('referenceId', v)} maxLength={100} />
           </Field>
           {reasonField('e.g. Customer return RT-1001')}
@@ -390,21 +392,21 @@ export function StockOperationSheet({
 
       {operation === 'levels' && balance ? (
         <>
-          <Text style={styles.note}>{`In ${balance.salesUom}. At or below the minimum the stock shows as Low stock with a reorder suggestion.`}</Text>
-          <Field label="Minimum">
-            <Input value={values.minimum} onChangeText={v => set('minimum', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Minimum" />
+          <Text style={styles.note}>{t('inventory.inSalesuomAtOrBelowThe', { salesUom: balance.salesUom })}</Text>
+          <Field label={t('inventory.minimum')}>
+            <Input value={values.minimum} onChangeText={v => set('minimum', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('inventory.minimum')} />
           </Field>
-          <Field label="Maximum">
-            <Input value={values.maximum} onChangeText={v => set('maximum', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Maximum" />
+          <Field label={t('common.maximum')}>
+            <Input value={values.maximum} onChangeText={v => set('maximum', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('common.maximum')} />
           </Field>
-          <Field label="Reorder quantity">
-            <Input value={values.reorder} onChangeText={v => set('reorder', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Reorder quantity" />
+          <Field label={t('common.reorderQuantity')}>
+            <Input value={values.reorder} onChangeText={v => set('reorder', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('common.reorderQuantity')} />
           </Field>
         </>
       ) : null}
 
       {operation !== 'levels' ? (
-        <Field label="Notes (optional)">
+        <Field label={t('inventory.notesOptional')}>
           <Input value={values.notes} onChangeText={v => set('notes', v)} maxLength={2000} />
         </Field>
       ) : null}

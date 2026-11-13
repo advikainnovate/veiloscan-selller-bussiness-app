@@ -16,9 +16,11 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, CheckIcon, MapPinIcon, TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** Create or edit a shipping zone: its title and the states it covers. Methods are added on the zone's page. */
 export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'ShippingZoneForm'>) {
+  const { t } = useTranslation();
   const id = route.params?.id;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -49,11 +51,11 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
     try {
       if (id) {
         await shippingZoneService.update(id, { ...zonePayload(form), coveredStates: form.coveredStates, status: Number(form.status) });
-        toast('Shipping zone updated');
+        toast(t('shipping.shippingZoneUpdated'));
         navigation.goBack();
       } else {
         const created = await shippingZoneService.create(zonePayload(form));
-        toast('Shipping zone created — now add its methods.');
+        toast(t('shipping.shippingZoneCreatedNowAddIts'));
         navigation.replace('ShippingZone', { id: created.id });
       }
     } catch (err) {
@@ -63,12 +65,12 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
     }
   }
 
-  const title = id ? 'Edit Shipping Zone' : 'Create Shipping Zone';
+  const title = id ? t('shipping.editShippingZone') : t('shipping.createShippingZone');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Shipping" icon={TruckIcon} allowed={false} />
+        <ComingSoon label={t('shipping.shipping')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
@@ -83,19 +85,19 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Shipping" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={t('shipping.shipping')} onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <SectionCard icon={TruckIcon} title="Basic Information" subtitle="Title and state coverage for this zone.">
-          <Field label="Zone Title" required>
+        <SectionCard icon={TruckIcon} title={t('common.basicInformation')} subtitle={t('shipping.titleAndStateCoverageForThis')}>
+          <Field label={t('shipping.zoneTitle')} required>
             <Input
               value={form.zoneTitle}
               onChangeText={v => setForm(f => ({ ...f, zoneTitle: v, zoneSlug: slugTouched ? f.zoneSlug : slugify(v) }))}
               placeholder="e.g. South India"
               maxLength={255}
-              accessibilityLabel="Zone Title"
+              accessibilityLabel={t('shipping.zoneTitle')}
             />
           </Field>
-          <Field label="Slug" required>
+          <Field label={t('common.slug')} required>
             <Input
               value={form.zoneSlug}
               onChangeText={v => {
@@ -104,39 +106,39 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
               }}
               autoCapitalize="none"
               maxLength={255}
-              accessibilityLabel="Zone Slug"
+              accessibilityLabel={t('shipping.zoneSlug')}
             />
           </Field>
           {id ? (
-            <Field label="Status">
+            <Field label={t('common.status')}>
               <Choices
                 options={[
-                  { value: '1', label: 'Active' },
-                  { value: '0', label: 'Inactive' },
+                  { value: '1', label: t('common.active') },
+                  { value: '0', label: t('common.inactive') },
                 ]}
                 value={form.status}
                 onChange={v => set('status', v)}
               />
             </Field>
           ) : null}
-          <Field label="Description">
-            <Input value={form.description} onChangeText={v => set('description', v)} multiline maxLength={1000} style={styles.textArea} accessibilityLabel="Description" />
+          <Field label={t('common.description')}>
+            <Input value={form.description} onChangeText={v => set('description', v)} multiline maxLength={1000} style={styles.textArea} accessibilityLabel={t('common.description')} />
           </Field>
         </SectionCard>
 
         <SectionCard
           icon={MapPinIcon}
-          title="Covered States"
-          subtitle={form.coveredStates.length ? `${form.coveredStates.length} selected` : 'None selected — the zone covers all states.'}
+          title={t('shipping.coveredStates')}
+          subtitle={form.coveredStates.length ? t('shipping.coveredstatescountSelected', { coveredStatesCount: form.coveredStates.length }) : t('shipping.noneSelectedTheZoneCoversAll')}
           action={
             form.coveredStates.length ? (
               <Pressable accessibilityRole="button" onPress={() => set('coveredStates', [])}>
-                <Text style={styles.link}>Clear</Text>
+                <Text style={styles.link}>{t('common.clear')}</Text>
               </Pressable>
             ) : null
           }
         >
-          <SearchBar value={stateSearch} onChange={setStateSearch} placeholder="Search states…" />
+          <SearchBar value={stateSearch} onChange={setStateSearch} placeholder={t('shipping.searchStates')} />
           <View style={styles.states}>
             {shown.map(s => {
               const on = form.coveredStates.includes(s);
@@ -150,7 +152,7 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
           </View>
         </SectionCard>
 
-        {!id ? <Text style={[opsStyles.muted, styles.tip]}>Save the zone first, then add its shipping methods — each can use a fixed, per-kg, or order-percentage rate.</Text> : null}
+        {!id ? <Text style={[opsStyles.muted, styles.tip]}>{t('shipping.saveTheZoneFirstThenAdd')}</Text> : null}
         {error ? (
           <View style={opsStyles.error}>
             <AlertCircleIcon size={16} color={colors.errorDark} />
@@ -158,7 +160,7 @@ export function ShippingZoneFormScreen({ navigation, route }: ScreenProps<'Shipp
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title={id ? 'Save Changes' : 'Create Zone'} loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={id ? t('common.saveChanges') : t('shipping.createZone')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

@@ -26,20 +26,23 @@ import { Gradient } from '../../components/ui/Gradient';
 import { EmptyState, ErrorState, FilterChips, ListSkeleton, SearchBar } from '../../components/list/ListParts';
 import { ArrowDownIcon, ArrowUpIcon, CartIcon, CheckCircleIcon, PlusIcon, ShoppingBagIcon } from '../../components/icons';
 import type { TabScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const QUICK_SALES = 'QUICK';
 
 type SortKey = 'placed' | 'amount' | 'customer';
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'placed', label: 'Date' },
-  { key: 'amount', label: 'Amount' },
-  { key: 'customer', label: 'Customer' },
+  { key: 'placed', get label() { return i18n.t('common.date'); } },
+  { key: 'amount', get label() { return i18n.t('common.amount'); } },
+  { key: 'customer', get label() { return i18n.t('common.customer'); } },
 ];
 
 const customerKey = (row: OrderRow) => (isQuickSale(row) ? 'quick sale' : (row.customerName ?? '').toLowerCase());
 
 /** Orders tab: the store's orders, newest first, with status filters and search. */
 export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('orders:manage');
   const { data, error, loading, refreshing, reload } = useFetch(
@@ -72,9 +75,9 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
   const chips = useMemo(
     () => [
       ...ORDER_FILTERS.map(f => ({ ...f, count: f.value ? rows.filter(r => r.orderStatus === f.value).length : rows.length })),
-      { value: QUICK_SALES, label: 'Quick Sales', count: rows.filter(isQuickSale).length },
+      { value: QUICK_SALES, label: t('orders.quickSales'), count: rows.filter(isQuickSale).length },
     ],
-    [rows],
+    [rows, t],
   );
 
   const visible = useMemo(() => {
@@ -104,8 +107,8 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Orders" />
-        <ComingSoon label="Orders" icon={ShoppingBagIcon} allowed={false} />
+        <AppHeader title={t('common.orders')} />
+        <ComingSoon label={t('common.orders')} icon={ShoppingBagIcon} allowed={false} />
       </View>
     );
   }
@@ -118,26 +121,26 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
         <View style={styles.summaryGlow} />
         <View style={styles.summaryTop}>
           <View>
-            <Text style={styles.summaryLabel}>Collected</Text>
+            <Text style={styles.summaryLabel}>{t('common.collected')}</Text>
             <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {formatRupees(Math.round(stats.collected))}
             </Text>
           </View>
           <View style={styles.summaryBadge}>
             <CheckCircleIcon size={14} color="#4ade80" />
-            <Text style={styles.summaryBadgeText}>{`${stats.pickedUpToday} picked up today`}</Text>
+            <Text style={styles.summaryBadgeText}>{t('orders.pickeduptodayPickedUpToday', { pickedUpToday: stats.pickedUpToday })}</Text>
           </View>
         </View>
         <View style={styles.summaryStats}>
-          <SummaryStat label="New orders" value={stats.newCount} dot="#fbbf24" active={filter === 'CREATED'} onPress={() => setFilter(filter === 'CREATED' ? '' : 'CREATED')} />
-          <SummaryStat label="Ready" value={stats.ready} dot="#c084fc" active={filter === 'PACKED'} onPress={() => setFilter(filter === 'PACKED' ? '' : 'PACKED')} />
-          <SummaryStat label="All orders" value={rows.length} dot="#94a3b8" active={!filter} onPress={() => setFilter('')} />
+          <SummaryStat label={t('orders.newOrders')} value={stats.newCount} dot="#fbbf24" active={filter === 'CREATED'} onPress={() => setFilter(filter === 'CREATED' ? '' : 'CREATED')} />
+          <SummaryStat label={t('common.ready')} value={stats.ready} dot="#c084fc" active={filter === 'PACKED'} onPress={() => setFilter(filter === 'PACKED' ? '' : 'PACKED')} />
+          <SummaryStat label={t('orders.allOrders')} value={rows.length} dot="#94a3b8" active={!filter} onPress={() => setFilter('')} />
         </View>
       </View>
-      <SearchBar value={search} onChange={setSearch} placeholder="Search order ID, customer, phone" />
+      <SearchBar value={search} onChange={setSearch} placeholder={t('orders.searchOrderIdCustomerPhone')} />
       <FilterChips options={chips} value={filter} onChange={setFilter} />
       <View style={styles.sortRow}>
-        <Text style={styles.sortLabel}>{`${visible.length} shown · Sort`}</Text>
+        <Text style={styles.sortLabel}>{t('orders.visiblecountShownSort', { visibleCount: visible.length })}</Text>
         <View style={styles.sortGroup}>
           {SORTS.map(option => {
             const active = sort.key === option.key;
@@ -147,7 +150,7 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
                 key={option.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                accessibilityLabel={`Sort by ${option.label}${active ? (sort.desc ? ', descending' : ', ascending') : ''}`}
+                accessibilityLabel={active ? t(sort.desc ? 'orders.sortByDescending' : 'orders.sortByAscending', { option: option.label }) : t('orders.sortBy', { option: option.label })}
                 onPress={() => toggleSort(option.key)}
                 style={[styles.sort, active && styles.sortActive]}
               >
@@ -163,7 +166,7 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Orders" subtitle={data ? `${rows.length} order${rows.length === 1 ? '' : 's'}` : undefined} />
+      <AppHeader title={t('common.orders')} subtitle={data ? t('common.orderCount', { count: rows.length }) : undefined} />
       <FlatList
         data={loading || (error && !data) ? [] : visible}
         keyExtractor={item => item.id}
@@ -177,8 +180,8 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
           ) : (
             <EmptyState
               icon={ShoppingBagIcon}
-              title={rows.length ? 'No orders match' : 'No orders yet'}
-              text={rows.length ? 'Try another filter or search.' : 'Orders placed at your stores will show up here.'}
+              title={rows.length ? t('orders.noOrdersMatch') : t('orders.noOrdersYet')}
+              text={rows.length ? t('common.tryAnotherFilterOrSearch') : t('orders.ordersPlacedAtYourStoresWill')}
             />
           )
         }
@@ -192,12 +195,12 @@ export function OrdersScreen({ navigation }: TabScreenProps<'Orders'>) {
       {/* "Add Self Orders": counter and phone orders. */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="New order"
+        accessibilityLabel={t('common.newOrder')}
         onPress={() => navigation.navigate('CreateOrder')}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
       >
         <PlusIcon size={20} color={colors.white} strokeWidth={2.4} />
-        <Text style={styles.fabText}>New order</Text>
+        <Text style={styles.fabText}>{t('common.newOrder')}</Text>
       </Pressable>
     </View>
   );
@@ -238,19 +241,20 @@ const TONE_COLOR: Record<string, string> = {
 };
 
 function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void }) {
+  const { t } = useTranslation();
   const quick = isQuickSale(order);
   const pay = paymentState(order);
   const discount = orderDiscountInfo(order);
   // How it was paid: "Cash ₹500 + UPI ₹200", and any credit still owed.
   const paidBy = (order.payments ?? []).map(p => `${methodLabel(p.method)} ${formatRupees(Number(p.amount) || 0)}`).join(' + ');
   const creditDue = Number(order.creditOutstanding) || 0;
-  const name = quick ? 'Quick Sale' : order.customerName || 'Registered customer';
+  const name = quick ? t('orders.quickSale2') : order.customerName || t('orders.registeredCustomer');
 
   const tone = orderStatusTone(order.orderStatus);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Order ${order.uniqueOrderId}, ${orderStatusLabel(order)}, ${formatRupees(orderAmount(order))}`}
+      accessibilityLabel={t('orders.orderUniqueorderidOrderAmount', { uniqueOrderId: order.uniqueOrderId, order: orderStatusLabel(order), amount: formatRupees(orderAmount(order)) })}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
@@ -269,7 +273,7 @@ function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void })
         </View>
         <View style={styles.amountCol}>
           <Text style={styles.amount}>{formatRupees(orderAmount(order))}</Text>
-          {discount ? <Text style={styles.discount}>−{formatRupees(discount.amount)} off</Text> : null}
+          {discount ? <Text style={styles.discount}>{t('orders.amountOff', { amount: formatRupees(discount.amount) })}</Text> : null}
         </View>
       </View>
       <View style={styles.cardBottom}>
@@ -277,9 +281,9 @@ function OrderCard({ order, onPress }: { order: OrderRow; onPress: () => void })
         <Badge label={pay.label} tone={pay.tone} />
         <Text style={styles.meta} numberOfLines={1}>
           {[
-            isPickupOrder(order) ? 'Pickup' : 'Delivery',
+            isPickupOrder(order) ? t('orders.pickup') : t('common.delivery'),
             paidBy || null,
-            creditDue > 0 ? `${formatRupees(creditDue)} on credit` : null,
+            creditDue > 0 ? t('orders.creditdueOnCredit', { creditDue: formatRupees(creditDue) }) : null,
             order.store?.name,
           ]
             .filter(Boolean)

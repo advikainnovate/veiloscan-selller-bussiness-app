@@ -15,6 +15,8 @@ import { Sheet } from '../ui/Sheet';
 import { Button } from '../ui/Button';
 import { SearchBar } from '../list/ListParts';
 import { CalendarIcon, CheckIcon, ChevronDownIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Form building blocks for the longer editors (product wizard): a labelled
 // field, text input, single-choice chips, a searchable picker and a date.
@@ -110,12 +112,12 @@ export function SelectField({
   label,
   required,
   hint,
-  placeholder = 'Select…',
+  placeholder = i18n.t('common.select'),
   value,
   options,
   onChange,
   disabled,
-  emptyText = 'Nothing to choose from',
+  emptyText = i18n.t('ui.nothingToChooseFrom'),
   allowClear,
 }: {
   label: string;
@@ -129,6 +131,7 @@ export function SelectField({
   emptyText?: string;
   allowClear?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const selected = options.find(o => o.value === value);
@@ -159,7 +162,7 @@ export function SelectField({
       </Pressable>
       <Sheet visible={open} title={label} onClose={() => setOpen(false)}>
         {options.length > 8 ? (
-          <SearchBar value={query} onChange={setQuery} placeholder="Search…" />
+          <SearchBar value={query} onChange={setQuery} placeholder={t('ui.search')} />
         ) : null}
         {allowClear ? (
           <OptionRow
@@ -247,6 +250,7 @@ export function DateField({
   minimumDate?: Date;
   maximumDate?: Date;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(fromISO(value));
   return (
@@ -265,16 +269,16 @@ export function DateField({
         >
           <CalendarIcon size={16} color={colors.textMuted} />
           <Text style={[styles.selectText, !value && styles.placeholder]}>
-            {value ? formatDay(value) : 'Choose a date'}
+            {value ? formatDay(value) : t('ui.chooseADate')}
           </Text>
         </Pressable>
         {value && !required ? (
           <Pressable
-            accessibilityLabel={`Clear ${label}`}
+            accessibilityLabel={t('ui.clearLabel', { label })}
             onPress={() => onChange('')}
             hitSlop={8}
           >
-            <Text style={styles.clear}>Clear</Text>
+            <Text style={styles.clear}>{t('common.clear')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -297,7 +301,7 @@ export function DateField({
           onClose={() => setOpen(false)}
           footer={
             <Button
-              title="Done"
+              title={t('common.done')}
               onPress={() => {
                 onChange(toISO(draft));
                 setOpen(false);
@@ -346,6 +350,7 @@ export function TimeField({
   /** Just the button, without the label above (for rows of times). */
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(fromHHMM(value));
   const button = (
@@ -358,7 +363,7 @@ export function TimeField({
       }}
       style={[styles.select, styles.flex]}
     >
-      <Text style={[styles.selectText, !value && styles.placeholder]}>{value ? clock(value) : 'Set time'}</Text>
+      <Text style={[styles.selectText, !value && styles.placeholder]}>{value ? clock(value) : t('ui.setTime')}</Text>
     </Pressable>
   );
   const pickers = (
@@ -380,7 +385,7 @@ export function TimeField({
           onClose={() => setOpen(false)}
           footer={
             <Button
-              title="Done"
+              title={t('common.done')}
               onPress={() => {
                 onChange(toHHMM(draft));
                 setOpen(false);

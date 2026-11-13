@@ -4,6 +4,7 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 import { colors, fonts } from '../../theme';
 import { formatRupees } from '../../lib/format';
 import { CHART_INK, ORDERS_COLOR, PROFIT_COLOR, SALES_COLOR, shortRupees } from '../../lib/sales-report';
+import { useTranslation } from 'react-i18next';
 
 function niceStep(span: number) {
   const raw = span / 4 || 1;
@@ -33,6 +34,7 @@ export function SalesProfitChart({
   profit: (number | null)[] | null;
   orders: number[];
 }) {
+  const { t: tr } = useTranslation();
   const [width, setWidth] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const n = Math.max(1, sales.length);
@@ -83,9 +85,9 @@ export function SalesProfitChart({
   return (
     <View onLayout={(e: LayoutChangeEvent) => setWidth(Math.round(e.nativeEvent.layout.width))}>
       <View style={styles.legend}>
-        <Legend color={SALES_COLOR} label="Sales Amount" />
-        {profit ? <Legend color={PROFIT_COLOR} label="Profit" /> : null}
-        <Legend color={ORDERS_COLOR} label="Orders" line />
+        <Legend color={SALES_COLOR} label={tr('reports.salesAmount')} />
+        {profit ? <Legend color={PROFIT_COLOR} label={tr('reports.profit')} /> : null}
+        <Legend color={ORDERS_COLOR} label={tr('common.orders')} line />
       </View>
 
       {/* The tapped bucket's figures (the panel's hover tooltip). */}
@@ -94,21 +96,21 @@ export function SalesProfitChart({
           <>
             <Text style={styles.readoutTitle}>{fullLabels[selected]}</Text>
             <View style={styles.readoutRow}>
-              <Reading color={SALES_COLOR} label="Sales" value={formatRupees(Math.round(sales[selected]))} />
+              <Reading color={SALES_COLOR} label={tr('common.sales')} value={formatRupees(Math.round(sales[selected]))} />
               {profit ? (
-                <Reading color={PROFIT_COLOR} label="Profit" value={profit[selected] == null ? '—' : formatRupees(Math.round(profit[selected] as number))} />
+                <Reading color={PROFIT_COLOR} label={tr('reports.profit')} value={profit[selected] == null ? '—' : formatRupees(Math.round(profit[selected] as number))} />
               ) : null}
-              <Reading color={ORDERS_COLOR} label="Orders" value={String(orders[selected])} />
+              <Reading color={ORDERS_COLOR} label={tr('common.orders')} value={String(orders[selected])} />
             </View>
           </>
         ) : (
-          <Text style={styles.readoutHint}>Tap a bar to see its figures</Text>
+          <Text style={styles.readoutHint}>{tr('reports.tapABarToSeeIts')}</Text>
         )}
       </View>
 
       {width > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={W > width}>
-          <Svg width={W} height={H} accessibilityLabel="Sales, profit and orders over time">
+          <Svg width={W} height={H} accessibilityLabel={tr('reports.salesProfitAndOrdersOverTime')}>
             {ticks.map(t => (
               <G key={t}>
                 <Line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} stroke={t === 0 ? CHART_INK.baseline : CHART_INK.grid} />
@@ -118,8 +120,7 @@ export function SalesProfitChart({
               </G>
             ))}
             <SvgText x={pad.left - 6} y={laneTop + laneH / 2 + 3.5} textAnchor="end" fontSize={10} fill={CHART_INK.muted}>
-              Orders
-            </SvgText>
+              {tr('common.orders')}</SvgText>
             <Line x1={pad.left} x2={W - pad.right} y1={laneTop + laneH} y2={laneTop + laneH} stroke={CHART_INK.grid} />
 
             {selected !== null ? (
@@ -212,6 +213,7 @@ export function Ring({
   selected: string | null;
   size?: number;
 }) {
+  const { t } = useTranslation();
   const total = segments.reduce((s, x) => s + x.value, 0);
   const R = 40;
   const C = 2 * Math.PI * R;
@@ -219,7 +221,7 @@ export function Ring({
   let acc = 0;
   return (
     <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="Sales by payment method">
+      <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel={t('reports.salesByPaymentMethod')}>
         <G rotation={-90} origin="50, 50">
           <Circle cx="50" cy="50" r={R} fill="none" stroke={CHART_INK.grid} strokeWidth={14} />
           {total > 0

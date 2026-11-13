@@ -20,16 +20,18 @@ import { BrandRequestForm } from '../../components/catalog/BrandRequestForm';
 import { AlertCircleIcon, CheckCircleIcon, ClockIcon, FileTextIcon, ShieldCheckIcon, TrashIcon } from '../../components/icons';
 import { BrandLogo } from './BrandApprovalsScreen';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 function DocumentTile({ label, file }: { label: string; file: Row | null | undefined }) {
+  const { t } = useTranslation();
   const url = file?.url as string | undefined;
   const isImage = !!url && !/\.pdf($|\?)/i.test(url) && !String(file?.mimeType ?? '').includes('pdf');
   return (
-    <Pressable accessibilityRole="link" accessibilityLabel={`Open ${label}`} disabled={!url} onPress={() => url && Linking.openURL(url)} style={styles.doc}>
+    <Pressable accessibilityRole="link" accessibilityLabel={t('catalog.openLabel', { label })} disabled={!url} onPress={() => url && Linking.openURL(url)} style={styles.doc}>
       <View style={styles.docThumb}>{url && isImage ? <Image source={{ uri: url }} style={styles.fill} resizeMode="contain" /> : <FileTextIcon size={18} color={url ? colors.secondary : colors.border} />}</View>
       <View style={styles.flex}>
         <Text style={opsStyles.title}>{label}</Text>
-        <Text style={url ? styles.link : opsStyles.muted}>{url ? 'Open' : 'Not uploaded'}</Text>
+        <Text style={url ? styles.link : opsStyles.muted}>{url ? t('common.open') : t('common.notUploaded')}</Text>
       </View>
     </Pressable>
   );
@@ -37,6 +39,7 @@ function DocumentTile({ label, file }: { label: string; file: Row | null | undef
 
 /** One brand request: its status, what to fix, details, documents and progress. */
 export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'BrandRequestDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -46,12 +49,12 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
   const [withdrawing, setWithdrawing] = useState(false);
 
   const brand = data?.brand as Row | undefined;
-  const header = <AppHeader title={String(brand?.title ?? 'Brand request')} subtitle="Brand Approvals" onBack={navigation.goBack} />;
+  const header = <AppHeader title={String(brand?.title ?? t('catalog.brandRequest'))} subtitle={t('common.brandApprovals')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Brand Approvals" icon={ShieldCheckIcon} allowed={false} />
+        <ComingSoon label={t('common.brandApprovals')} icon={ShieldCheckIcon} allowed={false} />
       </View>
     );
   }
@@ -67,7 +70,7 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Brand request not found'} onRetry={reload} />
+        <ErrorState message={error || t('catalog.brandRequestNotFound')} onRetry={reload} />
       </View>
     );
   }
@@ -81,16 +84,16 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
 
   async function withdraw() {
     const ok = await confirmAction(
-      'Withdraw this request?',
-      r.isNewBrand ? 'The request is deleted, along with the new brand it asked for.' : 'The request is deleted. You can request the brand again later.',
-      'Withdraw',
+      t('catalog.withdrawThisRequest'),
+      r.isNewBrand ? t('catalog.theRequestIsDeletedAlongWith') : t('catalog.theRequestIsDeletedYouCan'),
+      t('catalog.withdraw'),
       true,
     );
     if (!ok) return;
     setWithdrawing(true);
     try {
       await brandRequestService.withdraw(id);
-      toast('Request withdrawn');
+      toast(t('catalog.requestWithdrawn'));
       navigation.goBack();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -99,8 +102,8 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
   }
 
   const steps = [
-    { label: 'Requested', at: r.createdAt, done: true },
-    { label: status === BRAND_STATUS.PENDING ? 'Under review' : status === BRAND_STATUS.APPROVED ? 'Approved' : 'Changes needed', at: r.reviewedAt, done: status !== BRAND_STATUS.PENDING },
+    { label: t('catalog.requested'), at: r.createdAt, done: true },
+    { label: status === BRAND_STATUS.PENDING ? t('common.underReview') : status === BRAND_STATUS.APPROVED ? t('common.approved') : t('catalog.changesNeeded'), at: r.reviewedAt, done: status !== BRAND_STATUS.PENDING },
   ];
 
   return (
@@ -112,7 +115,7 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
           <View style={styles.flex}>
             <View style={styles.wrap}>
               <Badge label={label.label} tone={label.tone} />
-              {r.isNewBrand ? <Badge label="New brand" tone="blue" /> : null}
+              {r.isNewBrand ? <Badge label={t('catalog.newBrand')} tone="blue" /> : null}
             </View>
             <Text style={opsStyles.meta} numberOfLines={2}>{`${category} · ${store} · ${String(r.idd ?? '')}`}</Text>
           </View>
@@ -121,18 +124,18 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
         <View style={styles.actions}>
           {status === BRAND_STATUS.APPROVED ? (
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('ProductEditor', {})} style={[opsStyles.primaryBtn, styles.grow]}>
-              <Text style={opsStyles.primaryBtnText}>Add a product</Text>
+              <Text style={opsStyles.primaryBtnText}>{t('common.addAProduct')}</Text>
             </Pressable>
           ) : null}
           {status === BRAND_STATUS.REJECTED && !editing ? (
             <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={[opsStyles.primaryBtn, styles.grow]}>
-              <Text style={opsStyles.primaryBtnText}>Fix & resubmit</Text>
+              <Text style={opsStyles.primaryBtnText}>{t('catalog.fixAndResubmit2')}</Text>
             </Pressable>
           ) : null}
           {status !== BRAND_STATUS.APPROVED ? (
             <Pressable accessibilityRole="button" disabled={withdrawing} onPress={withdraw} style={[opsStyles.smallBtn, styles.grow]}>
               <TrashIcon size={14} color={colors.error} />
-              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{withdrawing ? 'Withdrawing…' : 'Withdraw'}</Text>
+              <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{withdrawing ? t('catalog.withdrawing') : t('catalog.withdraw')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -141,27 +144,27 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
           <View style={[styles.banner, styles.bannerRed]}>
             <AlertCircleIcon size={18} color={colors.error} />
             <View style={styles.flex}>
-              <Text style={[styles.bannerTitle, styles.red]}>What needs to change</Text>
-              <Text style={[styles.bannerText, styles.red]}>{(r.remarks as string) || "The reviewer didn't leave a note. Check that your documents are clear and complete."}</Text>
+              <Text style={[styles.bannerTitle, styles.red]}>{t('catalog.whatNeedsToChange')}</Text>
+              <Text style={[styles.bannerText, styles.red]}>{(r.remarks as string) || t('catalog.theReviewerDidnTLeaveA')}</Text>
             </View>
           </View>
         ) : status === BRAND_STATUS.PENDING ? (
           <View style={[styles.banner, styles.bannerAmber]}>
             <ClockIcon size={18} color={colors.warningDark} />
-            <Text style={[styles.bannerText, styles.amber, styles.flex]}>VeiloScan is reviewing this request, usually within one working day. You'll get a notification and an email with the decision.</Text>
+            <Text style={[styles.bannerText, styles.amber, styles.flex]}>{t('catalog.veiloscanIsReviewingThisRequestUsually')}</Text>
           </View>
         ) : (
           <View style={[styles.banner, styles.bannerGreen]}>
             <CheckCircleIcon size={18} color={colors.success} />
             <Text style={[styles.bannerText, styles.green, styles.flex]}>
-              {`Approved. You can now pick ${String(brand?.title ?? '')} for products in ${category} sold in this store.${r.remarks ? `\nNote: ${String(r.remarks)}` : ''}`}
+              {t('catalog.brandApprovedCanPick', { brand: String(brand?.title ?? ''), category })}{r.remarks ? `\n${t('catalog.noteText', { note: String(r.remarks) })}` : ''}
             </Text>
           </View>
         )}
 
         {editing ? (
           <>
-            <Text style={opsStyles.title}>Update your request</Text>
+            <Text style={opsStyles.title}>{t('catalog.updateYourRequest')}</Text>
             <BrandRequestForm
               existing={r}
               onCancel={() => setEditing(false)}
@@ -173,25 +176,25 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
           </>
         ) : (
           <>
-            <SectionCard icon={ShieldCheckIcon} title="Request details">
-              <Detail label="Category" value={category} />
-              <Detail label="Store" value={store} />
-              <Detail label="Sold today through" value={channels.length ? channels.map(channelLabel).join(', ') : '—'} />
-              <Detail label="Brand owner" value={r.isBrandOwner === true ? 'Yes — trademark in my name' : r.isBrandOwner === false ? 'No — authorised reseller' : '—'} />
+            <SectionCard icon={ShieldCheckIcon} title={t('catalog.requestDetails')}>
+              <Detail label={t('common.category')} value={category} />
+              <Detail label={t('common.store')} value={store} />
+              <Detail label={t('catalog.soldTodayThrough2')} value={channels.length ? channels.map(channelLabel).join(', ') : '—'} />
+              <Detail label={t('catalog.brandOwner')} value={r.isBrandOwner === true ? 'Yes — trademark in my name' : r.isBrandOwner === false ? 'No — authorised reseller' : '—'} />
               {r.isBrandOwner ? (
                 <Detail
-                  label="Trademark"
-                  value={`No. ${String(r.registeredApplicationNumber || '—')} · Class ${String(r.registeredClass || '—')} · ${r.registeredApplicationDate ? formatDay(r.registeredApplicationDate) : '—'}`}
+                  label={t('catalog.trademark')}
+                  value={`${t('catalog.applicationNumber', { number: String(r.registeredApplicationNumber || '—') })} · ${t('catalog.trademarkClass', { value: String(r.registeredClass || '—') })} · ${r.registeredApplicationDate ? formatDay(r.registeredApplicationDate) : '—'}`}
                 />
               ) : null}
             </SectionCard>
-            <SectionCard icon={FileTextIcon} title="Documents">
-              <DocumentTile label="Registered document" file={r.registeredDocumentFile as Row | null} />
-              <DocumentTile label="Brand logo" file={r.logoFile as Row | null} />
-              <DocumentTile label="MRP tag 1" file={r.mrpTag1File as Row | null} />
-              <DocumentTile label="MRP tag 2" file={r.mrpTag2File as Row | null} />
+            <SectionCard icon={FileTextIcon} title={t('common.documents')}>
+              <DocumentTile label={t('catalog.registeredDocument')} file={r.registeredDocumentFile as Row | null} />
+              <DocumentTile label={t('catalog.brandLogo')} file={r.logoFile as Row | null} />
+              <DocumentTile label={t('catalog.mrpTag1')} file={r.mrpTag1File as Row | null} />
+              <DocumentTile label={t('catalog.mrpTag2')} file={r.mrpTag2File as Row | null} />
             </SectionCard>
-            <SectionCard icon={ClockIcon} title="Progress">
+            <SectionCard icon={ClockIcon} title={t('catalog.progress')}>
               {steps.map((s, i) => (
                 <View key={s.label} style={styles.step}>
                   <View style={[styles.stepDot, s.done ? (status === BRAND_STATUS.REJECTED && i === 1 ? styles.stepRed : styles.stepDone) : styles.stepOpen]}>
@@ -199,7 +202,7 @@ export function BrandRequestDetailScreen({ navigation, route }: ScreenProps<'Bra
                   </View>
                   <View style={styles.flex}>
                     <Text style={opsStyles.title}>{s.label}</Text>
-                    <Text style={opsStyles.muted}>{s.done ? dateTime(s.at as string) : 'In progress'}</Text>
+                    <Text style={opsStyles.muted}>{s.done ? dateTime(s.at as string) : t('common.inProgress')}</Text>
                   </View>
                 </View>
               ))}

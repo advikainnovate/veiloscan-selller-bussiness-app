@@ -14,14 +14,16 @@ import { SelectField } from '../../components/form/Fields';
 import { EmptyState, ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { opsStyles } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, CheckCircleIcon, FileTextIcon, ImageIcon, LockIcon, QrCodeIcon, RefreshIcon } from '../../components/icons';
+import { Trans, useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PREVIEW_DELAY_MS = 350;
 
 const STATUS: Record<QrTagStatus, { label: string; tone: BadgeTone }> = {
-  PENDING: { label: 'Pending', tone: 'slate' },
-  GENERATING: { label: 'Generating', tone: 'blue' },
-  COMPLETED: { label: 'Ready', tone: 'green' },
-  FAILED: { label: 'Failed', tone: 'red' },
+  PENDING: { get label() { return i18n.t('common.pending'); }, tone: 'slate' },
+  GENERATING: { get label() { return i18n.t('store.generating'); }, tone: 'blue' },
+  COMPLETED: { get label() { return i18n.t('common.ready'); }, tone: 'green' },
+  FAILED: { get label() { return i18n.t('common.failed'); }, tone: 'red' },
 };
 
 interface Selection {
@@ -29,7 +31,6 @@ interface Selection {
   themeId: string;
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * The store page's QR Store Tag tab: the store's printable tag (4 × 6 in).
@@ -38,6 +39,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  * nothing has changed.
  */
 export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { storeId: string; storeName: string; storeStatus: string; canEdit: boolean }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const { data, error, loading, reload } = useFetch(() => qrTagService.get(storeId), [storeId]);
   const [view, setView] = useState<StoreQrTagView | null>(null);
@@ -94,7 +96,7 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
       const result = await qrTagService.generate(storeId, { ...selection, regenerate });
       setView(result);
       setPicked(null);
-      toast(result.generated ? 'Store tag generated' : 'Your store tag is already up to date');
+      toast(result.generated ? tr('store.storeTagGenerated') : tr('store.yourStoreTagIsAlreadyUp'));
       if (result.warnings?.length) toast(result.warnings.join('. '), 'error');
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -108,13 +110,13 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
     try {
       await Linking.openURL(url);
     } catch {
-      toast("Couldn't open the file on this phone", 'error');
+      toast(tr('store.couldnTOpenTheFileOn'), 'error');
     }
   }
 
   async function shareLink(url: string) {
     try {
-      await Share.share({ message: `Shop with ${storeName} on VeiloScan: ${url}`, url });
+      await Share.share({ message: tr('store.shopWithStorenameOnVeiloscanUrl', { storeName, url }), url });
     } catch {
       // Dismissed.
     }
@@ -126,7 +128,7 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
   } else if (error && !current) {
     body = <ErrorState message={error} onRetry={() => reload()} />;
   } else if (!current?.enabled) {
-    body = <EmptyState icon={QrCodeIcon} title="Not available yet" text="QR store tags are not available yet. Please contact support." />;
+    body = <EmptyState icon={QrCodeIcon} title={tr('store.notAvailableYet')} text={tr('store.qrStoreTagsAreNotAvailable')} />;
   } else {
     const { designs, themes, plan } = current;
     const design = designs.find(d => d.key === selection?.frame);
@@ -143,12 +145,12 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
                 source={{ uri: shownImage }}
                 style={[styles.tagImage, preview.loading && !showingSaved && styles.dim]}
                 resizeMode="contain"
-                accessibilityLabel={showingSaved ? 'Store QR tag' : 'Store QR tag preview'}
+                accessibilityLabel={showingSaved ? tr('store.storeQrTag') : tr('store.storeQrTagPreview')}
               />
             ) : (
               <View style={styles.tagEmpty}>
                 <QrCodeIcon size={40} color={colors.textMuted} />
-                <Text style={opsStyles.muted}>{!selection ? 'Not included in your plan' : canEdit ? 'Preparing preview…' : 'No tag generated yet'}</Text>
+                <Text style={opsStyles.muted}>{!selection ? tr('common.notIncludedInYourPlan') : canEdit ? tr('store.preparingPreview') : tr('store.noTagGeneratedYet')}</Text>
               </View>
             )}
             {preview.loading && !showingSaved ? (
@@ -158,25 +160,26 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
             ) : null}
           </View>
           <Text style={[opsStyles.muted, styles.center]}>
-            {showingSaved || !canEdit ? (ready ? 'Your current tag' : '') : selection ? 'Preview — generate the tag to save it' : ''}
+            {showingSaved || !canEdit ? (ready ? tr('store.yourCurrentTag') : '') : selection ? tr('store.previewGenerateTheTagToSave') : ''}
           </Text>
           {preview.error && !showingSaved ? <Text style={[styles.errorText, styles.center]}>{preview.error}</Text> : null}
         </View>
 
         <Text style={opsStyles.meta}>
-          Print this tag and place it at your counter, door or packaging. Customers scan it to open your shop. Size 4 × 6 in (10 × 15 cm), 300 DPI; the PDF prints at the exact size.
-        </Text>
+          {tr('store.printThisTagAndPlaceIt')}</Text>
 
         {plan.designLimit !== null || plan.themeLimit !== null ? (
           <View style={styles.plan}>
             <Text style={styles.planText}>
-              {`${plan.name ? `Your ${plan.name} plan` : 'Your plan'} includes ${plan.designLimit === null ? 'every design' : plural(plan.designLimit, 'tag design', 'tag designs')} and ${
-                plan.themeLimit === null ? 'every colour theme' : plural(plan.themeLimit, 'colour theme', 'colour themes')
-              }.`}
+              {tr('store.planIncludesDesignsAndThemes', {
+                plan: plan.name ? tr('store.yourNamedPlan', { name: plan.name }) : tr('store.yourPlan'),
+                designs: plan.designLimit === null ? tr('store.everyDesign') : tr('store.tagDesignCount', { count: plan.designLimit }),
+                themes: plan.themeLimit === null ? tr('store.everyColourTheme') : tr('store.colourThemeCount', { count: plan.themeLimit }),
+              })}
             </Text>
             {hasLocked ? (
               <Pressable accessibilityRole="link" onPress={() => openMenuKey('subscription')} hitSlop={6}>
-                <Text style={styles.planLink}>Upgrade for more</Text>
+                <Text style={styles.planLink}>{tr('store.upgradeForMore')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -184,28 +187,24 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
 
         {canEdit && !selection ? (
           <Notice tone="amber">
-            {'Your plan does not include QR store tags. '}
-            <Text style={styles.noticeLink} onPress={() => openMenuKey('subscription')}>
-              Upgrade your plan
-            </Text>
-            {' to create one.'}
+            <Trans i18nKey="store.planDoesNotIncludeQrUpgrade" components={{ link: <Text style={styles.noticeLink} onPress={() => openMenuKey('subscription')} /> }} />
           </Notice>
         ) : null}
 
         {canEdit && selection ? (
           <View style={styles.box}>
             <SelectField
-              label="Tag design"
+              label={tr('store.tagDesign')}
               hint={design?.description ?? undefined}
               value={selection.frame}
               // A locked design can't be picked: the panel disables it.
-              options={designs.map(d => ({ value: d.key, label: d.locked ? `${d.name} — upgrade to unlock` : d.name }))}
+              options={designs.map(d => ({ value: d.key, label: d.locked ? tr('store.nameUpgradeToUnlock', { name: d.name }) : d.name }))}
               onChange={frame => {
-                if (designs.find(d => d.key === frame)?.locked) return toast('Upgrade your plan to use this design', 'error');
+                if (designs.find(d => d.key === frame)?.locked) return toast(tr('store.upgradeYourPlanToUseThis'), 'error');
                 setPicked({ ...selection, frame });
               }}
             />
-            <Text style={styles.label}>Colour theme</Text>
+            <Text style={styles.label}>{tr('store.colourTheme')}</Text>
             <View style={styles.themes}>
               {themes.map(theme => {
                 const active = theme.id === selection.themeId;
@@ -214,7 +213,7 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
                     key={theme.id}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: active, disabled: theme.locked }}
-                    accessibilityLabel={theme.locked ? `${theme.name}, upgrade your plan to use it` : theme.name}
+                    accessibilityLabel={theme.locked ? tr('store.nameUpgradeYourPlanToUse', { name: theme.name }) : theme.name}
                     disabled={theme.locked}
                     onPress={() => setPicked({ ...selection, themeId: theme.id })}
                     style={[styles.theme, active && styles.themeOn, theme.locked && styles.locked]}
@@ -232,40 +231,40 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
             {showingSaved ? (
               <View style={opsStyles.row}>
                 <CheckCircleIcon size={16} color={colors.successDark} />
-                <Text style={styles.saved}>Your tag uses this design and colour theme</Text>
+                <Text style={styles.saved}>{tr('store.yourTagUsesThisDesignAnd')}</Text>
               </View>
             ) : (
-              <Button title={ready ? 'Save & Generate Tag' : 'Generate Store Tag'} loading={busy} onPress={() => generate(false)} icon={<QrCodeIcon size={18} color={colors.white} />} />
+              <Button title={ready ? tr('store.saveAndGenerateTag') : tr('store.generateStoreTag')} loading={busy} onPress={() => generate(false)} icon={<QrCodeIcon size={18} color={colors.white} />} />
             )}
             <View style={opsStyles.chipRow}>
               {ready && !matchesSaved && picked ? (
                 <Pressable accessibilityRole="button" onPress={() => setPicked(null)} style={opsStyles.smallBtn}>
-                  <Text style={opsStyles.smallBtnText}>Back to current design</Text>
+                  <Text style={opsStyles.smallBtnText}>{tr('store.backToCurrentDesign')}</Text>
                 </Pressable>
               ) : null}
               {showingSaved ? (
                 <Pressable accessibilityRole="button" disabled={busy} onPress={() => generate(true)} style={opsStyles.smallBtn}>
                   <RefreshIcon size={15} color={colors.text} />
-                  <Text style={opsStyles.smallBtnText}>{busy ? 'Regenerating…' : 'Regenerate'}</Text>
+                  <Text style={opsStyles.smallBtnText}>{busy ? tr('store.regenerating') : tr('store.regenerate')}</Text>
                 </Pressable>
               ) : null}
             </View>
           </View>
         ) : null}
 
-        {storeStatus !== 'ACTIVE' ? <Notice tone="amber">The QR code opens your shop only once the store is active.</Notice> : null}
-        {current.isOutdated ? <Notice tone="amber">Your store details, the tag design or its colours changed since this tag was made. Generate it again so the printed tag matches.</Notice> : null}
-        {tag?.status === 'FAILED' && tag.errorMessage ? <Notice tone="red">{`Last attempt failed: ${tag.errorMessage}`}</Notice> : null}
+        {storeStatus !== 'ACTIVE' ? <Notice tone="amber">{tr('store.theQrCodeOpensYourShop')}</Notice> : null}
+        {current.isOutdated ? <Notice tone="amber">{tr('store.yourStoreDetailsTheTagDesign')}</Notice> : null}
+        {tag?.status === 'FAILED' && tag.errorMessage ? <Notice tone="red">{tr('store.lastAttemptFailedErrormessage', { errorMessage: tag.errorMessage })}</Notice> : null}
 
         {ready && tag ? (
           <View style={styles.box}>
             <View style={opsStyles.rowBetween}>
-              <Text style={opsStyles.title}>Current tag</Text>
+              <Text style={opsStyles.title}>{tr('store.currentTag')}</Text>
               {status ? <Badge label={status.label} tone={status.tone} /> : null}
             </View>
             {tag.qrCodeUrl ? (
               <View style={styles.detail}>
-                <Text style={opsStyles.muted}>QR opens</Text>
+                <Text style={opsStyles.muted}>{tr('store.qrOpens')}</Text>
                 <Pressable accessibilityRole="link" onPress={() => open(tag.qrCodeUrl)}>
                   <Text style={styles.url} numberOfLines={1}>
                     {tag.qrCodeUrl.replace(/^https?:\/\//, '')}
@@ -275,26 +274,26 @@ export function StoreQrTagPanel({ storeId, storeName, storeStatus, canEdit }: { 
             ) : null}
             {tag.generatedAt ? (
               <View style={styles.detail}>
-                <Text style={opsStyles.muted}>Generated</Text>
+                <Text style={opsStyles.muted}>{tr('store.generated')}</Text>
                 <Text style={opsStyles.title}>{dateTime(tag.generatedAt)}</Text>
               </View>
             ) : null}
-            <Button title="Download PDF (print)" onPress={() => open(tag.tagPdfDownloadUrl ?? tag.tagPdfUrl)} icon={<FileTextIcon size={18} color={colors.white} />} />
+            <Button title={tr('store.downloadPdfPrint')} onPress={() => open(tag.tagPdfDownloadUrl ?? tag.tagPdfUrl)} icon={<FileTextIcon size={18} color={colors.white} />} />
             <View style={opsStyles.chipRow}>
               <Pressable accessibilityRole="button" onPress={() => open(tag.tagImageDownloadUrl ?? tag.tagImageUrl)} style={opsStyles.smallBtn}>
                 <ImageIcon size={15} color={colors.text} />
-                <Text style={opsStyles.smallBtnText}>Download PNG</Text>
+                <Text style={opsStyles.smallBtnText}>{tr('store.downloadPng')}</Text>
               </Pressable>
               {tag.tagPdfUrl ? (
                 <Pressable accessibilityRole="button" onPress={() => open(tag.tagPdfUrl)} style={opsStyles.smallBtn}>
                   <FileTextIcon size={15} color={colors.text} />
-                  <Text style={opsStyles.smallBtnText}>Open to Print</Text>
+                  <Text style={opsStyles.smallBtnText}>{tr('store.openToPrint')}</Text>
                 </Pressable>
               ) : null}
               {tag.qrCodeUrl ? (
                 <Pressable accessibilityRole="button" onPress={() => shareLink(tag.qrCodeUrl!)} style={opsStyles.smallBtn}>
                   <QrCodeIcon size={15} color={colors.text} />
-                  <Text style={opsStyles.smallBtnText}>Share shop link</Text>
+                  <Text style={opsStyles.smallBtnText}>{tr('store.shareShopLink')}</Text>
                 </Pressable>
               ) : null}
             </View>

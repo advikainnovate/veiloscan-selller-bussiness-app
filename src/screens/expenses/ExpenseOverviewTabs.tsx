@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { monthShort } from '../../lib/date';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { colors, fonts, radius } from '../../theme';
@@ -18,12 +19,14 @@ import { LinkButton, NoData, OpsCard, opsStyles, Placeholder, RangeChips, StatCa
 import { AlertCircleIcon, CalendarIcon, ClockIcon, CreditCardIcon, FileTextIcon, LayersIcon, PercentIcon, PlusIcon, RefreshIcon, WalletIcon } from '../../components/icons';
 import type { ExpenseTab, RootStackParamList } from '../../navigation/types';
 import type { ListPreset } from './ExpensesScreen';
+import { Trans, useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const monthLabel = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(2, 4)}`;
+const monthLabel = (ym: string) => `${monthShort(Number(ym.slice(5, 7)) - 1)} ${ym.slice(2, 4)}`;
 
 /** Expenses › Dashboard: the period's totals, what's owed now, trend, categories and what's due. */
 export function ExpenseDashboardTab({ storeId, openList, openTab }: { storeId: string; openList: (p: ListPreset) => void; openTab: (t: ExpenseTab) => void }) {
+  const { t: tr } = useTranslation();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { hasPermission } = useAuth();
   const today = todayDay();
@@ -43,11 +46,11 @@ export function ExpenseDashboardTab({ storeId, openList, openTab }: { storeId: s
         <View style={opsStyles.row}>
           <Pressable accessibilityRole="button" onPress={() => openTab('recurring')} style={opsStyles.smallBtn}>
             <CalendarIcon size={15} color={colors.text} />
-            <Text style={opsStyles.smallBtnText}>Recurring</Text>
+            <Text style={opsStyles.smallBtnText}>{tr('expenses.recurring')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Add Expense" onPress={() => navigation.navigate('ExpenseForm', {})} style={opsStyles.primaryBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('expenses.addExpense')} onPress={() => navigation.navigate('ExpenseForm', {})} style={opsStyles.primaryBtn}>
             <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-            <Text style={opsStyles.primaryBtnText}>Add Expense</Text>
+            <Text style={opsStyles.primaryBtnText}>{tr('expenses.addExpense')}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -56,96 +59,96 @@ export function ExpenseDashboardTab({ storeId, openList, openTab }: { storeId: s
 
       <Text style={opsStyles.sectionLabel}>{rangeLabel(range).toUpperCase()}</Text>
       <StatGrid>
-        <StatCard icon={WalletIcon} tone="orange" label="Total Expenses" value={money(t?.totalExpenses)} sub={t ? `${t.count} bill${t.count === 1 ? '' : 's'} · net of returns` : null} loading={loading} />
-        <StatCard icon={WalletIcon} tone="emerald" label="Paid Expenses" value={money(t?.paidExpenses)} sub="Paid when recorded" loading={loading} />
-        <StatCard icon={CreditCardIcon} tone="sky" label="Credit Expenses" value={money(t?.creditExpenses)} sub="Bought on credit" loading={loading} />
-        <StatCard icon={LayersIcon} tone="slate" label="Returns" value={money(t?.returns)} sub="Credit notes" loading={loading} />
+        <StatCard icon={WalletIcon} tone="orange" label={tr('common.totalExpenses')} value={money(t?.totalExpenses)} sub={t ? `${tr('expenses.billCount', { count: t.count })} · ${tr('expenses.netOfReturns')}` : null} loading={loading} />
+        <StatCard icon={WalletIcon} tone="emerald" label={tr('expenses.paidExpenses')} value={money(t?.paidExpenses)} sub={tr('expenses.paidWhenRecorded')} loading={loading} />
+        <StatCard icon={CreditCardIcon} tone="sky" label={tr('expenses.creditExpenses')} value={money(t?.creditExpenses)} sub={tr('expenses.boughtOnCredit')} loading={loading} />
+        <StatCard icon={LayersIcon} tone="slate" label={tr('common.returns')} value={money(t?.returns)} sub={tr('expenses.creditNotes')} loading={loading} />
       </StatGrid>
 
-      <Text style={opsStyles.sectionLabel}>OWED RIGHT NOW</Text>
+      <Text style={opsStyles.sectionLabel}>{tr('expenses.owedRightNow')}</Text>
       <StatGrid>
         <StatCard
           icon={WalletIcon}
           tone="amber"
-          label="Outstanding"
+          label={tr('common.outstanding')}
           value={money(o?.outstanding)}
-          sub={o ? `${o.openCount} open bill${o.openCount === 1 ? '' : 's'}` : null}
+          sub={o ? tr('expenses.openBillCount', { count: o.openCount }) : null}
           loading={loading}
           onPress={() => openList({ status: 'OPEN' })}
         />
         <StatCard
           icon={AlertCircleIcon}
           tone="red"
-          label="Overdue"
+          label={tr('common.overdue')}
           value={money(o?.overdue)}
           negative={!!o?.overdue}
-          sub={o ? `${o.overdueCount} bill${o.overdueCount === 1 ? '' : 's'}` : null}
+          sub={o ? tr('expenses.billCount', { count: o.overdueCount }) : null}
           loading={loading}
           onPress={() => openList({ status: 'OVERDUE' })}
         />
         <StatCard
           icon={ClockIcon}
           tone="sky"
-          label="Partially Paid"
+          label={tr('expenses.partiallyPaid')}
           value={money(o?.partiallyPaid)}
-          sub={o ? `${o.partiallyPaidCount} bill${o.partiallyPaidCount === 1 ? '' : 's'} · still owed` : null}
+          sub={o ? `${tr('expenses.billCount', { count: o.partiallyPaidCount })} · ${tr('expenses.stillOwed')}` : null}
           loading={loading}
           onPress={() => openList({ status: 'PARTIALLY_PAID' })}
         />
         <StatCard
           icon={CalendarIcon}
           tone="violet"
-          label="Due in 7 Days"
+          label={tr('expenses.dueIn7Days')}
           value={money(o?.dueThisWeek)}
-          sub={o?.refundsDue ? `${money(o.refundsDue)} refunds due to you` : 'Upcoming payments'}
+          sub={o?.refundsDue ? tr('expenses.refundsdueRefundsDueToYou', { refundsDue: money(o.refundsDue) }) : tr('expenses.upcomingPayments')}
           loading={loading}
         />
       </StatGrid>
       {o?.stockBillsOutstanding ? (
         <Text style={opsStyles.meta}>
-          {`Plus ${money(o.stockBillsOutstanding)} owed on stock purchase bills (Pending Stock) — see `}
-          <Text style={styles.inlineLink} onPress={() => openTab('suppliers')}>
-            Suppliers
-          </Text>
-          .
+          <Trans
+            i18nKey="expenses.plusOwedOnStockBillsSeeSuppliers"
+            values={{ amount: money(o.stockBillsOutstanding) }}
+            components={{ link: <Text style={styles.inlineLink} onPress={() => openTab('suppliers')} /> }}
+          />
         </Text>
       ) : null}
 
-      <OpsCard title="Monthly Expense Summary" description="Last 12 months: expenses (net of returns) and payments made">
+      <OpsCard title={tr('expenses.monthlyExpenseSummary')} description={tr('expenses.last12MonthsExpensesNetOf')}>
         {loading ? (
           <Placeholder height={240} />
         ) : (
           <ComboChart
             labels={months.map(m => monthLabel(m.month))}
-            fullLabels={months.map(m => `${monthLabel(m.month)} · ${m.count} bill${m.count === 1 ? '' : 's'}`)}
+            fullLabels={months.map(m => `${monthLabel(m.month)} · ${tr('expenses.billCount', { count: m.count })}`)}
             lines={[
-              { key: 'total', label: 'Expenses', color: CHART_COLORS[0], values: months.map(m => m.total) },
-              { key: 'payments', label: 'Payments made', color: CHART_COLORS[1], values: months.map(m => m.payments) },
-              { key: 'credit', label: 'On credit', color: CHART_COLORS[3], values: months.map(m => m.credit) },
+              { key: 'total', label: tr('common.expenses'), color: CHART_COLORS[0], values: months.map(m => m.total) },
+              { key: 'payments', label: tr('expenses.paymentsMade'), color: CHART_COLORS[1], values: months.map(m => m.payments) },
+              { key: 'credit', label: tr('common.onCredit'), color: CHART_COLORS[3], values: months.map(m => m.credit) },
             ]}
           />
         )}
       </OpsCard>
 
-      <OpsCard title="By Category" description={rangeLabel(range)}>
+      <OpsCard title={tr('common.byCategory')} description={rangeLabel(range)}>
         {loading ? (
           <Placeholder />
         ) : data?.byCategory.length ? (
           <BarList rows={data.byCategory.map(c => ({ label: c.name, value: c.amount, sub: `${c.count}` }))} />
         ) : (
-          <NoData text="No expenses in this period." />
+          <NoData text={tr('expenses.noExpensesInThisPeriod2')} />
         )}
       </OpsCard>
 
       <OpsCard
-        title="Upcoming & Overdue Payments"
-        description="Credit bills with a due date, most urgent first"
-        action={<LinkButton label="View all" onPress={() => openList({ status: 'OPEN', sort: 'due_asc' })} />}
+        title={tr('expenses.upcomingAndOverduePayments')}
+        description={tr('expenses.creditBillsWithADueDate')}
+        action={<LinkButton label={tr('expenses.viewAll')} onPress={() => openList({ status: 'OPEN', sort: 'due_asc' })} />}
       >
         {loading ? (
           <Placeholder height={120} />
         ) : !data?.upcoming.length ? (
-          <NoData text="Nothing to pay. Credit expenses with a due date show up here." />
+          <NoData text={tr('expenses.nothingToPayCreditExpensesWith')} />
         ) : (
           data.upcoming.map((e, i) => {
             const s = expenseStatus(e.status);
@@ -177,23 +180,24 @@ export function ExpenseDashboardTab({ storeId, openList, openTab }: { storeId: s
 }
 
 const PERIODS: { value: ReportPeriod; label: string; range: string }[] = [
-  { value: 'daily', label: 'Daily', range: 'This month' },
-  { value: 'weekly', label: 'Weekly', range: 'Last 12 weeks' },
-  { value: 'monthly', label: 'Monthly', range: 'Last 12 months' },
-  { value: 'yearly', label: 'Yearly', range: 'Last 5 years' },
+  { value: 'daily', get label() { return i18n.t('common.daily'); }, range: 'This month' },
+  { value: 'weekly', get label() { return i18n.t('common.weekly'); }, range: 'Last 12 weeks' },
+  { value: 'monthly', get label() { return i18n.t('common.monthly'); }, range: 'Last 12 months' },
+  { value: 'yearly', get label() { return i18n.t('common.yearly'); }, range: 'Last 5 years' },
 ];
 
 function bucketLabel(bucket: string, period: ReportPeriod, full = false) {
   const [y, m, d] = bucket.split('-');
   if (period === 'yearly') return y;
-  if (period === 'monthly') return `${MONTHS[Number(m) - 1]} ${full ? y : y.slice(2)}`;
-  if (period === 'weekly') return full ? `Week of ${day(bucket)}` : `${Number(d)} ${MONTHS[Number(m) - 1]}`;
+  if (period === 'monthly') return `${monthShort(Number(m) - 1)} ${full ? y : y.slice(2)}`;
+  if (period === 'weekly') return full ? i18n.t('expenses.weekOfBucket', { bucket: day(bucket) }) : `${Number(d)} ${monthShort(Number(m) - 1)}`;
   return full ? day(bucket) : String(Number(d));
 }
 const pct = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : 0);
 
 /** Expenses › Reports: by period, with trend, methods, categories, suppliers and statuses. */
 export function ExpenseReportsTab({ storeId }: { storeId: string }) {
+  const { t: tr } = useTranslation();
   const toast = useToast();
   const today = todayDay();
   const [period, setPeriod] = useState<ReportPeriod>('monthly');
@@ -237,53 +241,53 @@ export function ExpenseReportsTab({ storeId }: { storeId: string }) {
       </View>
       <View style={opsStyles.rowBetween}>
         <Text style={[opsStyles.meta, styles.flex]}>{custom ? rangeLabel(custom) : PERIODS.find(p => p.value === period)?.range}</Text>
-        {custom ? <LinkButton label="Reset range" onPress={() => setCustom(null)} /> : null}
+        {custom ? <LinkButton label={tr('expenses.resetRange')} onPress={() => setCustom(null)} /> : null}
       </View>
       <RangeChips today={today} value={custom ?? { key: 'none', label: '', from: today, to: today }} onChange={setCustom} keys={['month', 'last-month', '3m']} />
       <Pressable accessibilityRole="button" disabled={exporting || !t?.count} onPress={exportPdf} style={[opsStyles.smallBtn, styles.export, !t?.count && styles.disabled]}>
         <FileTextIcon size={15} color={colors.text} />
-        <Text style={opsStyles.smallBtnText}>{exporting ? 'Exporting…' : 'Export PDF'}</Text>
+        <Text style={opsStyles.smallBtnText}>{exporting ? tr('expenses.exporting') : tr('expenses.exportPdf')}</Text>
       </Pressable>
 
       {error && !r ? <ErrorState message={error} onRetry={() => reload()} /> : null}
       <StatGrid>
-        <StatCard icon={WalletIcon} tone="orange" label="Total Expenses" value={money(t?.net)} sub="After returns" loading={loading} />
-        <StatCard icon={FileTextIcon} tone="blue" label="Bills Recorded" value={t ? t.count.toLocaleString('en-IN') : '—'} sub={t?.count ? `Avg ${money(Math.round(t.net / t.count))} each` : undefined} loading={loading} />
-        <StatCard icon={WalletIcon} tone="emerald" label="Paid" value={money(t?.paid)} sub="Payments made in the period" loading={loading} />
-        <StatCard icon={CreditCardIcon} tone="amber" label="Bought on Credit" value={money(t?.credit)} sub={t?.gross ? `${pct(t.credit, t.gross).toFixed(0)}% of bills` : undefined} loading={loading} />
-        <StatCard icon={RefreshIcon} tone="violet" label="Returns" value={money(t?.returned)} sub="Credit notes approved" loading={loading} />
-        <StatCard icon={PercentIcon} tone="red" label="GST Paid" value={money(t?.tax)} sub={t?.gross ? `${pct(t.tax, t.gross).toFixed(1)}% of bills` : undefined} loading={loading} />
+        <StatCard icon={WalletIcon} tone="orange" label={tr('common.totalExpenses')} value={money(t?.net)} sub={tr('expenses.afterReturns')} loading={loading} />
+        <StatCard icon={FileTextIcon} tone="blue" label={tr('expenses.billsRecorded')} value={t ? t.count.toLocaleString('en-IN') : '—'} sub={t?.count ? tr('expenses.avgAmountEach', { amount: money(Math.round(t.net / t.count)) }) : undefined} loading={loading} />
+        <StatCard icon={WalletIcon} tone="emerald" label={tr('common.paid')} value={money(t?.paid)} sub={tr('expenses.paymentsMadeInThePeriod')} loading={loading} />
+        <StatCard icon={CreditCardIcon} tone="amber" label={tr('expenses.boughtOnCredit2')} value={money(t?.credit)} sub={t?.gross ? tr('expenses.fixedPercentOfBills', { fixed: pct(t.credit, t.gross).toFixed(0) }) : undefined} loading={loading} />
+        <StatCard icon={RefreshIcon} tone="violet" label={tr('common.returns')} value={money(t?.returned)} sub={tr('expenses.creditNotesApproved')} loading={loading} />
+        <StatCard icon={PercentIcon} tone="red" label={tr('expenses.gstPaid')} value={money(t?.tax)} sub={t?.gross ? tr('expenses.fixedPercentOfBills', { fixed: pct(t.tax, t.gross).toFixed(1) }) : undefined} loading={loading} />
       </StatGrid>
 
-      <OpsCard title="Expense Trend" description="Expenses by bill date · payments by payment date">
+      <OpsCard title={tr('expenses.expenseTrend')} description={tr('expenses.expensesByBillDatePaymentsBy')}>
         {loading ? (
           <Placeholder height={240} />
         ) : !points.length ? (
-          <NoData text="Nothing in this period" />
+          <NoData text={tr('expenses.nothingInThisPeriod')} />
         ) : (
           <ComboChart
             labels={points.map(p => bucketLabel(p.bucket, r!.period))}
             fullLabels={points.map(p => bucketLabel(p.bucket, r!.period, true))}
             lines={[
-              { key: 'net', label: 'Expenses', color: CHART_COLORS[0], values: points.map(p => p.net) },
-              { key: 'paid', label: 'Paid', color: CHART_COLORS[1], values: points.map(p => p.paid) },
-              { key: 'credit', label: 'On credit', color: CHART_COLORS[3], values: points.map(p => p.credit) },
+              { key: 'net', label: tr('common.expenses'), color: CHART_COLORS[0], values: points.map(p => p.net) },
+              { key: 'paid', label: tr('common.paid'), color: CHART_COLORS[1], values: points.map(p => p.paid) },
+              { key: 'credit', label: tr('common.onCredit'), color: CHART_COLORS[3], values: points.map(p => p.credit) },
             ]}
           />
         )}
       </OpsCard>
 
-      <OpsCard title="Payments by Method">
+      <OpsCard title={tr('expenses.paymentsByMethod')}>
         {loading ? (
           <Placeholder />
         ) : !methods.length ? (
-          <NoData text="Nothing in this period" />
+          <NoData text={tr('expenses.nothingInThisPeriod')} />
         ) : (
           <View style={styles.ring}>
             <Ring
               segments={methods.map((m, i) => ({ key: m.method, value: m.amount, color: CHART_COLORS[i % CHART_COLORS.length] }))}
               centerValue={money(methodTotal)}
-              centerLabel="Paid"
+              centerLabel={tr('common.paid')}
               selected={selectedMethod}
             />
             <View style={styles.legend}>
@@ -300,25 +304,25 @@ export function ExpenseReportsTab({ storeId }: { storeId: string }) {
         )}
       </OpsCard>
 
-      <OpsCard title="Top Categories">
-        {loading ? <Placeholder /> : r?.byCategory.length ? <BarList rows={r.byCategory.slice(0, 8).map(c => ({ label: c.name, value: c.amount, sub: `${c.count}` }))} /> : <NoData text="Nothing in this period" />}
+      <OpsCard title={tr('expenses.topCategories')}>
+        {loading ? <Placeholder /> : r?.byCategory.length ? <BarList rows={r.byCategory.slice(0, 8).map(c => ({ label: c.name, value: c.amount, sub: `${c.count}` }))} /> : <NoData text={tr('expenses.nothingInThisPeriod')} />}
       </OpsCard>
 
-      <OpsCard title="Top Suppliers" description="Expenses and how much of it is paid">
+      <OpsCard title={tr('expenses.topSuppliers')} description={tr('expenses.expensesAndHowMuchOfIt')}>
         {loading ? (
           <Placeholder />
         ) : r?.bySupplier.length ? (
-          <BarList rows={r.bySupplier.slice(0, 8).map(s => ({ label: s.name, value: s.amount, sub: `${money(s.paid)} paid` }))} color={CHART_COLORS[0]} />
+          <BarList rows={r.bySupplier.slice(0, 8).map(s => ({ label: s.name, value: s.amount, sub: tr('expenses.paidPaid', { paid: money(s.paid) }) }))} color={CHART_COLORS[0]} />
         ) : (
-          <NoData text="Nothing in this period" />
+          <NoData text={tr('expenses.nothingInThisPeriod')} />
         )}
       </OpsCard>
 
-      <OpsCard title="Bills by Status" description="Bills dated in the period, as they stand today">
+      <OpsCard title={tr('expenses.billsByStatus')} description={tr('expenses.billsDatedInThePeriodAs')}>
         {loading ? (
           <Placeholder height={100} />
         ) : !r?.byStatus.length ? (
-          <NoData text="Nothing in this period" />
+          <NoData text={tr('expenses.nothingInThisPeriod')} />
         ) : (
           r.byStatus.map((s, i) => {
             const meta = expenseStatus(s.status);
@@ -333,11 +337,11 @@ export function ExpenseReportsTab({ storeId }: { storeId: string }) {
         )}
       </OpsCard>
 
-      <OpsCard title="Period Breakdown" description={r ? `${PERIODS.find(p => p.value === r.period)?.label} · periods with activity, newest first` : undefined}>
+      <OpsCard title={tr('expenses.periodBreakdown')} description={r ? tr('expenses.labelPeriodsWithActivityNewestFirst', { label: PERIODS.find(p => p.value === r.period)?.label }) : undefined}>
         {loading ? (
           <Placeholder />
         ) : !points.length ? (
-          <NoData text="Nothing in this period" />
+          <NoData text={tr('expenses.nothingInThisPeriod')} />
         ) : (
           [...points]
             .filter(p => p.count || p.paid)
@@ -349,9 +353,14 @@ export function ExpenseReportsTab({ storeId }: { storeId: string }) {
                   <Text style={opsStyles.amount}>{money(p.net)}</Text>
                 </View>
                 <Text style={opsStyles.meta}>
-                  {`${p.count} bill${p.count === 1 ? '' : 's'} · gross ${money(p.gross)}${p.returned ? ` · returns −${money(p.returned)}` : ''}${p.credit ? ` · credit ${money(p.credit)}` : ''}${
-                    p.tax ? ` · GST ${money(p.tax)}` : ''
-                  } · paid ${money(p.paid)}`}
+                  {[
+                    tr('expenses.billCount', { count: p.count }),
+                    tr('expenses.grossAmount', { amount: money(p.gross) }),
+                    p.returned ? tr('expenses.returnsAmount', { amount: `−${money(p.returned)}` }) : null,
+                    p.credit ? tr('expenses.creditAmount', { amount: money(p.credit) }) : null,
+                    p.tax ? tr('expenses.gstAmount', { amount: money(p.tax) }) : null,
+                    tr('expenses.paidAmount', { amount: money(p.paid) }),
+                  ].filter(Boolean).join(' · ')}
                 </Text>
               </View>
             ))

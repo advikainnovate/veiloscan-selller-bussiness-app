@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 // Ported from the Seller Panel's src/lib/product-wizard-helpers.ts — keep the two in step.
 export function slugify(text: string): string {
   return (text || '')
@@ -32,7 +33,7 @@ export function cartesianProduct<T>(groups: T[][]): T[][] {
 export const LENGTH_UNIT_OPTIONS = ['MM', 'CM', 'M', 'INCH', 'FT'];
 export const WEIGHT_UNIT_OPTIONS = ['MG', 'G', 'KG', 'LB'];
 export const ITEM_CONDITION_OPTIONS = [
-  { value: 'NEW', label: 'New' },
-  { value: 'USED', label: 'Used' },
-  { value: 'REFURBISHED', label: 'Refurbished' },
+  { value: 'NEW', get label() { return i18n.t('common.new'); } },
+  { value: 'USED', get label() { return i18n.t('products.used'); } },
+  { value: 'REFURBISHED', get label() { return i18n.t('products.refurbished'); } },
 ];

@@ -14,6 +14,7 @@ import { DateField, Field, Input, SelectField } from '../form/Fields';
 import { opsStyles } from '../operations/OpsParts';
 import { SectionCard } from '../store/StoreSections';
 import { AlertCircleIcon, CheckCircleIcon, CheckIcon, FileTextIcon, ImageIcon, ShieldCheckIcon, StoreIcon, TagIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 type DocKey = 'mrpTag1' | 'mrpTag2' | 'logo' | 'registeredDocument';
 const NO_FILES: Record<DocKey, PickedFile | null> = { mrpTag1: null, mrpTag2: null, logo: null, registeredDocument: null };
@@ -40,6 +41,7 @@ export function Choice({ checked, type = 'radio', title, body, onPress }: { chec
 }
 
 function UploadBox({ title, required, file, currentUrl, onFile, onRemove }: { title: string; required?: boolean; file: PickedFile | null; currentUrl?: string; onFile: (f: PickedFile) => void; onRemove: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const uri = file?.uri ?? currentUrl;
   async function pick() {
@@ -56,19 +58,19 @@ function UploadBox({ title, required, file, currentUrl, onFile, onRemove }: { ti
       <View style={styles.flex}>
         <Text style={opsStyles.title}>
           {title}
-          {required ? <Text style={opsStyles.danger}> *</Text> : <Text style={opsStyles.muted}> (optional)</Text>}
+          {required ? <Text style={opsStyles.danger}> *</Text> : <Text style={opsStyles.muted}>{' '}{t('common.optional')}</Text>}
         </Text>
         <Text style={opsStyles.muted} numberOfLines={1}>
-          {file ? file.name : currentUrl ? 'Uploaded — pick a photo to replace it' : 'A photo of the document'}
+          {file ? file.name : currentUrl ? t('catalog.uploadedPickAPhotoToReplace') : t('catalog.aPhotoOfTheDocument')}
         </Text>
       </View>
       <View style={styles.uploadActions}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Upload ${title}`} onPress={pick} style={opsStyles.smallBtn}>
-          <Text style={opsStyles.smallBtnText}>{uri ? 'Change' : 'Upload'}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.uploadTitle', { title })} onPress={pick} style={opsStyles.smallBtn}>
+          <Text style={opsStyles.smallBtnText}>{uri ? t('common.change') : t('common.upload')}</Text>
         </Pressable>
         {file ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${title}`} hitSlop={6} onPress={onRemove}>
-            <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>Remove</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('catalog.removeTitle', { title })} hitSlop={6} onPress={onRemove}>
+            <Text style={[opsStyles.smallBtnText, opsStyles.danger]}>{t('common.remove')}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -103,6 +105,7 @@ export function BrandRequestForm({
   onDone: (created?: Row[]) => void;
   onCancel?: () => void;
 }) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { current } = useStore();
   const toast = useToast();
@@ -203,12 +206,12 @@ export function BrandRequestForm({
       };
       if (existing) {
         await brandRequestService.resubmit(existing.id, details);
-        toast('Request resubmitted for review');
+        toast(tr('catalog.requestResubmittedForReview'));
         setFiles(NO_FILES);
         return onDone();
       }
       const created = await brandRequestService.create({ categoryId, storeIds, ...(brandMode === 'existing' ? { brandId } : { newBrandTitle: newBrandTitle.trim() }), ...details });
-      toast(created.length > 1 ? `Requested for ${created.length} stores` : 'Brand approval requested');
+      toast(created.length > 1 ? tr('catalog.requestedForCreatedcountStores', { createdCount: created.length }) : tr('catalog.brandApprovalRequested'));
       onDone(created);
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -222,9 +225,9 @@ export function BrandRequestForm({
     <View style={styles.wrap}>
       {!isResubmit ? (
         <>
-          <Step n={++step} title="Brand & category" subtitle="The child category you'll list products in, and the brand you want to sell there.">
+          <Step n={++step} title={tr('catalog.brandAndCategory')} subtitle={tr('catalog.theChildCategoryYouLlList')}>
             <SelectField
-              label="Child category"
+              label={tr('common.childCategory')}
               required
               value={categoryId}
               options={categoryOptions}
@@ -232,47 +235,47 @@ export function BrandRequestForm({
                 setCategoryId(v);
                 setPickedStores(null);
               }}
-              hint="Only categories mapped to your stores are listed."
-              placeholder={storesQ.loading ? 'Loading your categories…' : 'Select a child category'}
-              emptyText="No categories are mapped to your stores yet — map them under Store Settings › Categories first."
+              hint={tr('catalog.onlyCategoriesMappedToYourStores')}
+              placeholder={storesQ.loading ? tr('catalog.loadingYourCategories') : tr('catalog.selectAChildCategory')}
+              emptyText={tr('catalog.noCategoriesAreMappedToYour')}
             />
-            <Choice checked={brandMode === 'existing'} onPress={() => setBrandMode('existing')} title="A listed brand" body="One of the brands offered in this category." />
-            <Choice checked={brandMode === 'new'} onPress={() => setBrandMode('new')} title="A brand that isn't listed" body="It's added once VeiloScan approves your request." />
+            <Choice checked={brandMode === 'existing'} onPress={() => setBrandMode('existing')} title={tr('catalog.aListedBrand')} body={tr('catalog.oneOfTheBrandsOfferedIn')} />
+            <Choice checked={brandMode === 'new'} onPress={() => setBrandMode('new')} title={tr('catalog.aBrandThatIsnTListed')} body={tr('catalog.itsAddedOnceVeiloscanApprovesYour')} />
             {brandMode === 'existing' ? (
               <>
                 <SelectField
-                  label="Brand"
+                  label={tr('common.brand')}
                   required
                   value={selectedBrand ? brandId : ''}
                   options={brandOptions}
                   onChange={setBrandId}
                   disabled={!categoryId}
-                  placeholder={!categoryId ? 'Select a child category first' : linked.loading ? 'Loading brands…' : 'Select a brand'}
-                  emptyText="Not listed? Choose “A brand that isn't listed”."
-                  hint="Only brands offered in this category are listed."
+                  placeholder={!categoryId ? tr('catalog.selectAChildCategoryFirst') : linked.loading ? tr('catalog.loadingBrands') : tr('catalog.selectABrand')}
+                  emptyText={tr('catalog.notListedChooseABrandThat')}
+                  hint={tr('catalog.onlyBrandsOfferedInThisCategory')}
                 />
                 {categoryId && !linked.loading && !brandOptions.length ? (
                   <Pressable accessibilityRole="button" onPress={() => setBrandMode('new')}>
-                    <Text style={styles.warnText}>No brands are offered in this category yet. Tap to request a brand that isn't listed instead.</Text>
+                    <Text style={styles.warnText}>{tr('catalog.noBrandsAreOfferedInThis')}</Text>
                   </Pressable>
                 ) : null}
               </>
             ) : (
-              <Field label="Brand name" required>
-                <Input value={newBrandTitle} onChangeText={setNewBrandTitle} placeholder="As printed on the product and its packaging" maxLength={150} accessibilityLabel="Brand name" />
+              <Field label={tr('catalog.brandName')} required>
+                <Input value={newBrandTitle} onChangeText={setNewBrandTitle} placeholder={tr('catalog.asPrintedOnTheProductAnd')} maxLength={150} accessibilityLabel={tr('catalog.brandName')} />
               </Field>
             )}
           </Step>
 
-          <Step n={++step} title="Stores" subtitle="Approval is given per store. Pick every store that will sell this brand.">
+          <Step n={++step} title={tr('common.stores')} subtitle={tr('catalog.approvalIsGivenPerStorePick')}>
             {storesQ.loading ? (
-              <Text style={opsStyles.muted}>Loading your stores…</Text>
+              <Text style={opsStyles.muted}>{tr('catalog.loadingYourStores')}</Text>
             ) : !categoryId ? (
-              <Text style={[opsStyles.muted, styles.dashed]}>Pick a child category first — only stores it's mapped to can be chosen.</Text>
+              <Text style={[opsStyles.muted, styles.dashed]}>{tr('catalog.pickAChildCategoryFirstOnly')}</Text>
             ) : (
               stores.map(s => {
                 const t = taken.get(s.id);
-                const unavailable = !eligible.has(s.id) ? 'Category not mapped to this store' : t !== undefined ? `Already requested · ${BRAND_STATUS_LABEL[t]?.label}` : null;
+                const unavailable = !eligible.has(s.id) ? tr('catalog.categoryNotMappedToThisStore') : t !== undefined ? tr('catalog.alreadyRequestedLabel', { label: BRAND_STATUS_LABEL[t]?.label }) : null;
                 return unavailable ? (
                   <View key={s.id} style={[styles.choice, styles.unavailable]}>
                     <StoreIcon size={16} color={colors.textMuted} />
@@ -290,53 +293,53 @@ export function BrandRequestForm({
         </>
       ) : null}
 
-      <Step n={++step} title="Distribution & ownership" subtitle="Where the brand's products are sold today, and whether the brand is yours.">
-        <Text style={styles.label}>SOLD TODAY THROUGH *</Text>
+      <Step n={++step} title={tr('catalog.distributionAndOwnership')} subtitle={tr('catalog.whereTheBrandsProductsAreSold')}>
+        <Text style={styles.label}>{tr('catalog.soldTodayThrough')}</Text>
         {SALES_CHANNELS.map(c => (
           <Choice key={c.value} type="checkbox" checked={salesChannels.includes(c.value)} onPress={() => setSalesChannels(cur => toggleChannel(cur, c.value))} title={c.label} />
         ))}
-        <Text style={styles.label}>ARE YOU THE BRAND OWNER? *</Text>
-        <Choice checked={isBrandOwner === true} onPress={() => setIsBrandOwner(true)} title="Yes, I own it" body="A trademark is applied for or registered in my name." />
-        <Choice checked={isBrandOwner === false} onPress={() => setIsBrandOwner(false)} title="No, I resell it" body="I'm an authorised distributor or retailer." />
+        <Text style={styles.label}>{tr('catalog.areYouTheBrandOwner')}</Text>
+        <Choice checked={isBrandOwner === true} onPress={() => setIsBrandOwner(true)} title={tr('catalog.yesIOwnIt')} body={tr('catalog.aTrademarkIsAppliedForOr')} />
+        <Choice checked={isBrandOwner === false} onPress={() => setIsBrandOwner(false)} title={tr('catalog.noIResellIt')} body={tr('catalog.iMAnAuthorisedDistributorOr')} />
       </Step>
 
       {isBrandOwner ? (
-        <Step n={++step} title="Trademark details" subtitle="From your trademark application or registration certificate.">
-          <Field label="Application number" required>
-            <Input value={applicationNumber} onChangeText={setApplicationNumber} placeholder="e.g. 3143253" maxLength={50} accessibilityLabel="Application number" />
+        <Step n={++step} title={tr('catalog.trademarkDetails')} subtitle={tr('catalog.fromYourTrademarkApplicationOrRegistration')}>
+          <Field label={tr('catalog.applicationNumber')} required>
+            <Input value={applicationNumber} onChangeText={setApplicationNumber} placeholder="e.g. 3143253" maxLength={50} accessibilityLabel={tr('catalog.applicationNumber')} />
           </Field>
-          <Field label="Class" required>
-            <Input value={registeredClass} onChangeText={setRegisteredClass} placeholder="e.g. 25" maxLength={20} accessibilityLabel="Class" />
+          <Field label={tr('catalog.class')} required>
+            <Input value={registeredClass} onChangeText={setRegisteredClass} placeholder="e.g. 25" maxLength={20} accessibilityLabel={tr('catalog.class')} />
           </Field>
-          <DateField label="Application date" required value={registeredDate} onChange={setRegisteredDate} maximumDate={new Date()} />
+          <DateField label={tr('catalog.applicationDate')} required value={registeredDate} onChange={setRegisteredDate} maximumDate={new Date()} />
         </Step>
       ) : null}
 
-      <Step n={++step} title="Documents" subtitle="Proof that you may sell the brand. Photos of the documents.">
+      <Step n={++step} title={tr('common.documents')} subtitle={tr('catalog.proofThatYouMaySellThe')}>
         <UploadBox
-          title="Registered document"
+          title={tr('catalog.registeredDocument')}
           required
           file={files.registeredDocument}
           currentUrl={fileUrl(existing, 'registeredDocumentFile')}
           onFile={f => setFiles(s => ({ ...s, registeredDocument: f }))}
           onRemove={() => setFiles(s => ({ ...s, registeredDocument: null }))}
         />
-        <Text style={[opsStyles.muted, styles.tight]}>Trademark certificate (registered or applied), or a brand authorisation letter.</Text>
+        <Text style={[opsStyles.muted, styles.tight]}>{tr('catalog.trademarkCertificateRegisteredOrAppliedOr')}</Text>
         {brandLogoUrl ? (
           <View style={styles.upload}>
             <Image source={{ uri: brandLogoUrl }} style={styles.uploadThumb} resizeMode="contain" />
-            <Text style={[opsStyles.muted, styles.flex]}>The brand's own logo is used.</Text>
+            <Text style={[opsStyles.muted, styles.flex]}>{tr('catalog.theBrandsOwnLogoIsUsed')}</Text>
           </View>
         ) : (
-          <UploadBox title="Brand logo" required={isNewBrand} file={files.logo} currentUrl={fileUrl(existing, 'logoFile')} onFile={f => setFiles(s => ({ ...s, logo: f }))} onRemove={() => setFiles(s => ({ ...s, logo: null }))} />
+          <UploadBox title={tr('catalog.brandLogo')} required={isNewBrand} file={files.logo} currentUrl={fileUrl(existing, 'logoFile')} onFile={f => setFiles(s => ({ ...s, logo: f }))} onRemove={() => setFiles(s => ({ ...s, logo: null }))} />
         )}
-        <UploadBox title="MRP tag 1" file={files.mrpTag1} currentUrl={fileUrl(existing, 'mrpTag1File')} onFile={f => setFiles(s => ({ ...s, mrpTag1: f }))} onRemove={() => setFiles(s => ({ ...s, mrpTag1: null }))} />
-        <UploadBox title="MRP tag 2" file={files.mrpTag2} currentUrl={fileUrl(existing, 'mrpTag2File')} onFile={f => setFiles(s => ({ ...s, mrpTag2: f }))} onRemove={() => setFiles(s => ({ ...s, mrpTag2: null }))} />
-        <Text style={opsStyles.muted}>Files are only shared with VeiloScan reviewers. PDFs can be uploaded on the Seller Panel.</Text>
+        <UploadBox title={tr('catalog.mrpTag1')} file={files.mrpTag1} currentUrl={fileUrl(existing, 'mrpTag1File')} onFile={f => setFiles(s => ({ ...s, mrpTag1: f }))} onRemove={() => setFiles(s => ({ ...s, mrpTag1: null }))} />
+        <UploadBox title={tr('catalog.mrpTag2')} file={files.mrpTag2} currentUrl={fileUrl(existing, 'mrpTag2File')} onFile={f => setFiles(s => ({ ...s, mrpTag2: f }))} onRemove={() => setFiles(s => ({ ...s, mrpTag2: null }))} />
+        <Text style={opsStyles.muted}>{tr('catalog.filesAreOnlySharedWithVeiloscan')}</Text>
       </Step>
 
       <View style={styles.checklist}>
-        <Text style={opsStyles.title}>{isResubmit ? 'Ready to resubmit?' : 'Your request'}</Text>
+        <Text style={opsStyles.title}>{isResubmit ? tr('catalog.readyToResubmit') : tr('catalog.yourRequest')}</Text>
         {!isResubmit && (selectedBrand || newBrandTitle.trim()) ? (
           <Text style={opsStyles.meta}>{`${brandMode === 'existing' ? String(selectedBrand?.title ?? '') : newBrandTitle.trim()} · ${categoryOptions.find(o => o.value === categoryId)?.label ?? 'No category yet'}`}</Text>
         ) : null}
@@ -355,25 +358,25 @@ export function BrandRequestForm({
           onPress={submit}
           style={[opsStyles.primaryBtn, styles.submit, (!ready || submitting) && styles.disabled]}
         >
-          <Text style={opsStyles.primaryBtnText}>{submitting ? 'Sending…' : isResubmit ? 'Resubmit for review' : storeIds.length > 1 ? `Request for ${storeIds.length} stores` : 'Submit request'}</Text>
+          <Text style={opsStyles.primaryBtnText}>{submitting ? tr('common.sending') : isResubmit ? tr('catalog.resubmitForReview') : storeIds.length > 1 ? tr('catalog.requestForStoreidscountStores', { storeIdsCount: storeIds.length }) : tr('catalog.submitRequest')}</Text>
         </Pressable>
         {onCancel ? (
           <Pressable accessibilityRole="button" onPress={onCancel} style={styles.cancel}>
-            <Text style={opsStyles.smallBtnText}>Cancel</Text>
+            <Text style={opsStyles.smallBtnText}>{tr('common.cancel')}</Text>
           </Pressable>
         ) : null}
       </View>
 
       <View style={styles.next}>
-        <Text style={opsStyles.title}>What happens next</Text>
-        <Text style={opsStyles.meta}>1. VeiloScan checks your documents, usually within one working day.</Text>
-        <Text style={opsStyles.meta}>2. You get a notification and an email with the decision.</Text>
-        <Text style={opsStyles.meta}>3. Once approved, the brand appears in your product forms for this category.</Text>
+        <Text style={opsStyles.title}>{tr('catalog.whatHappensNext')}</Text>
+        <Text style={opsStyles.meta}>{tr('catalog.n1VeiloscanChecksYourDocumentsUsually')}</Text>
+        <Text style={opsStyles.meta}>{tr('catalog.n2YouGetANotificationAnd')}</Text>
+        <Text style={opsStyles.meta}>{tr('catalog.n3OnceApprovedTheBrandAppears')}</Text>
       </View>
       {isNewBrand && !isResubmit ? (
         <View style={styles.warn}>
           <AlertCircleIcon size={15} color={colors.warningDark} />
-          <Text style={[styles.warnText, styles.flex]}>New brands are checked more closely. Upload a clear trademark or authorisation document to avoid delays.</Text>
+          <Text style={[styles.warnText, styles.flex]}>{tr('catalog.newBrandsAreCheckedMoreClosely')}</Text>
         </View>
       ) : null}
     </View>

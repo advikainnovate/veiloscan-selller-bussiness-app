@@ -4,6 +4,7 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 import { colors, fonts } from '../../theme';
 import { formatRupees } from '../../lib/format';
 import { CHART_INK, shortRupees } from '../../lib/sales-report';
+import { useTranslation } from 'react-i18next';
 
 export interface Series {
   key: string;
@@ -27,6 +28,7 @@ const MIN_SLOT = 20;
  * SalesComboChart and MultiLineChart in one.
  */
 export function ComboChart({ labels, fullLabels, bars, lines, height = 220 }: { labels: string[]; fullLabels: string[]; bars?: Series; lines: Series[]; height?: number }) {
+  const { t: tr } = useTranslation();
   const [width, setWidth] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const n = Math.max(1, labels.length);
@@ -77,12 +79,12 @@ export function ComboChart({ labels, fullLabels, bars, lines, height = 220 }: { 
             </View>
           </>
         ) : (
-          <Text style={styles.hint}>Tap the chart to see a period's figures</Text>
+          <Text style={styles.hint}>{tr('operations.tapTheChartToSeeA')}</Text>
         )}
       </View>
       {width > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={W > width}>
-          <Svg width={W} height={height} accessibilityLabel="Chart over time">
+          <Svg width={W} height={height} accessibilityLabel={tr('operations.chartOverTime')}>
             {ticks.map(t => (
               <G key={t}>
                 <Line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} stroke={t === 0 ? CHART_INK.baseline : CHART_INK.grid} />

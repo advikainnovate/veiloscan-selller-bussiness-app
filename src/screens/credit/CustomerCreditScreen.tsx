@@ -27,6 +27,7 @@ import {
   type IconProps,
 } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
@@ -56,6 +57,7 @@ function CreditAvatar({ name }: { name: string }) {
 
 /** Sales › Customer Credit: what customers owe, collecting it and following up. */
 export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('customer-credit:manage');
   const canCreateOrder = hasPermission('orders:manage');
@@ -118,8 +120,8 @@ export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Customer Credit" onBack={navigation.goBack} />
-        <ComingSoon label="Customer Credit" icon={WalletIcon} allowed={false} />
+        <AppHeader title={t('common.customerCredit')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.customerCredit')} icon={WalletIcon} allowed={false} />
       </View>
     );
   }
@@ -153,57 +155,56 @@ export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit
       <View style={styles.titleRow}>
         <View style={styles.flex}>
           <Text style={styles.pageTitle} accessibilityRole="header">
-            Customer Credit
-          </Text>
-          <Text style={styles.pageSubtitle}>Manage customer credit, collect payments, track due dates and follow up on overdue credit.</Text>
+            {t('common.customerCredit')}</Text>
+          <Text style={styles.pageSubtitle}>{t('credit.manageCustomerCreditCollectPaymentsTrack')}</Text>
         </View>
       </View>
       {canCreateOrder ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add Credit Sale"
+          accessibilityLabel={t('credit.addCreditSale')}
           onPress={() => navigation.navigate('CreateOrder')}
           style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
         >
           <PlusIcon size={16} color={colors.white} strokeWidth={2.4} />
-          <Text style={styles.addText}>Add Credit Sale</Text>
+          <Text style={styles.addText}>{t('credit.addCreditSale')}</Text>
         </Pressable>
       ) : null}
 
       <View style={styles.cards}>
-        <SummaryCard icon={WalletIcon} tone={['#f5f3ff', '#7c3aed']} label="Total Credit" value={v(s?.totalCredit)} hint="All credit given" />
-        <SummaryCard icon={CheckCircleIcon} tone={['#ecfdf5', '#059669']} label="Collected" value={v(s?.totalCollected)} hint={s ? `${collectedPct}% of total credit` : undefined} />
+        <SummaryCard icon={WalletIcon} tone={['#f5f3ff', '#7c3aed']} label={t('credit.totalCredit')} value={v(s?.totalCredit)} hint={t('credit.allCreditGiven')} />
+        <SummaryCard icon={CheckCircleIcon} tone={['#ecfdf5', '#059669']} label={t('common.collected')} value={v(s?.totalCollected)} hint={s ? t('credit.collectedpctPercentOfTotalCredit', { collectedPct }) : undefined} />
         <SummaryCard
           icon={ClockIcon}
           tone={['#fff7ed', '#ea580c']}
-          label="Outstanding"
+          label={t('common.outstanding')}
           value={v(s?.totalOutstanding)}
-          hint={s ? `${owing} customer${owing === 1 ? '' : 's'}` : undefined}
+          hint={s ? t('common.customerCount', { count: owing }) : undefined}
         />
         <SummaryCard
           icon={CalendarIcon}
           tone={['#fffbeb', '#d97706']}
-          label="Due This Week"
+          label={t('credit.dueThisWeek')}
           value={v(s?.dueThisWeek)}
-          hint={counts.data ? `${dueSoon} credit${dueSoon === 1 ? '' : 's'}` : undefined}
+          hint={counts.data ? t('credit.creditCount', { count: dueSoon }) : undefined}
         />
         <SummaryCard
           icon={AlertCircleIcon}
           tone={['#fef2f2', '#dc2626']}
-          label="Overdue"
+          label={t('common.overdue')}
           value={v(s?.overdueAmount)}
-          hint={s ? `${s.overdueCount} credit${s.overdueCount === 1 ? '' : 's'}` : undefined}
+          hint={s ? t('credit.creditCount', { count: s.overdueCount }) : undefined}
         />
         <SummaryCard
           icon={UsersIcon}
           tone={['#f0f9ff', '#0284c7']}
-          label="Customers Owing"
+          label={t('credit.customersOwing')}
           value={summary.loading ? '…' : String(owing)}
-          hint="Active credit customers"
+          hint={t('credit.activeCreditCustomers')}
         />
       </View>
 
-      <SearchBar value={query} onChange={setQuery} placeholder="Search customer, phone, order ID or credit ID…" />
+      <SearchBar value={query} onChange={setQuery} placeholder={t('credit.searchCustomerPhoneOrderIdOr')} />
       <FilterChips
         options={CREDIT_FILTERS.map(f => ({ value: f.value, label: f.label, count: counts.data?.[f.value] }))}
         value={filter}
@@ -214,7 +215,7 @@ export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit
 
   return (
     <View style={styles.screen}>
-      <AppHeader title="Customer Credit" onBack={navigation.goBack} />
+      <AppHeader title={t('common.customerCredit')} onBack={navigation.goBack} />
       <FlatList
         ref={listRef}
         data={list.loading || (list.error && !list.data) ? [] : rows}
@@ -235,11 +236,11 @@ export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit
           ) : (
             <EmptyState
               icon={WalletIcon}
-              title={search || filter !== 'all' ? 'No credits match' : 'No customer credit yet'}
+              title={search || filter !== 'all' ? t('credit.noCreditsMatch') : t('credit.noCustomerCreditYet')}
               text={
                 search || filter !== 'all'
-                  ? 'Try another filter or search term.'
-                  : "When a customer pays part of an order and takes the rest on credit — from the order's Collect Payment screen — it appears here."
+                  ? t('common.tryAnotherFilterOrSearchTerm')
+                  : t('credit.whenACustomerPaysPartOf')
               }
             />
           )
@@ -248,13 +249,13 @@ export function CustomerCreditScreen({ navigation }: ScreenProps<'CustomerCredit
           rows.length ? (
             <View style={styles.pager}>
               <Text style={styles.pagerText}>
-                {`Showing ${formatNumber((page - 1) * PAGE_SIZE + 1)}–${formatNumber(Math.min(page * PAGE_SIZE, total))} of ${formatNumber(total)} credit${total === 1 ? '' : 's'}`}
+                {t('credit.showingRangeOfCredits', { count: total, from: formatNumber((page - 1) * PAGE_SIZE + 1), to: formatNumber(Math.min(page * PAGE_SIZE, total)), total: formatNumber(total) })}
               </Text>
               {pages > 1 ? (
                 <>
-                  <PageButton label="Previous page" disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
+                  <PageButton label={t('common.previousPage')} disabled={page <= 1} onPress={() => goToPage(page - 1)} flip />
                   <Text style={styles.pagerCount}>{`${page} / ${pages}`}</Text>
-                  <PageButton label="Next page" disabled={page >= pages} onPress={() => goToPage(page + 1)} />
+                  <PageButton label={t('common.nextPage')} disabled={page >= pages} onPress={() => goToPage(page + 1)} />
                 </>
               ) : null}
             </View>
@@ -318,13 +319,14 @@ function SummaryCard({
 }
 
 function CreditCard({ row, onPress, onCollect }: { row: CreditRow; onPress: () => void; onCollect: () => void }) {
+  const { t } = useTranslation();
   const status = creditStatus(row.status);
   const hint = dueHint(row);
   const open = row.outstandingAmount > 0 && isOpenCredit(row.status);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${row.customerName}, ${status.label}, ${formatRupees(row.outstandingAmount)} outstanding`}
+      accessibilityLabel={t('credit.customernameLabelOutstandingamountOutstanding', { customerName: row.customerName, label: status.label, outstandingAmount: formatRupees(row.outstandingAmount) })}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -342,18 +344,18 @@ function CreditCard({ row, onPress, onCollect }: { row: CreditRow; onPress: () =
       </View>
 
       <View style={styles.amounts}>
-        <Amount label="Credit" value={row.creditAmount} bg={colors.background} fg={colors.text} />
-        <Amount label="Paid" value={row.paidAmount} bg="#ecfdf5" fg="#047857" />
-        <Amount label="Due" value={row.outstandingAmount} bg="#fff7ed" fg="#c2410c" strong />
+        <Amount label={t('common.credit')} value={row.creditAmount} bg={colors.background} fg={colors.text} />
+        <Amount label={t('common.paid')} value={row.paidAmount} bg="#ecfdf5" fg="#047857" />
+        <Amount label={t('common.due')} value={row.outstandingAmount} bg="#fff7ed" fg="#c2410c" strong />
       </View>
 
       <View style={styles.rowBottom}>
         <View style={styles.flex}>
           {row.status === 'PAID' || row.status === 'CANCELLED' ? (
-            <Text style={styles.due}>{row.lastPaymentDate ? `Last paid ${formatDay(row.lastPaymentDate)}` : '—'}</Text>
+            <Text style={styles.due}>{row.lastPaymentDate ? t('credit.lastPaidLastpaymentdate', { lastPaymentDate: formatDay(row.lastPaymentDate) }) : '—'}</Text>
           ) : (
             <>
-              <Text style={styles.due}>{`Due ${formatDay(row.dueDate)}`}</Text>
+              <Text style={styles.due}>{t('credit.dueDuedate', { dueDate: formatDay(row.dueDate) })}</Text>
               {hint ? (
                 <Text style={[styles.hint, (row.overdueDays > 0 || (row.dueInDays ?? 99) <= 7) && styles.hintUrgent]}>{hint}</Text>
               ) : null}
@@ -363,7 +365,7 @@ function CreditCard({ row, onPress, onCollect }: { row: CreditRow; onPress: () =
         {row.customerPhone ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Call ${row.customerName}`}
+            accessibilityLabel={t('credit.callCustomername', { customerName: row.customerName })}
             hitSlop={6}
             onPress={() => Linking.openURL(`tel:${row.customerPhone}`)}
             style={styles.iconBtn}
@@ -374,11 +376,11 @@ function CreditCard({ row, onPress, onCollect }: { row: CreditRow; onPress: () =
         {open ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Collect from ${row.customerName}`}
+            accessibilityLabel={t('credit.collectFromCustomername', { customerName: row.customerName })}
             onPress={onCollect}
             style={({ pressed }) => [styles.collect, pressed && styles.addBtnPressed]}
           >
-            <Text style={styles.collectText}>Collect</Text>
+            <Text style={styles.collectText}>{t('credit.collect')}</Text>
           </Pressable>
         ) : null}
       </View>

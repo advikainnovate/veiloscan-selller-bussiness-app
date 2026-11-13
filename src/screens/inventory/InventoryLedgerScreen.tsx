@@ -18,12 +18,14 @@ import { compactStyles, CountTiles, ListTop, RowCard, Separator, SummaryLine, TI
 import { Detail, opsStyles } from '../../components/operations/OpsParts';
 import { ClipboardListIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE = 40;
 const TYPE_OPTIONS = MOVEMENT_TYPES.map(t => ({ value: t, label: movementLabel(t) }));
 
 /** Catalog › Inventory Ledger: every stock movement, newest first. Entries come from stock operations and orders — never edited. */
 export function InventoryLedgerScreen({ navigation }: ScreenProps<'InventoryLedger'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const listPadding = useListPadding();
   const allowed = hasPermission('inventory-transactions:manage');
@@ -57,23 +59,23 @@ export function InventoryLedgerScreen({ navigation }: ScreenProps<'InventoryLedg
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Inventory Ledger" onBack={navigation.goBack} />
-        <ComingSoon label="Inventory Ledger" icon={ClipboardListIcon} allowed={false} />
+        <AppHeader title={t('common.inventoryLedger')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.inventoryLedger')} icon={ClipboardListIcon} allowed={false} />
       </View>
     );
   }
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Inventory Ledger" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('common.inventoryLedger')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
-        <SearchBar value={search} onChange={reset(setSearch)} placeholder="Search product, SKU, reference…" />
+        <SearchBar value={search} onChange={reset(setSearch)} placeholder={t('inventory.searchProductSkuReference')} />
         <CountTiles
           tiles={[
-            { key: 'total', label: 'Movements', count: items.length, info: true, ...TILE_COLORS.orange },
-            { key: 'in', label: 'Stock in', count: count('in'), ...TILE_COLORS.green },
-            { key: 'out', label: 'Stock out', count: count('out'), ...TILE_COLORS.red },
-            { key: 'hold', label: 'Holds', count: count('hold'), ...TILE_COLORS.amber },
+            { key: 'total', label: t('inventory.movements'), count: items.length, info: true, ...TILE_COLORS.orange },
+            { key: 'in', label: t('inventory.stockIn'), count: count('in'), ...TILE_COLORS.green },
+            { key: 'out', label: t('inventory.stockOut'), count: count('out'), ...TILE_COLORS.red },
+            { key: 'hold', label: t('inventory.holds'), count: count('hold'), ...TILE_COLORS.amber },
           ]}
           value={dir}
           onSelect={reset(setDir)}
@@ -81,16 +83,16 @@ export function InventoryLedgerScreen({ navigation }: ScreenProps<'InventoryLedg
         />
         <View style={styles.filters}>
           <View style={styles.flex}>
-            <SelectField label="Movement" value={type} options={TYPE_OPTIONS} onChange={reset(setType)} placeholder="All movements" allowClear="All movements" />
+            <SelectField label={t('inventory.movement')} value={type} options={TYPE_OPTIONS} onChange={reset(setType)} placeholder={t('inventory.allMovements2')} allowClear={t('inventory.allMovements2')} />
           </View>
           {warehouses.length > 1 ? (
             <View style={styles.flex}>
-              <SelectField label="Warehouse" value={warehouse} options={warehouses} onChange={reset(setWarehouse)} placeholder="All warehouses" allowClear="All warehouses" />
+              <SelectField label={t('common.warehouse')} value={warehouse} options={warehouses} onChange={reset(setWarehouse)} placeholder={t('inventory.allWarehouses')} allowClear={t('inventory.allWarehouses')} />
             </View>
           ) : null}
         </View>
         <SummaryLine
-          hint="Every stock movement, newest first. Added by stock operations and orders — never edited."
+          hint={t('inventory.everyStockMovementNewestFirstAdded')}
           filtered={isFiltered}
           shown={rows.length}
           total={items.length}
@@ -123,13 +125,13 @@ export function InventoryLedgerScreen({ navigation }: ScreenProps<'InventoryLedg
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={ClipboardListIcon}
-                  title={isFiltered ? 'No movements match' : 'No stock movements yet'}
-                  text={isFiltered ? 'Try another filter or search term.' : 'Receipts, sales, counts, damage, transfers and returns appear here as they happen.'}
+                  title={isFiltered ? t('inventory.noMovementsMatch') : t('inventory.noStockMovementsYet')}
+                  text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('inventory.receiptsSalesCountsDamageTransfersAnd')}
                 />
               </View>
             )
           }
-          ListFooterComponent={rows.length > shown ? <Text style={[opsStyles.muted, styles.more]}>{`Showing ${shown} of ${rows.length} — scroll for more`}</Text> : undefined}
+          ListFooterComponent={rows.length > shown ? <Text style={[opsStyles.muted, styles.more]}>{t('inventory.showingShownOfRowscountScrollFor', { shown, rowsCount: rows.length })}</Text> : undefined}
           renderItem={({ item: e }) => <LedgerCard entry={e} onPress={() => setOpen(e)} />}
         />
       )}
@@ -161,10 +163,11 @@ export function InventoryLedgerScreen({ navigation }: ScreenProps<'InventoryLedg
 }
 
 function LedgerCard({ entry: e, onPress }: { entry: LedgerRow; onPress: () => void }) {
+  const { t } = useTranslation();
   const [bg, fg] = movementTone(e.type);
   const qty = moved(e) ?? (e.legacyQuantity ? (direction(e) === 'out' ? -1 : 1) * Math.abs(Number(e.legacyQuantity)) : null);
   return (
-    <RowCard label={`Open ${movementLabel(e.type)} for ${e.productName ?? 'item'}`} onPress={onPress}>
+    <RowCard label={t('inventory.openMovementFor', { movement: movementLabel(e.type), product: e.productName ?? t('inventory.item') })} onPress={onPress}>
       <View style={compactStyles.head}>
         <View style={[compactStyles.thumb, { backgroundColor: bg }]}>
           <ClipboardListIcon size={16} color={fg} />
@@ -184,7 +187,7 @@ function LedgerCard({ entry: e, onPress }: { entry: LedgerRow; onPress: () => vo
       </View>
       <View style={compactStyles.chips}>
         <Text style={[compactStyles.chip, { backgroundColor: bg, color: fg }]}>{movementLabel(e.type)}</Text>
-        {e.onHandAfter !== null ? <Text style={compactStyles.chip}>{`On hand ${formatQuantity(e.onHandAfter)}`}</Text> : null}
+        {e.onHandAfter !== null ? <Text style={compactStyles.chip}>{t('inventory.onHandOnhandafter', { onHandAfter: formatQuantity(e.onHandAfter) })}</Text> : null}
         <Text style={[compactStyles.meta, styles.flex]} numberOfLines={1}>
           {`${dateTime(e.createdAt)}${e.performedBy ? ` · ${e.performedBy}` : ''}`}
         </Text>
@@ -204,6 +207,7 @@ function Delta({ label, value, after }: { label: string; value: number | null; a
 }
 
 function LedgerSheet({ entry: e, onClose, onStock, onOrder }: { entry: LedgerRow | null; onClose: () => void; onStock?: () => void; onOrder?: () => void }) {
+  const { t } = useTranslation();
   return (
     <Sheet
       visible={!!e}
@@ -215,12 +219,12 @@ function LedgerSheet({ entry: e, onClose, onStock, onOrder }: { entry: LedgerRow
           <View style={styles.actions}>
             {onStock ? (
               <Pressable accessibilityRole="button" onPress={onStock} style={[opsStyles.smallBtn, styles.grow]}>
-                <Text style={opsStyles.smallBtnText}>Open stock record</Text>
+                <Text style={opsStyles.smallBtnText}>{t('inventory.openStockRecord')}</Text>
               </Pressable>
             ) : null}
             {onOrder ? (
               <Pressable accessibilityRole="button" onPress={onOrder} style={[opsStyles.primaryBtn, styles.grow]}>
-                <Text style={opsStyles.primaryBtnText}>Open order</Text>
+                <Text style={opsStyles.primaryBtnText}>{t('common.openOrder')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -230,21 +234,21 @@ function LedgerSheet({ entry: e, onClose, onStock, onOrder }: { entry: LedgerRow
       {e ? (
         <View style={styles.sheet}>
           <View style={styles.deltas}>
-            <Delta label="On hand" value={e.onHandDelta} after={e.onHandAfter} />
-            <Delta label="Reserved" value={e.reservedDelta} after={e.reservedAfter} />
-            <Delta label="Blocked" value={e.blockedDelta} after={e.blockedAfter} />
+            <Delta label={t('inventory.onHand')} value={e.onHandDelta} after={e.onHandAfter} />
+            <Delta label={t('common.reserved')} value={e.reservedDelta} after={e.reservedAfter} />
+            <Delta label={t('common.blocked')} value={e.blockedDelta} after={e.blockedAfter} />
           </View>
-          <Detail label="Quantity" value={enteredLabel(e, v => formatQuantity(v))} />
-          {e.baseQuantity !== null && e.baseUom && e.enteredUom !== e.baseUom ? <Detail label="In base unit" value={`${formatQuantity(e.baseQuantity)} ${e.baseUom}`} /> : null}
-          <Detail label="Warehouse" value={e.warehouseTitle} />
-          {e.lotNumber || e.batchNumber ? <Detail label="Lot / batch" value={[e.lotNumber, e.batchNumber].filter(Boolean).join(' · ')} /> : null}
-          {e.totalCost ? <Detail label="Cost" value={`₹${formatQuantity(e.totalCost, 2)}${e.unitCost ? ` (₹${formatQuantity(e.unitCost, 2)} each)` : ''}`} /> : null}
-          <Detail label="Reason" value={e.reason} />
-          <Detail label="Reference" value={referenceLabel(e)} />
-          {e.notes ? <Detail label="Notes" value={e.notes} /> : null}
-          <Detail label="When" value={dateTime(e.createdAt)} />
-          <Detail label="By" value={e.performedBy} />
-          <Text style={opsStyles.muted}>Ledger entries can't be edited or deleted. Quantities are in each SKU's base unit.</Text>
+          <Detail label={t('common.quantity')} value={enteredLabel(e, v => formatQuantity(v))} />
+          {e.baseQuantity !== null && e.baseUom && e.enteredUom !== e.baseUom ? <Detail label={t('inventory.inBaseUnit')} value={`${formatQuantity(e.baseQuantity)} ${e.baseUom}`} /> : null}
+          <Detail label={t('common.warehouse')} value={e.warehouseTitle} />
+          {e.lotNumber || e.batchNumber ? <Detail label={t('inventory.lotBatch2')} value={[e.lotNumber, e.batchNumber].filter(Boolean).join(' · ')} /> : null}
+          {e.totalCost ? <Detail label={t('common.cost')} value={`₹${formatQuantity(e.totalCost, 2)}${e.unitCost ? ` (${t('inventory.amountEach', { amount: `₹${formatQuantity(e.unitCost, 2)}` })})` : ''}`} /> : null}
+          <Detail label={t('common.reason')} value={e.reason} />
+          <Detail label={t('common.reference')} value={referenceLabel(e)} />
+          {e.notes ? <Detail label={t('common.notes')} value={e.notes} /> : null}
+          <Detail label={t('common.when')} value={dateTime(e.createdAt)} />
+          <Detail label={t('common.by')} value={e.performedBy} />
+          <Text style={opsStyles.muted}>{t('inventory.ledgerEntriesCanTBeEdited')}</Text>
         </View>
       ) : null}
     </Sheet>

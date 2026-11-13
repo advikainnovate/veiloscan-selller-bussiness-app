@@ -16,6 +16,7 @@ import { compactStyles, CountTiles, Fab, ListTop, RowCard, Separator, SummaryLin
 import { opsStyles } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, ShieldCheckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 10;
 
@@ -34,6 +35,7 @@ export function BrandLogo({ brand, size = 36 }: { brand: Row | undefined; size?:
 
 /** Catalog › Brand Approvals: ask VeiloScan to approve a brand so products can use it. */
 export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const listPadding = useListPadding();
   const allowed = hasPermission('products-master:manage');
@@ -59,8 +61,8 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Brand Approvals" onBack={navigation.goBack} />
-        <ComingSoon label="Brand Approvals" icon={ShieldCheckIcon} allowed={false} />
+        <AppHeader title={t('common.brandApprovals')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.brandApprovals')} icon={ShieldCheckIcon} allowed={false} />
       </View>
     );
   }
@@ -69,7 +71,7 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Brand Approvals" subtitle="Catalog" onBack={navigation.goBack} />
+      <AppHeader title={t('common.brandApprovals')} subtitle={t('common.catalog')} onBack={navigation.goBack} />
       <ListTop>
         <SearchBar
           value={search}
@@ -77,13 +79,13 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
             setSearch(v);
             setShown(PAGE_SIZE);
           }}
-          placeholder="Search brand, category or store…"
+          placeholder={t('catalog.searchBrandCategoryOrStore')}
         />
         <CountTiles
           tiles={[
-            { key: String(BRAND_STATUS.PENDING), label: 'Awaiting', count: count(BRAND_STATUS.PENDING), ...TILE_COLORS.amber },
-            { key: String(BRAND_STATUS.REJECTED), label: 'Changes needed', count: count(BRAND_STATUS.REJECTED), ...TILE_COLORS.red },
-            { key: String(BRAND_STATUS.APPROVED), label: 'Approved', count: count(BRAND_STATUS.APPROVED), ...TILE_COLORS.green },
+            { key: String(BRAND_STATUS.PENDING), label: t('catalog.awaiting'), count: count(BRAND_STATUS.PENDING), ...TILE_COLORS.amber },
+            { key: String(BRAND_STATUS.REJECTED), label: t('catalog.changesNeeded'), count: count(BRAND_STATUS.REJECTED), ...TILE_COLORS.red },
+            { key: String(BRAND_STATUS.APPROVED), label: t('common.approved'), count: count(BRAND_STATUS.APPROVED), ...TILE_COLORS.green },
           ]}
           value={status === null ? '' : String(status)}
           onSelect={k => {
@@ -93,7 +95,7 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
           loading={loading && !data}
         />
         <SummaryLine
-          hint={status !== null ? BRAND_STATUS_LABEL[status].hint : 'Ask VeiloScan to approve a brand so your products can use it.'}
+          hint={status !== null ? BRAND_STATUS_LABEL[status].hint : t('catalog.askVeiloscanToApproveABrand')}
           filtered={isFiltered}
           shown={filtered.length}
           total={rows.length}
@@ -121,9 +123,9 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
               <Pressable accessibilityRole="button" onPress={() => setStatus(BRAND_STATUS.REJECTED)} style={styles.alert}>
                 <AlertCircleIcon size={16} color={colors.errorDark} />
                 <Text style={styles.alertText}>
-                  {`${count(BRAND_STATUS.REJECTED)} request${count(BRAND_STATUS.REJECTED) === 1 ? ' needs' : 's need'} changes before ${count(BRAND_STATUS.REJECTED) === 1 ? 'it' : 'they'} can be approved.`}
+                  {t('catalog.requestsNeedChanges', { count: count(BRAND_STATUS.REJECTED) })}
                 </Text>
-                <Text style={styles.alertShow}>Show</Text>
+                <Text style={styles.alertShow}>{t('common.show')}</Text>
               </Pressable>
             ) : undefined
           }
@@ -134,8 +136,8 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
               <View style={compactStyles.empty}>
                 <EmptyState
                   icon={ShieldCheckIcon}
-                  title={isFiltered ? 'No requests match' : 'No brand requests yet'}
-                  text={isFiltered ? 'Try another filter or search term.' : "Products can only use a brand that's approved for your store in their category. Request one to get started."}
+                  title={isFiltered ? t('common.noRequestsMatch') : t('catalog.noBrandRequestsYet')}
+                  text={isFiltered ? t('common.tryAnotherFilterOrSearchTerm') : t('catalog.productsCanOnlyUseABrand')}
                 />
               </View>
             )
@@ -144,17 +146,18 @@ export function BrandApprovalsScreen({ navigation }: ScreenProps<'BrandApprovals
         />
       )}
 
-      <Fab label="Request Brand" accessibilityLabel="Request brand approval" onPress={create} />
+      <Fab label={t('catalog.requestBrand')} accessibilityLabel={t('catalog.requestBrandApproval')} onPress={create} />
     </View>
   );
 }
 
 function RequestCard({ row, onOpen }: { row: Row; onOpen: () => void }) {
+  const { t } = useTranslation();
   const brand = row.brand as Row | undefined;
   const s = BRAND_STATUS_LABEL[row.status as number] ?? BRAND_STATUS_LABEL[0];
   const rejected = row.status === BRAND_STATUS.REJECTED;
   return (
-    <RowCard label={`Open ${String(brand?.title ?? 'request')}`} onPress={onOpen}>
+    <RowCard label={t('catalog.openNamed', { name: String(brand?.title ?? t('catalog.request')) })} onPress={onOpen}>
       <View style={compactStyles.head}>
         <BrandLogo brand={brand} />
         <View style={styles.flex}>
@@ -176,7 +179,7 @@ function RequestCard({ row, onOpen }: { row: Row; onOpen: () => void }) {
           {String(row.remarks)}
         </Text>
       ) : null}
-      {rejected ? <Text style={styles.fix}>Fix & resubmit ›</Text> : null}
+      {rejected ? <Text style={styles.fix}>{t('catalog.fixAndResubmit')}</Text> : null}
     </RowCard>
   );
 }

@@ -11,11 +11,13 @@ import { Button } from '../components/ui/Button';
 import { OtpInput } from '../components/ui/OtpInput';
 import { PasswordField } from '../components/ui/PasswordField';
 import type { ScreenProps } from '../navigation/types';
+import { Trans, useTranslation } from 'react-i18next';
 
 const RESEND_SECONDS = 30;
 
 /** Step 2 of a password reset: the emailed code and a new password. */
 export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPassword'>) {
+  const { t } = useTranslation();
   const { email } = route.params;
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +41,7 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
     setInfo(null);
     try {
       await authService.forgotPassword(email);
-      setInfo('A new code is on its way. Codes are valid for 10 minutes.');
+      setInfo(t('auth.aNewCodeIsOnIts'));
       setOtp('');
       setResendIn(RESEND_SECONDS);
     } catch (err) {
@@ -49,16 +51,16 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
 
   async function handleSubmit() {
     if (isLoading) return;
-    if (otp.length !== 6) return setError('Enter the 6-digit code from the email.');
-    if (!meetsPasswordRules(password)) return setError('Choose a password that meets every rule below.');
-    if (password !== confirm) return setError("The passwords don't match — type the same new password in both fields.");
+    if (otp.length !== 6) return setError(t('auth.enterThe6DigitCodeFrom'));
+    if (!meetsPasswordRules(password)) return setError(t('auth.chooseAPasswordThatMeetsEvery'));
+    if (password !== confirm) return setError(t('auth.thePasswordsDonTMatchType'));
 
     setError(null);
     setInfo(null);
     setIsLoading(true);
     try {
       await authService.resetPassword(email, otp, password);
-      navigation.popTo('Login', { email, notice: 'Your password has been reset. Sign in with your new password.' });
+      navigation.popTo('Login', { email, notice: t('auth.yourPasswordHasBeenResetSign') });
     } catch (err) {
       setError(extractErrorMessage(err));
       setIsLoading(false);
@@ -72,9 +74,9 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
           <View style={styles.badge}>
             <ShieldCheckIcon size={30} color={colors.secondary} />
           </View>
-          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.title}>{t('auth.resetPassword')}</Text>
           <Text style={styles.subtitle}>
-            Enter the code we emailed to <Text style={styles.email}>{email}</Text> and choose a new password.
+            <Trans i18nKey="auth.enterCodeEmailedToAndChoosePassword" values={{ email }} components={{ b: <Text style={styles.email} /> }} />
           </Text>
         </View>
 
@@ -91,12 +93,12 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
         <View style={styles.form}>
           <View style={styles.group}>
             <View style={styles.row}>
-              <Text style={styles.label}>Reset Code</Text>
+              <Text style={styles.label}>{t('auth.resetCode')}</Text>
               {resendIn > 0 ? (
-                <Text style={styles.muted}>Resend in {resendIn}s</Text>
+                <Text style={styles.muted}>{t('auth.resendInResendinS', { resendIn })}</Text>
               ) : (
                 <Pressable hitSlop={8} onPress={resend}>
-                  <Text style={styles.link}>Resend code</Text>
+                  <Text style={styles.link}>{t('auth.resendCode')}</Text>
                 </Pressable>
               )}
             </View>
@@ -104,8 +106,8 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
           </View>
 
           <PasswordField
-            label="New Password"
-            placeholder="Choose a new password"
+            label={t('common.newPassword')}
+            placeholder={t('auth.chooseANewPassword')}
             value={password}
             onChangeText={setPassword}
             textContentType="newPassword"
@@ -116,19 +118,19 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
           />
           <PasswordField
             ref={confirmRef}
-            label="Confirm New Password"
-            placeholder="Type the new password again"
+            label={t('auth.confirmNewPassword')}
+            placeholder={t('auth.typeTheNewPasswordAgain')}
             value={confirm}
             onChangeText={setConfirm}
             textContentType="newPassword"
             autoComplete="new-password"
             returnKeyType="go"
             onSubmitEditing={handleSubmit}
-            error={mismatch ? "The passwords don't match yet." : null}
+            error={mismatch ? t('auth.thePasswordsDonTMatchYet') : null}
           />
 
           <View style={styles.rules}>
-            <Text style={styles.rulesTitle}>Password must include:</Text>
+            <Text style={styles.rulesTitle}>{t('auth.passwordMustInclude')}</Text>
             {PASSWORD_RULES.map(rule => {
               const met = rule.test(password);
               return (
@@ -143,8 +145,8 @@ export function ResetPasswordScreen({ navigation, route }: ScreenProps<'ResetPas
           </View>
 
           <Button
-            title="Reset Password"
-            loadingTitle="Resetting..."
+            title={t('auth.resetPassword')}
+            loadingTitle={t('auth.resetting')}
             loading={isLoading}
             onPress={handleSubmit}
             icon={<ArrowRightIcon size={18} color={colors.white} />}

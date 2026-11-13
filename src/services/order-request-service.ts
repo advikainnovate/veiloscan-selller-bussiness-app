@@ -6,6 +6,7 @@ import type {
   CreateSellerOrderPayload,
   SellerOrderResult,
 } from './seller-order-service';
+import i18n from '../i18n';
 
 // Order requests customers send to ORDER_REQUEST stores (eshop-backend
 // /order-requests): a list of products without prices, which the store
@@ -151,17 +152,17 @@ export const ORDER_REQUEST_STATUSES: {
   badge: string;
   tone: BadgeTone;
 }[] = [
-  { value: 'REQUESTED', label: 'New', badge: 'PENDING', tone: 'amber' },
+  { value: 'REQUESTED', get label() { return i18n.t('common.new'); }, badge: 'PENDING', tone: 'amber' },
   {
     value: 'UNDER_REVIEW',
-    label: 'Under review',
+    get label() { return i18n.t('common.underReview'); },
     badge: 'IN_PROGRESS',
     tone: 'blue',
   },
-  { value: 'CONFIRMED', label: 'Confirmed', badge: 'DRAFT', tone: 'violet' },
-  { value: 'COMPLETED', label: 'Completed', badge: 'COMPLETED', tone: 'green' },
-  { value: 'REJECTED', label: 'Rejected', badge: 'REJECTED', tone: 'red' },
-  { value: 'CANCELLED', label: 'Cancelled', badge: 'CLOSED', tone: 'slate' },
+  { value: 'CONFIRMED', get label() { return i18n.t('common.confirmed'); }, badge: 'DRAFT', tone: 'violet' },
+  { value: 'COMPLETED', get label() { return i18n.t('common.completed'); }, badge: 'COMPLETED', tone: 'green' },
+  { value: 'REJECTED', get label() { return i18n.t('common.rejected'); }, badge: 'REJECTED', tone: 'red' },
+  { value: 'CANCELLED', get label() { return i18n.t('common.cancelled'); }, badge: 'CLOSED', tone: 'slate' },
 ];
 
 export function requestStatusLabel(status: OrderRequestStatus): string {

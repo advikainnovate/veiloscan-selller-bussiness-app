@@ -19,6 +19,7 @@ import { navigationRef } from '../navigation/navigationRef';
 import { notificationService } from '../services/notification-service';
 import { openNotification } from './notifications';
 import type { AppNotification } from '../services/dashboard-service';
+import i18n from '../i18n';
 
 const DEVICE_KEY = 'app.pushDeviceId';
 const APP_VERSION: string = require('../../package.json').version;
@@ -32,7 +33,7 @@ function showForegroundNotification(m: RemoteMessage) {
   const data = (m.data ?? {}) as Record<string, string>;
   try {
     const native = NativeModules.NotificationSound;
-    if (native?.show) native.show(m.notification?.title ?? 'VeiloScan Business', m.notification?.body ?? '', data.link ?? null, data.notificationId ?? null);
+    if (native?.show) native.show(m.notification?.title ?? i18n.t('common.veiloscanBusiness'), m.notification?.body ?? '', data.link ?? null, data.notificationId ?? null);
     else native?.play?.();
   } catch {
     // Best-effort; a native issue must not block push handling.

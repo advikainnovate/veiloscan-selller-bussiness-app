@@ -17,13 +17,16 @@ import { Card, Row } from '../../components/ui/Card';
 import { ErrorState, ListSkeleton } from '../../components/list/ListParts';
 import { BanIcon, CheckCircleIcon, EditIcon, FileTextIcon, TicketIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const money = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : formatRupees(Number(v)));
 const count = (v: unknown, none = '—') => (v === null || v === undefined || v === '' ? none : String(v));
-const selection = (v: unknown) => (v === 'SELECTED' ? 'Selected' : v === 'ALL' ? 'All' : '—');
+const selection = (v: unknown) => (v === 'SELECTED' ? i18n.t('common.selected') : v === 'ALL' ? i18n.t('common.all') : '—');
 
 /** One coupon: its rules, eligibility and validity; activate, edit or delete. */
 export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -34,21 +37,21 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
   if (!allowed) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Coupon" onBack={navigation.goBack} />
-        <ComingSoon label="Coupons" icon={TicketIcon} allowed={false} />
+        <AppHeader title={t('common.coupon')} onBack={navigation.goBack} />
+        <ComingSoon label={t('coupons.coupons')} icon={TicketIcon} allowed={false} />
       </View>
     );
   }
   if (loading || !coupon) {
     return (
       <View style={styles.screen}>
-        <AppHeader title="Coupon" onBack={navigation.goBack} />
+        <AppHeader title={t('common.coupon')} onBack={navigation.goBack} />
         {loading ? (
           <View style={styles.content}>
             <ListSkeleton rows={3} height={140} />
           </View>
         ) : (
-          <ErrorState message={error ?? 'Not found.'} onRetry={() => reload()} />
+          <ErrorState message={error ?? t('common.notFound')} onRetry={() => reload()} />
         )}
       </View>
     );
@@ -58,14 +61,14 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
 
   function toggle() {
     NativeAlert.alert(`${active ? 'Deactivate' : 'Activate'} "${coupon!.title}"?`, undefined, [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: active ? 'Deactivate' : 'Activate',
+        text: active ? t('common.deactivate') : t('common.activate'),
         onPress: async () => {
           setBusy('toggle');
           try {
             await couponService.update(id, { status: active ? 0 : 1 });
-            toast(active ? 'Coupon deactivated' : 'Coupon activated');
+            toast(active ? t('coupons.couponDeactivated') : t('coupons.couponActivated'));
             reload();
           } catch (err) {
             toast(extractErrorMessage(err), 'error');
@@ -78,16 +81,16 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
   }
 
   function remove() {
-    NativeAlert.alert('Delete coupon?', 'It will be removed from this list. Deactivate it instead if you only want to take it out of use.', [
-      { text: 'Cancel', style: 'cancel' },
+    NativeAlert.alert(t('coupons.deleteCoupon'), t('coupons.itWillBeRemovedFromThis'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           setBusy('delete');
           try {
             await couponService.remove(id);
-            toast('Coupon deleted');
+            toast(t('coupons.couponDeleted'));
             navigation.goBack();
           } catch (err) {
             toast(extractErrorMessage(err), 'error');
@@ -100,7 +103,7 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
 
   return (
     <View style={styles.screen}>
-      <AppHeader title={coupon.title} subtitle={`Code: ${coupon.couponCode}`} onBack={navigation.goBack} />
+      <AppHeader title={coupon.title} subtitle={t('coupons.codeCouponcode', { couponCode: coupon.couponCode })} onBack={navigation.goBack} />
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
@@ -111,8 +114,8 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
             <Text style={styles.codeText}>{coupon.couponCode}</Text>
           </View>
           <View style={styles.badges}>
-            <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
-            {isExpiredCoupon(coupon) ? <Badge label="Expired" tone="amber" /> : null}
+            <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
+            {isExpiredCoupon(coupon) ? <Badge label={t('common.expired')} tone="amber" /> : null}
           </View>
         </View>
 
@@ -124,50 +127,50 @@ export function CouponDetailScreen({ navigation, route }: ScreenProps<'CouponDet
             style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
           >
             {active ? <BanIcon size={16} color={colors.text} /> : <CheckCircleIcon size={16} color={colors.text} />}
-            <Text style={styles.actionText}>{busy === 'toggle' ? 'Saving…' : active ? 'Deactivate' : 'Activate'}</Text>
+            <Text style={styles.actionText}>{busy === 'toggle' ? t('common.saving') : active ? t('common.deactivate') : t('common.activate')}</Text>
           </Pressable>
           <Button
-            title="Edit"
+            title={t('common.edit')}
             onPress={() => navigation.navigate('CouponForm', { id })}
             icon={<EditIcon size={16} color={colors.white} />}
             style={styles.flex}
           />
         </View>
 
-        <Card title="Details" icon={TicketIcon}>
-          <Row label="Slug" value={coupon.codeSlug} />
-          <Row label="Discount Type" value={coupon.discountType === 'PERCENTAGE' ? 'Percentage' : coupon.discountType === 'FLAT' ? 'Flat' : '—'} />
-          <Row label="Discount Value" value={count(coupon.discountValue)} />
-          <Row label="Created" value={formatDay(coupon.createdAt)} />
-          <Row label="Updated" value={formatDay(coupon.updatedAt)} />
+        <Card title={t('common.details')} icon={TicketIcon}>
+          <Row label={t('common.slug')} value={coupon.codeSlug} />
+          <Row label={t('common.discountType')} value={coupon.discountType === 'PERCENTAGE' ? 'Percentage' : coupon.discountType === 'FLAT' ? 'Flat' : '—'} />
+          <Row label={t('common.discountValue')} value={count(coupon.discountValue)} />
+          <Row label={t('common.created')} value={formatDay(coupon.createdAt)} />
+          <Row label={t('common.updated')} value={formatDay(coupon.updatedAt)} />
         </Card>
 
-        <Card title="Order Rules & Usage Limits" icon={TicketIcon}>
-          <Row label="Min Order Value" value={money(coupon.minOrderValue)} />
-          <Row label="Max Order Value" value={money(coupon.maxOrderValue)} />
-          <Row label="Max Discount Amount" value={money(coupon.maxDiscountAmount)} />
-          <Row label="Total Usage Limit" value={coupon.usageLimitTotal ? String(coupon.usageLimitTotal) : 'Unlimited'} />
-          <Row label="Usage Limit Per User" value={count(coupon.usageLimitPerUser)} />
-          <Row label="Initial Coupon Count" value={count(coupon.initialCoupon)} />
+        <Card title={t('coupons.orderRulesAndUsageLimits')} icon={TicketIcon}>
+          <Row label={t('coupons.minOrderValue2')} value={money(coupon.minOrderValue)} />
+          <Row label={t('coupons.maxOrderValue2')} value={money(coupon.maxOrderValue)} />
+          <Row label={t('coupons.maxDiscountAmount2')} value={money(coupon.maxDiscountAmount)} />
+          <Row label={t('coupons.totalUsageLimit2')} value={coupon.usageLimitTotal ? String(coupon.usageLimitTotal) : 'Unlimited'} />
+          <Row label={t('coupons.usageLimitPerUser2')} value={count(coupon.usageLimitPerUser)} />
+          <Row label={t('coupons.initialCouponCount')} value={count(coupon.initialCoupon)} />
         </Card>
 
-        <Card title="Eligibility & Validity" icon={TicketIcon}>
-          <Row label="Categories" value={selection(coupon.categoriesSelection)} />
-          <Row label="Brands" value={selection(coupon.brandsSelection)} />
-          <Row label="Products" value={selection(coupon.productSelection)} />
-          <Row label="Start Date" value={coupon.startDate ? formatDay(coupon.startDate) : '—'} />
-          <Row label="End Date" value={coupon.endDate ? formatDay(coupon.endDate) : 'No end date'} />
+        <Card title={t('coupons.eligibilityAndValidity')} icon={TicketIcon}>
+          <Row label={t('common.categories')} value={selection(coupon.categoriesSelection)} />
+          <Row label={t('common.brands')} value={selection(coupon.brandsSelection)} />
+          <Row label={t('common.products')} value={selection(coupon.productSelection)} />
+          <Row label={t('common.startDate')} value={coupon.startDate ? formatDay(coupon.startDate) : '—'} />
+          <Row label={t('common.endDate')} value={coupon.endDate ? formatDay(coupon.endDate) : 'No end date'} />
         </Card>
 
         {coupon.description || coupon.termsAndConditions ? (
-          <Card title="Description & Terms" icon={FileTextIcon}>
+          <Card title={t('common.descriptionAndTerms')} icon={FileTextIcon}>
             {coupon.description ? <Text style={styles.body}>{coupon.description}</Text> : null}
             {coupon.termsAndConditions ? <Text style={[styles.body, styles.terms]}>{coupon.termsAndConditions}</Text> : null}
           </Card>
         ) : null}
 
         <Pressable accessibilityRole="button" disabled={busy !== null} onPress={remove} hitSlop={8} style={styles.delete}>
-          <Text style={styles.deleteText}>{busy === 'delete' ? 'Deleting…' : 'Delete coupon'}</Text>
+          <Text style={styles.deleteText}>{busy === 'delete' ? t('common.deleting') : t('coupons.deleteCoupon2')}</Text>
         </Pressable>
       </ScrollView>
     </View>

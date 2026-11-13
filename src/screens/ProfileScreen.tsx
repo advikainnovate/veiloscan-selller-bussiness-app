@@ -9,6 +9,8 @@ import { formatDay } from '../lib/date';
 import { pickImages } from '../lib/pick-image';
 import { meetsPasswordRules, PASSWORD_RULES } from '../lib/password-rules';
 import { openMenuKey } from '../navigation/navigationRef';
+import { useLanguage } from '../context/LanguageContext';
+import { LANGUAGES } from '../i18n';
 import { authService } from '../services/auth-service';
 import { fileService, type PickedFile } from '../services/products-service';
 import { profileService, type Rec, type SalesTeamState } from '../services/profile-service';
@@ -24,6 +26,7 @@ import { Sheet } from '../components/ui/Sheet';
 import { Choices, Field, Input } from '../components/form/Fields';
 import { confirmAction, opsStyles } from '../components/operations/OpsParts';
 import {
+  GlobeIcon,
   AlertCircleIcon,
   AwardIcon,
   CalendarIcon,
@@ -43,6 +46,8 @@ import {
   type IconProps,
 } from '../components/icons';
 import type { ScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 const titleCase = (v: unknown) => {
   const s = String(v ?? '');
@@ -51,14 +56,16 @@ const titleCase = (v: unknown) => {
 const ACCOUNT_TONE: Record<string, BadgeTone> = { ACTIVE: 'green', INACTIVE: 'slate', PENDING: 'amber', SUSPENDED: 'red', BLOCKED: 'red' };
 const PLAN_TONE: Record<string, BadgeTone> = { TRIALING: 'amber', ACTIVE: 'green', PAST_DUE: 'red', PAUSED: 'slate', CANCELLED: 'slate', EXPIRED: 'slate', PENDING: 'amber' };
 const SALES_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
-  PENDING: { label: 'Awaiting approval', tone: 'amber' },
-  APPROVED: { label: 'Approved', tone: 'green' },
-  REJECTED: { label: 'Not approved', tone: 'red' },
+  PENDING: { get label() { return i18n.t('common.awaitingApproval'); }, tone: 'amber' },
+  APPROVED: { get label() { return i18n.t('common.approved'); }, tone: 'green' },
+  REJECTED: { get label() { return i18n.t('common.notApproved'); }, tone: 'red' },
 };
 
 /** My Profile: who you are, how complete your profile is, security, plan and sales team, as the panel's page. */
 export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
+  const { t } = useTranslation();
   const { user, roles, logout, refreshUser } = useAuth();
+  const { language } = useLanguage();
   const toast = useToast();
   const userId = String(user?.id ?? '');
   const profile = useFetch(() => (userId ? profileService.get(userId).catch(() => null) : Promise.resolve(null)), [userId]);
@@ -82,12 +89,12 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
 
   // What makes a complete profile, and what's still missing.
   const checklist = [
-    { done: !!avatarUrl, label: 'Add a profile photo' },
-    { done: !!p?.shortDescription, label: 'Write a short bio' },
-    { done: !!user.userDisplayName, label: 'Set a display name' },
-    { done: !!user.gender, label: 'Add your gender' },
-    { done: !!user.isEmailVerification, label: 'Verify your email' },
-    { done: !!user.isPhoneVerification, label: 'Verify your phone' },
+    { done: !!avatarUrl, label: t('profile.addAProfilePhoto') },
+    { done: !!p?.shortDescription, label: t('profile.writeAShortBio') },
+    { done: !!user.userDisplayName, label: t('profile.setADisplayName') },
+    { done: !!user.gender, label: t('profile.addYourGender') },
+    { done: !!user.isEmailVerification, label: t('profile.verifyYourEmail') },
+    { done: !!user.isPhoneVerification, label: t('profile.verifyYourPhone') },
   ];
   const done = checklist.filter(c => c.done).length;
   const percent = Math.round((done / checklist.length) * 100);
@@ -103,12 +110,12 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
   }
 
   async function signOut() {
-    if (await confirmAction('Sign out?', 'You will need to sign in again to manage your store.', 'Sign Out', true)) logout();
+    if (await confirmAction(t('common.signOut2'), t('common.youWillNeedToSignIn'), t('common.signOut'), true)) logout();
   }
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="My Profile" subtitle="Account" onBack={navigation.canGoBack() ? navigation.goBack : undefined} />
+      <AppHeader title={t('common.myProfile')} subtitle={t('common.account')} onBack={navigation.canGoBack() ? navigation.goBack : undefined} />
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
         {/* Who you are */}
         <View style={styles.hero}>
@@ -118,7 +125,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
             <View style={[styles.glow, styles.glowTwo]} />
           </View>
           <View style={styles.heroBody}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Change profile photo" onPress={() => setEditing(true)} style={styles.avatarWrap}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('profile.changeProfilePhoto')} onPress={() => setEditing(true)} style={styles.avatarWrap}>
               <View style={styles.avatar}>{avatarUrl ? <Image source={{ uri: avatarUrl }} style={styles.fill} /> : <Text style={styles.initials}>{initials}</Text>}</View>
               <View style={styles.camera}>
                 <ImageIcon size={13} color={colors.white} />
@@ -135,15 +142,15 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
             <View style={styles.chips}>
               <Chip icon={MailIcon} label={String(user.email ?? '—')} onPress={user.email ? () => Linking.openURL(`mailto:${String(user.email)}`) : undefined} />
               <Chip icon={PhoneIcon} label={phone} />
-              <Chip icon={CalendarIcon} label={`Joined ${formatDay(user.createdAt)}`} />
+              <Chip icon={CalendarIcon} label={t('profile.joinedCreatedat', { createdAt: formatDay(user.createdAt) })} />
             </View>
             <View style={styles.about}>
-              <Text style={styles.kicker}>ABOUT ME</Text>
+              <Text style={styles.kicker}>{t('profile.aboutMe')}</Text>
               {p?.shortDescription ? (
                 <Text style={styles.bio}>{String(p.shortDescription)}</Text>
               ) : (
                 <Pressable accessibilityRole="button" onPress={() => setEditing(true)}>
-                  <Text style={styles.addBio}>{profile.loading ? 'Loading…' : 'No bio yet — add a short one ›'}</Text>
+                  <Text style={styles.addBio}>{profile.loading ? t('common.loading') : t('profile.noBioYetAddAShort')}</Text>
                 </Pressable>
               )}
             </View>
@@ -153,7 +160,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
         {/* How complete it is */}
         <View style={styles.card}>
           <View style={opsStyles.rowBetween}>
-            <Text style={opsStyles.title}>Profile completeness</Text>
+            <Text style={opsStyles.title}>{t('profile.profileCompleteness')}</Text>
             <Text style={[styles.percent, percent === 100 && styles.ok]}>{`${percent}%`}</Text>
           </View>
           <View style={styles.bar} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: percent }}>
@@ -176,44 +183,45 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
 
         {/* At a glance */}
         <View style={styles.tiles}>
-          <Tile icon={ShieldCheckIcon} tint="#fff7ed" color={colors.secondary} label="Role" value={roleTitle} />
-          <Tile icon={UsersIcon} tint="#eef2ff" color="#4f46e5" label="User type" value={titleCase(user.userType)} />
-          <Tile icon={CheckCircleIcon} tint="#ecfdf5" color="#059669" label="Account" value={titleCase(status)} />
-          <Tile icon={ClockIcon} tint="#f0f9ff" color="#0284c7" label="Last login" value={user.lastLoginAt ? formatDay(user.lastLoginAt) : 'No recent logins'} />
+          <Tile icon={ShieldCheckIcon} tint="#fff7ed" color={colors.secondary} label={t('common.role')} value={roleTitle} />
+          <Tile icon={UsersIcon} tint="#eef2ff" color="#4f46e5" label={t('common.userType')} value={titleCase(user.userType)} />
+          <Tile icon={CheckCircleIcon} tint="#ecfdf5" color="#059669" label={t('common.account')} value={titleCase(status)} />
+          <Tile icon={ClockIcon} tint="#f0f9ff" color="#0284c7" label={t('common.lastLogin')} value={user.lastLoginAt ? formatDay(user.lastLoginAt) : 'No recent logins'} />
         </View>
 
-        <Group title="Personal Information" action={{ label: 'Edit', onPress: () => setEditing(true) }}>
-          <Row label="Full Name" value={fullName} />
-          <Row label="Display Name" value={user.userDisplayName as string} />
-          <Row label="Username" value={user.username as string} />
-          <Row label="Email Address" value={user.email as string} />
-          <Row label="Phone Number" value={phone} />
-          <Row label="Gender" value={user.gender ? titleCase(user.gender) : null} last />
+        <Group title={t('profile.personalInformation')} action={{ label: t('common.edit'), onPress: () => setEditing(true) }}>
+          <Row label={t('profile.fullName')} value={fullName} />
+          <Row label={t('profile.displayName')} value={user.userDisplayName as string} />
+          <Row label={t('common.username')} value={user.username as string} />
+          <Row label={t('common.emailAddress')} value={user.email as string} />
+          <Row label={t('profile.phoneNumber')} value={phone} />
+          <Row label={t('common.gender')} value={user.gender ? titleCase(user.gender) : null} last />
         </Group>
 
-        <Group title="Security" action={{ label: 'Change password', onPress: () => setChangingPassword(true) }}>
-          <Row label="Password" value="••••••••••" />
-          <Row label="Email" value={<Verified on={!!user.isEmailVerification} />} />
-          <Row label="Phone" value={<Verified on={!!user.isPhoneVerification} />} />
-          <Row label="Password changed" value={user.passwordChangedAt ? formatDay(user.passwordChangedAt) : 'Never'} />
-          <Row label="Recent login attempts" value={String((user.loginAttempt as number | undefined) ?? 0)} last />
+        <Group title={t('profile.security')} action={{ label: t('profile.changePassword'), onPress: () => setChangingPassword(true) }}>
+          <Row label={t('common.password')} value="••••••••••" />
+          <Row label={t('common.email')} value={<Verified on={!!user.isEmailVerification} />} />
+          <Row label={t('common.phone')} value={<Verified on={!!user.isPhoneVerification} />} />
+          <Row label={t('profile.passwordChanged')} value={user.passwordChangedAt ? formatDay(user.passwordChangedAt) : 'Never'} />
+          <Row label={t('profile.recentLoginAttempts')} value={String((user.loginAttempt as number | undefined) ?? 0)} last />
         </Group>
 
-        <Group title="Documents & Verification">
-          <Row label="ID Proof" value={<Uploaded on={!!p?.idProofDocId} />} />
-          <Row label="Address Proof" value={<Uploaded on={!!p?.addressProofDocId} />} />
-          <Row label="Profile Status" value={<Badge label={titleCase(p?.status ?? 'ACTIVE')} tone={ACCOUNT_TONE[String(p?.status ?? 'ACTIVE')] ?? 'slate'} />} last />
+        <Group title={t('profile.documentsAndVerification')}>
+          <Row label={t('profile.idProof')} value={<Uploaded on={!!p?.idProofDocId} />} />
+          <Row label={t('common.addressProof')} value={<Uploaded on={!!p?.addressProofDocId} />} />
+          <Row label={t('profile.profileStatus')} value={<Badge label={titleCase(p?.status ?? 'ACTIVE')} tone={ACCOUNT_TONE[String(p?.status ?? 'ACTIVE')] ?? 'slate'} />} last />
         </Group>
 
         <PlanGroup plan={plan.data?.plan ?? null} loading={plan.loading} />
 
         {isOwner ? <SalesTeamGroup state={sales.data ?? null} loading={sales.loading} onRequest={() => setJoining(true)} /> : null}
 
-        <Group title="Account">
-          <Action icon={EditIcon} tone="green" title="Edit Profile" sub="Update your name, photo and bio" onPress={() => setEditing(true)} />
-          <Action icon={LockIcon} title="Change Password" sub="We email you a 6-digit code" onPress={() => setChangingPassword(true)} />
-          <Action icon={AwardIcon} title="Subscription" sub="Your plan and billing" onPress={() => openMenuKey('subscription')} />
-          <Action icon={LogoutIcon} tone="red" title="Sign Out" sub="End your current session" onPress={signOut} last />
+        <Group title={t('common.account')}>
+          <Action icon={EditIcon} tone="green" title={t('profile.editProfile')} sub={t('profile.updateYourNamePhotoAndBio')} onPress={() => setEditing(true)} />
+          <Action icon={LockIcon} title={t('profile.changePassword2')} sub={t('profile.weEmailYouA6Digit')} onPress={() => setChangingPassword(true)} />
+          <Action icon={AwardIcon} title={t('common.subscription')} sub={t('profile.yourPlanAndBilling')} onPress={() => openMenuKey('subscription')} />
+          <Action icon={GlobeIcon} title={t('nav.languageAndRegion')} sub={LANGUAGES.find(l => l.code === language)?.nativeName ?? ''} onPress={() => openMenuKey('language')} />
+          <Action icon={LogoutIcon} tone="red" title={t('common.signOut')} sub={t('profile.endYourCurrentSession')} onPress={signOut} last />
         </Group>
       </ScrollView>
 
@@ -224,7 +232,7 @@ export function ProfileScreen({ navigation }: ScreenProps<'Profile'>) {
         onClose={() => setEditing(false)}
         onSaved={async () => {
           setEditing(false);
-          toast('Profile updated');
+          toast(t('profile.profileUpdated'));
           await Promise.all([refreshUser().catch(() => {}), profile.reload()]);
         }}
       />
@@ -268,14 +276,20 @@ function Tile({ icon: Icon, tint, color, label, value }: { icon: ComponentType<I
   );
 }
 
-const Verified = ({ on }: { on: boolean }) => (
+const Verified = ({ on }: { on: boolean }) => {
+  const { t } = useTranslation();
+  return (
   <View style={styles.inline}>
     <CheckCircleIcon size={14} color={on ? colors.success : colors.warning} />
-    <Text style={[groupStyles.value, on ? styles.ok : styles.amber]}>{on ? 'Verified' : 'Not verified'}</Text>
+    <Text style={[groupStyles.value, on ? styles.ok : styles.amber]}>{on ? t('common.verified') : t('profile.notVerified')}</Text>
   </View>
 );
+};
 
-const Uploaded = ({ on }: { on: boolean }) => <Text style={[groupStyles.value, on ? styles.ok : groupStyles.muted]}>{on ? 'Uploaded' : 'Not uploaded'}</Text>;
+const Uploaded = ({ on }: { on: boolean }) => {
+  const { t } = useTranslation();
+  return <Text style={[groupStyles.value, on ? styles.ok : groupStyles.muted]}>{on ? t('profile.uploaded') : t('common.notUploaded')}</Text>;
+};
 
 function Action({ icon: Icon, title, sub, onPress, tone = 'slate', last }: { icon: ComponentType<IconProps>; title: string; sub: string; onPress: () => void; tone?: 'slate' | 'green' | 'red'; last?: boolean }) {
   const tones = { slate: ['#f1f5f9', colors.textSecondary], green: ['#ecfdf5', '#059669'], red: ['#fef2f2', colors.error] } as const;
@@ -294,41 +308,42 @@ function Action({ icon: Icon, title, sub, onPress, tone = 'slate', last }: { ico
 }
 
 function PlanGroup({ plan, loading }: { plan: NonNullable<Awaited<ReturnType<typeof subscriptionService.mine>>>['plan'] | null; loading: boolean }) {
-  const manage = { label: 'Manage', onPress: () => openMenuKey('subscription') };
+  const { t } = useTranslation();
+  const manage = { label: t('common.manage'), onPress: () => openMenuKey('subscription') };
   if (!plan) {
     return (
-      <Group title="Subscription Plan" action={manage}>
-        <Row label="Plan" value={loading ? 'Loading…' : 'Unavailable right now'} last />
+      <Group title={t('profile.subscriptionPlan')} action={manage}>
+        <Row label={t('common.plan')} value={loading ? 'Loading…' : 'Unavailable right now'} last />
       </Group>
     );
   }
   const status = String(plan.status ?? '');
   const price =
     plan.amount == null
-      ? 'Custom pricing'
+      ? t('common.customPricing')
       : `${new Intl.NumberFormat('en-IN', { style: 'currency', currency: plan.currency ?? 'INR', maximumFractionDigits: 0 }).format(plan.amount)} / ${plan.billingCycle === 'YEARLY' ? 'year' : 'month'}`;
   const trialEnds = status === 'TRIALING' && plan.trialEndsAt ? formatDay(plan.trialEndsAt) : null;
   return (
-    <Group title="Subscription Plan" action={manage}>
+    <Group title={t('profile.subscriptionPlan')} action={manage}>
       <Row
-        label="Current Plan"
+        label={t('profile.currentPlan')}
         value={
           <View style={styles.inline}>
             <Text style={groupStyles.value}>{plan.planName ?? '—'}</Text>
-            {plan.isDefault ? <Badge label="Free" tone="slate" /> : null}
+            {plan.isDefault ? <Badge label={t('common.free')} tone="slate" /> : null}
           </View>
         }
       />
       {plan.isDefault ? (
-        <Row label="Status" value="No paid plan yet — choose one to start a free trial" last />
+        <Row label={t('common.status')} value="No paid plan yet — choose one to start a free trial" last />
       ) : (
         <>
-          <Row label="Status" value={<Badge label={titleCase(status)} tone={PLAN_TONE[status] ?? 'slate'} />} />
-          <Row label="Billing" value={price} />
-          {trialEnds ? <Row label="Free Trial Ends" value={trialEnds} /> : null}
-          <Row label={trialEnds ? 'First Charge' : 'Renews On'} value={plan.currentPeriodEnd ? formatDay(plan.currentPeriodEnd) : '—'} />
-          <Row label="Auto-renew" value={<Text style={[groupStyles.value, plan.autoRenew ? styles.ok : groupStyles.muted]}>{plan.autoRenew ? 'On' : 'Off'}</Text>} />
-          <Row label="Started On" value={plan.startedAt ? formatDay(plan.startedAt) : '—'} last />
+          <Row label={t('common.status')} value={<Badge label={titleCase(status)} tone={PLAN_TONE[status] ?? 'slate'} />} />
+          <Row label={t('profile.billing')} value={price} />
+          {trialEnds ? <Row label={t('profile.freeTrialEnds')} value={trialEnds} /> : null}
+          <Row label={trialEnds ? t('profile.firstCharge') : t('profile.renewsOn')} value={plan.currentPeriodEnd ? formatDay(plan.currentPeriodEnd) : '—'} />
+          <Row label="Auto-renew" value={<Text style={[groupStyles.value, plan.autoRenew ? styles.ok : groupStyles.muted]}>{plan.autoRenew ? t('common.on') : t('common.off')}</Text>} />
+          <Row label={t('profile.startedOn')} value={plan.startedAt ? formatDay(plan.startedAt) : '—'} last />
         </>
       )}
     </Group>
@@ -336,29 +351,30 @@ function PlanGroup({ plan, loading }: { plan: NonNullable<Awaited<ReturnType<typ
 }
 
 function SalesTeamGroup({ state, loading, onRequest }: { state: SalesTeamState | null; loading: boolean; onRequest: () => void }) {
-  const action = state?.canRequest ? { label: state.standing === 'REJECTED' ? 'Request again' : 'Join', onPress: onRequest } : undefined;
+  const { t } = useTranslation();
+  const action = state?.canRequest ? { label: state.standing === 'REJECTED' ? t('common.requestAgain') : t('profile.join'), onPress: onRequest } : undefined;
   if (!state) {
     return (
-      <Group title="Sales Team">
-        <Row label="Status" value={loading ? 'Loading…' : 'Unavailable right now'} last />
+      <Group title={t('profile.salesTeam')}>
+        <Row label={t('common.status')} value={loading ? 'Loading…' : 'Unavailable right now'} last />
       </Group>
     );
   }
   const latest = state.history[0];
   const s = SALES_STATUS[state.standing];
   return (
-    <Group title="Sales Team" action={action}>
+    <Group title={t('profile.salesTeam')} action={action}>
       {state.salesTeam ? (
         <>
-          <Row label="Sales Team ID" value={<Text style={[groupStyles.value, styles.mono]}>{state.salesTeam.salesId}</Text>} />
-          <Row label="Account Status" value={<Badge label={titleCase(state.salesTeam.status)} tone={ACCOUNT_TONE[state.salesTeam.status] ?? 'slate'} />} />
-          <Row label="Member Since" value={formatDay(state.salesTeam.createdAt)} />
+          <Row label={t('profile.salesTeamId')} value={<Text style={[groupStyles.value, styles.mono]}>{state.salesTeam.salesId}</Text>} />
+          <Row label={t('profile.accountStatus')} value={<Badge label={titleCase(state.salesTeam.status)} tone={ACCOUNT_TONE[state.salesTeam.status] ?? 'slate'} />} />
+          <Row label={t('profile.memberSince')} value={formatDay(state.salesTeam.createdAt)} />
           <Row
-            label="Sign In"
+            label={t('profile.signIn')}
             value={
               state.salesPortalUrl ? (
                 <Pressable accessibilityRole="link" onPress={() => Linking.openURL(`${state.salesPortalUrl}/login`)}>
-                  <Text style={styles.link}>Open the Sales Portal</Text>
+                  <Text style={styles.link}>{t('profile.openTheSalesPortal')}</Text>
                 </Pressable>
               ) : (
                 'Sales Portal, with this ID'
@@ -369,16 +385,16 @@ function SalesTeamGroup({ state, loading, onRequest }: { state: SalesTeamState |
         </>
       ) : (
         <>
-          <Row label="Status" value={s ? <Badge label={s.label} tone={s.tone} /> : 'Not a member'} last={!latest} />
-          {latest ? <Row label="Requested On" value={formatDay(latest.createdAt)} last={!(latest.status === 'REJECTED' && latest.decisionNote)} /> : null}
-          {latest?.status === 'REJECTED' && latest.decisionNote ? <Text style={[styles.note, opsStyles.danger]}>{`Reason: ${latest.decisionNote}`}</Text> : null}
+          <Row label={t('common.status')} value={s ? <Badge label={s.label} tone={s.tone} /> : 'Not a member'} last={!latest} />
+          {latest ? <Row label={t('profile.requestedOn')} value={formatDay(latest.createdAt)} last={!(latest.status === 'REJECTED' && latest.decisionNote)} /> : null}
+          {latest?.status === 'REJECTED' && latest.decisionNote ? <Text style={[styles.note, opsStyles.danger]}>{t('profile.reasonDecisionnote', { decisionNote: latest.decisionNote })}</Text> : null}
           {state.standing === 'NONE' ? (
             <View style={styles.pitch}>
               <ChartTrendIcon size={16} color={colors.secondary} />
-              <Text style={[opsStyles.muted, styles.flex]}>Sell VeiloScan plans to other sellers. Once approved you get a Sales Team ID and sign in to the Sales Portal with a one-time code.</Text>
+              <Text style={[opsStyles.muted, styles.flex]}>{t('profile.sellVeiloscanPlansToOtherSellers')}</Text>
             </View>
           ) : null}
-          {state.standing === 'PENDING' ? <Text style={styles.note}>An admin is reviewing your request. You'll be notified when it's decided.</Text> : null}
+          {state.standing === 'PENDING' ? <Text style={styles.note}>{t('profile.anAdminIsReviewingYourRequest')}</Text> : null}
         </>
       )}
     </Group>
@@ -388,6 +404,7 @@ function SalesTeamGroup({ state, loading, onRequest }: { state: SalesTeamState |
 // ── Sheets ───────────────────────────────────────────────────────────────
 
 function EditProfileSheet({ visible, user, profile, onClose, onSaved }: { visible: boolean; user: Rec; profile: Rec | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState({ firstName: '', lastName: '', displayName: '', gender: '', bio: '' });
   const [photo, setPhoto] = useState<PickedFile | null>(null);
@@ -420,7 +437,7 @@ function EditProfileSheet({ visible, user, profile, onClose, onSaved }: { visibl
 
   async function save() {
     setError('');
-    if (!form.firstName.trim()) return setError('Enter your first name');
+    if (!form.firstName.trim()) return setError(t('profile.enterYourFirstName'));
     setSaving(true);
     try {
       const id = String(user.id);
@@ -440,36 +457,36 @@ function EditProfileSheet({ visible, user, profile, onClose, onSaved }: { visibl
 
   const preview = photo?.uri ?? current;
   return (
-    <Sheet visible={visible} title="Edit Profile" onClose={onClose} footer={<Button title="Save changes" loading={saving} onPress={save} />}>
+    <Sheet visible={visible} title={t('profile.editProfile')} onClose={onClose} footer={<Button title={t('common.saveChanges2')} loading={saving} onPress={save} />}>
       <View style={styles.photoRow}>
         <View style={styles.photo}>{preview ? <Image source={{ uri: preview }} style={styles.fill} /> : <UserIcon size={24} color={colors.textMuted} />}</View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Change photo" onPress={pick} style={opsStyles.smallBtn}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('profile.changePhoto')} onPress={pick} style={opsStyles.smallBtn}>
           <ImageIcon size={14} color={colors.text} />
-          <Text style={opsStyles.smallBtnText}>{preview ? 'Change photo' : 'Add photo'}</Text>
+          <Text style={opsStyles.smallBtnText}>{preview ? t('profile.changePhoto') : t('common.addPhoto')}</Text>
         </Pressable>
       </View>
-      <Field label="First Name" required>
-        <Input value={form.firstName} onChangeText={v => set('firstName', v)} maxLength={50} accessibilityLabel="First Name" />
+      <Field label={t('profile.firstName')} required>
+        <Input value={form.firstName} onChangeText={v => set('firstName', v)} maxLength={50} accessibilityLabel={t('profile.firstName')} />
       </Field>
-      <Field label="Last Name">
-        <Input value={form.lastName} onChangeText={v => set('lastName', v)} maxLength={50} accessibilityLabel="Last Name" />
+      <Field label={t('profile.lastName')}>
+        <Input value={form.lastName} onChangeText={v => set('lastName', v)} maxLength={50} accessibilityLabel={t('profile.lastName')} />
       </Field>
-      <Field label="Display Name">
-        <Input value={form.displayName} onChangeText={v => set('displayName', v)} maxLength={50} autoCapitalize="none" accessibilityLabel="Display Name" />
+      <Field label={t('profile.displayName')}>
+        <Input value={form.displayName} onChangeText={v => set('displayName', v)} maxLength={50} autoCapitalize="none" accessibilityLabel={t('profile.displayName')} />
       </Field>
-      <Field label="Gender">
+      <Field label={t('common.gender')}>
         <Choices
           options={[
-            { value: 'MALE', label: 'Male' },
-            { value: 'FEMALE', label: 'Female' },
-            { value: 'OTHER', label: 'Other' },
+            { value: 'MALE', label: t('common.male') },
+            { value: 'FEMALE', label: t('common.female') },
+            { value: 'OTHER', label: t('common.other') },
           ]}
           value={form.gender}
           onChange={v => set('gender', v)}
         />
       </Field>
-      <Field label="About Me" hint={`${form.bio.length} / 255`}>
-        <Input value={form.bio} onChangeText={v => set('bio', v)} maxLength={255} multiline placeholder="A short bio about yourself" style={styles.textArea} accessibilityLabel="About Me" />
+      <Field label={t('profile.aboutMe2')} hint={`${form.bio.length} / 255`}>
+        <Input value={form.bio} onChangeText={v => set('bio', v)} maxLength={255} multiline placeholder={t('profile.aShortBioAboutYourself')} style={styles.textArea} accessibilityLabel={t('profile.aboutMe2')} />
       </Field>
       {error ? (
         <View style={opsStyles.error}>
@@ -483,6 +500,7 @@ function EditProfileSheet({ visible, user, profile, onClose, onSaved }: { visibl
 
 /** Change the password with a code emailed to the account, without signing out. */
 function ChangePasswordSheet({ visible, email, onClose }: { visible: boolean; email: string; onClose: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [step, setStep] = useState<'send' | 'reset'>('send');
   const [otp, setOtp] = useState('');
@@ -515,13 +533,13 @@ function ChangePasswordSheet({ visible, email, onClose }: { visible: boolean; em
 
   async function reset() {
     setError('');
-    if (otp.length !== 6) return setError('Enter the 6-digit code from the email');
-    if (!meetsPasswordRules(password)) return setError('The new password doesn’t meet the rules below');
-    if (password !== confirm) return setError('The passwords don’t match');
+    if (otp.length !== 6) return setError(t('profile.enterThe6DigitCodeFrom'));
+    if (!meetsPasswordRules(password)) return setError(t('profile.theNewPasswordDoesnTMeet'));
+    if (password !== confirm) return setError(t('profile.thePasswordsDonTMatch'));
     setBusy(true);
     try {
       await authService.resetPassword(email, otp, password);
-      toast('Password changed');
+      toast(t('profile.passwordChanged'));
       onClose();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -533,16 +551,16 @@ function ChangePasswordSheet({ visible, email, onClose }: { visible: boolean; em
   return (
     <Sheet
       visible={visible}
-      title="Change Password"
-      subtitle={step === 'send' ? `We'll email a 6-digit code to ${email}.` : `Enter the code sent to ${email}, then your new password.`}
+      title={t('profile.changePassword2')}
+      subtitle={step === 'send' ? t('profile.weLlEmailA6Digit', { email }) : t('profile.enterTheCodeSentToEmail', { email })}
       onClose={onClose}
-      footer={<Button title={step === 'send' ? 'Send Code' : 'Change Password'} loading={busy} onPress={step === 'send' ? send : reset} />}
+      footer={<Button title={step === 'send' ? t('common.sendCode') : t('profile.changePassword2')} loading={busy} onPress={step === 'send' ? send : reset} />}
     >
       {step === 'reset' ? (
         <>
           <OtpInput value={otp} onChange={setOtp} autoFocus disabled={busy} />
-          <PasswordField label="New Password" placeholder="Enter a new password" value={password} onChangeText={setPassword} />
-          <PasswordField label="Confirm Password" placeholder="Enter it again" value={confirm} onChangeText={setConfirm} />
+          <PasswordField label={t('common.newPassword')} placeholder={t('profile.enterANewPassword')} value={password} onChangeText={setPassword} />
+          <PasswordField label={t('profile.confirmPassword')} placeholder={t('profile.enterItAgain')} value={confirm} onChangeText={setConfirm} />
           <View style={styles.rules}>
             {PASSWORD_RULES.map(r => {
               const ok = r.test(password);
@@ -555,13 +573,13 @@ function ChangePasswordSheet({ visible, email, onClose }: { visible: boolean; em
             })}
           </View>
           <Pressable accessibilityRole="button" disabled={busy} onPress={send}>
-            <Text style={styles.link}>Send a new code</Text>
+            <Text style={styles.link}>{t('profile.sendANewCode')}</Text>
           </Pressable>
         </>
       ) : (
         <View style={styles.pitch}>
           <MailIcon size={16} color={colors.secondary} />
-          <Text style={[opsStyles.muted, styles.flex]}>The code is valid for a few minutes. Your other devices may need to sign in again afterwards.</Text>
+          <Text style={[opsStyles.muted, styles.flex]}>{t('profile.theCodeIsValidForA')}</Text>
         </View>
       )}
       {error ? (
@@ -575,6 +593,7 @@ function ChangePasswordSheet({ visible, email, onClose }: { visible: boolean; em
 }
 
 function SalesTeamSheet({ visible, onClose, onSent }: { visible: boolean; onClose: () => void; onSent: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -590,7 +609,7 @@ function SalesTeamSheet({ visible, onClose, onSent }: { visible: boolean; onClos
     setError('');
     try {
       await profileService.requestSalesTeam(note.trim());
-      toast('Request sent — an admin will review it');
+      toast(t('profile.requestSentAnAdminWillReview'));
       onSent();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -601,13 +620,13 @@ function SalesTeamSheet({ visible, onClose, onSent }: { visible: boolean; onClos
   return (
     <Sheet
       visible={visible}
-      title="Become a Sales Team member"
-      subtitle="An admin reviews your request. Once approved, a separate Sales Team account is created with a Sales Team ID for the Sales Portal; your seller account stays as it is."
+      title={t('profile.becomeASalesTeamMember')}
+      subtitle={t('profile.anAdminReviewsYourRequestOnce')}
       onClose={onClose}
-      footer={<Button title="Send request" loading={busy} onPress={send} />}
+      footer={<Button title={t('profile.sendRequest')} loading={busy} onPress={send} />}
     >
-      <Field label="Note (optional)">
-        <Input value={note} onChangeText={setNote} maxLength={500} multiline placeholder="e.g. I'd like to onboard sellers in my area" style={styles.textArea} accessibilityLabel="Note" />
+      <Field label={t('common.noteOptional')}>
+        <Input value={note} onChangeText={setNote} maxLength={500} multiline placeholder="e.g. I'd like to onboard sellers in my area" style={styles.textArea} accessibilityLabel={t('common.note')} />
       </Field>
       {error ? (
         <View style={opsStyles.error}>

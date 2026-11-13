@@ -10,6 +10,8 @@ import {
 import { colors, fonts, radius } from '../../theme';
 import { addDaysISO, formatDay } from '../../lib/date';
 import { REMINDER_TYPES, type ReminderType } from '../../lib/orders';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 export interface CreditTerms {
   /** Days from today until the due date. */
@@ -35,9 +37,9 @@ export function creditTermsProblem(
   maxDays: number,
 ): string | null {
   if (terms.days < 1 || terms.days > maxDays)
-    return `Pick a due date within ${maxDays} days`;
+    return i18n.t('orders.pickADueDateWithinMaxdays', { maxDays });
   if (terms.reminderEnabled && !terms.channels.length)
-    return 'Choose at least one reminder channel';
+    return i18n.t('orders.chooseAtLeastOneReminderChannel');
   return null;
 }
 
@@ -65,6 +67,7 @@ export function CreditTermsForm({
   onChange: (next: CreditTerms) => void;
   maxDays: number;
 }) {
+  const { t } = useTranslation();
   const set = (patch: Partial<CreditTerms>) => onChange({ ...value, ...patch });
   const dayOptions = [
     ...new Set([7, 15, 30, maxDays].filter(d => d > 0 && d <= maxDays)),
@@ -72,25 +75,24 @@ export function CreditTermsForm({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>Due in</Text>
+      <Text style={styles.label}>{t('orders.dueIn')}</Text>
       <View style={styles.chips}>
         {dayOptions.map(days => (
           <Chip
             key={days}
-            label={`${days} days`}
+            label={t('orders.daysDays', { days })}
             selected={value.days === days}
             onPress={() => set({ days })}
           />
         ))}
       </View>
       <Text style={styles.due}>
-        Due {formatDay(addDaysISO(value.days))} · up to {maxDays} days allowed
-      </Text>
+        {t('orders.dueDateUpToMaxdaysDays', { date: formatDay(addDaysISO(value.days)), maxDays })}</Text>
 
       <View style={styles.switchRow}>
         <View style={styles.flex}>
-          <Text style={styles.label}>Remind the customer</Text>
-          <Text style={styles.hint}>Before the due date</Text>
+          <Text style={styles.label}>{t('orders.remindTheCustomer')}</Text>
+          <Text style={styles.hint}>{t('orders.beforeTheDueDate')}</Text>
         </View>
         <Switch
           value={value.reminderEnabled}
@@ -107,15 +109,15 @@ export function CreditTermsForm({
                 key={days}
                 label={
                   days === 0
-                    ? 'On the day'
-                    : `${days} day${days === 1 ? '' : 's'} before`
+                    ? t('orders.onTheDay')
+                    : t('orders.daysBefore', { count: days })
                 }
                 selected={value.reminderDays === days}
                 onPress={() => set({ reminderDays: days })}
               />
             ))}
           </View>
-          <Text style={styles.label}>By</Text>
+          <Text style={styles.label}>{t('common.by')}</Text>
           <View style={styles.chips}>
             {REMINDER_TYPES.map(type => {
               const on = value.channels.includes(type.value);
@@ -142,7 +144,7 @@ export function CreditTermsForm({
       <TextInput
         value={value.notes}
         onChangeText={notes => set({ notes })}
-        placeholder="Note (optional)"
+        placeholder={t('common.noteOptional')}
         placeholderTextColor={colors.textMuted}
         selectionColor="#7c3aed"
         style={styles.notes}

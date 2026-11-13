@@ -13,6 +13,7 @@ import {
   type QuantitySlab,
   type SkuQuantityScheme,
 } from './quantity-discount';
+import i18n from '../i18n';
 
 // Mirrors eshop-backend storefront-order.service placeOrder (seller orders) and
 // utils/seller-order-pricing.util: line discounts first, then the seller's
@@ -80,12 +81,12 @@ export function couponDiscount(
   if (amount < coupon.minOrderValue)
     return {
       off: 0,
-      problem: `${coupon.code} needs an order of at least ₹${coupon.minOrderValue}`,
+      problem: i18n.t('orders.codeNeedsAnOrderOfAt', { code: coupon.code, minOrderValue: coupon.minOrderValue }),
     };
   if (coupon.maxOrderValue && amount > coupon.maxOrderValue)
     return {
       off: 0,
-      problem: `${coupon.code} is for orders up to ₹${coupon.maxOrderValue}`,
+      problem: i18n.t('orders.codeIsForOrdersUpTo', { code: coupon.code, maxOrderValue: coupon.maxOrderValue }),
     };
   const raw =
     coupon.discountType === 'PERCENTAGE'
@@ -103,18 +104,18 @@ export function orderDiscount(
   if (!discount || discount.type === 'NONE') return { off: 0, problem: null };
   const value = discount.value;
   if (!Number.isFinite(value) || value < 0)
-    return { off: 0, problem: 'Enter a discount of 0 or more' };
+    return { off: 0, problem: i18n.t('orders.enterADiscountOf0Or') };
   if (discount.type === 'PERCENTAGE') {
     if (value > 100)
-      return { off: 0, problem: 'Percentage must be between 0 and 100' };
+      return { off: 0, problem: i18n.t('orders.percentageMustBeBetween0And') };
     return { off: round2((amount * value) / 100), problem: null };
   }
   if (round2(value) > round2(amount))
     return {
       off: 0,
-      problem: `Flat discount can't be more than the subtotal (₹${formatNumber(
+      problem: i18n.t('orders.flatDiscountCanTBeMore', { count: formatNumber(
         round2(amount),
-      )})`,
+      ) }),
     };
   return { off: round2(value), problem: null };
 }
@@ -211,7 +212,7 @@ export function priceOrder(
   const { off: couponOff, problem: couponProblem } = blocked
     ? {
         off: 0,
-        problem: `${coupon.code} can't be combined with the quantity discount on these items`,
+        problem: i18n.t('orders.codeCanTBeCombinedWith', { code: coupon.code }),
       }
     : coupon && lines.length
     ? couponDiscount(coupon, eligible)

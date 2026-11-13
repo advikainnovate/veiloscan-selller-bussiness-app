@@ -11,15 +11,17 @@ import { subscriptionService } from '../../services/subscription-service';
 import { AppHeader } from '../../components/layout/AppHeader';
 import { ComingSoon } from '../../components/layout/ComingSoon';
 import { EmptyState, ErrorState, ListSkeleton } from '../../components/list/ListParts';
-import { OpsCard, opsStyles, PageTitle, PROFIT_HIDDEN, RangeChips, StatCard, StatGrid } from '../../components/operations/OpsParts';
+import { OpsCard, opsStyles, PageTitle, profitHidden, RangeChips, StatCard, StatGrid } from '../../components/operations/OpsParts';
 import { AlertCircleIcon, BarChartIcon, BoxIcon, BuildingIcon, CartIcon, ChevronRightIcon, LockIcon, ShoppingBagIcon, StoreIcon, TruckIcon, WalletIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Operations › All Stores: every store a seller owns, combined. Each store's
  * row matches its own dashboard; tap one to switch to it.
  */
 export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
+  const { t } = useTranslation();
   const { hasPermission } = useAuth();
   const allowed = hasPermission('store-operations:manage');
   const { stores, select } = useStore();
@@ -37,8 +39,8 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="All Stores" onBack={navigation.goBack} />
-        <ComingSoon label="All Stores" icon={BuildingIcon} allowed={false} />
+        <AppHeader title={t('common.allStores')} onBack={navigation.goBack} />
+        <ComingSoon label={t('common.allStores')} icon={BuildingIcon} allowed={false} />
       </View>
     );
   }
@@ -46,7 +48,7 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
   if (plan.loading) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="All Stores" onBack={navigation.goBack} />
+        <AppHeader title={t('common.allStores')} onBack={navigation.goBack} />
         <View style={opsStyles.content}>
           <ListSkeleton rows={4} height={110} />
         </View>
@@ -57,26 +59,27 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
   if (!enabled) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="All Stores" onBack={navigation.goBack} />
+        <AppHeader title={t('common.allStores')} onBack={navigation.goBack} />
         <ScrollView contentContainerStyle={opsStyles.content}>
           <View style={opsStyles.row}>
-            <PageTitle title="Business Overview" subtitle="Combined performance across all your stores" />
+            <PageTitle title={t('common.businessOverview')} subtitle={t('operations.combinedPerformanceAcrossAllYourStores')} />
             <View style={styles.locked}>
               <LockIcon size={12} color={colors.textSecondary} />
-              <Text style={styles.lockedText}>Locked</Text>
+              <Text style={styles.lockedText}>{t('operations.locked')}</Text>
             </View>
           </View>
           <View style={styles.upgrade}>
             <View style={styles.upgradeIcon}>
               <BuildingIcon size={22} color={colors.secondaryDark} />
             </View>
-            <Text style={styles.upgradeTitle}>Consolidated reporting isn't in your plan</Text>
+            <Text style={styles.upgradeTitle}>{t('operations.consolidatedReportingIsnTInYour')}</Text>
             <Text style={styles.upgradeText}>
-              {`${plan.data?.plan?.planName ? `Your ${plan.data.plan.planName} plan` : 'Your plan'} lets you switch between your ${stores.length || ''} ${
-                stores.length === 1 ? 'store' : 'stores'
-              } and read each one's dashboard. Upgrade to see their sales, expenses and net profit combined in one place.`}
+              {t('operations.planLetsYouSwitchStores', {
+                plan: plan.data?.plan?.planName ? t('store.yourNamedPlan', { name: plan.data.plan.planName }) : t('store.yourPlan'),
+                stores: stores.length ? t('common.storeCount', { count: stores.length }) : t('operations.storesLower'),
+              })}
             </Text>
-            <Text style={styles.upgradeHint}>Upgrade to the Business plan — contact your account manager to switch.</Text>
+            <Text style={styles.upgradeHint}>{t('operations.upgradeToTheBusinessPlanContact')}</Text>
           </View>
         </ScrollView>
       </View>
@@ -89,30 +92,30 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
 
   function openStore(entry: ConsolidatedStore) {
     select(entry.store.id);
-    toast(`Switched to ${entry.store.name}`);
+    toast(t('common.switchedToName', { name: entry.store.name }));
     navigation.navigate('BusinessOverview');
   }
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="All Stores" onBack={navigation.goBack} />
+      <AppHeader title={t('common.allStores')} onBack={navigation.goBack} />
       <ScrollView
         contentContainerStyle={opsStyles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
       >
         <PageTitle
-          title="Business Overview"
-          subtitle={`${data ? `All ${data.storeCount} ${data.storeCount === 1 ? 'store' : 'stores'}` : 'All stores'} · ${rangeLabel(range)}`}
+          title={t('common.businessOverview')}
+          subtitle={`${data ? t('operations.allStoresCount', { count: data.storeCount }) : t('common.allStores')} · ${rangeLabel(range)}`}
         />
         <RangeChips today={today} value={range} onChange={setRange} />
         {error && !data ? <ErrorState message={error} onRetry={() => reload()} /> : null}
 
         <StatGrid>
-          <StatCard icon={CartIcon} tone="orange" label="Total Sales" value={money(totals?.sales)} delta={previous ? change(totals?.sales, previous.sales) : undefined} loading={loading} />
+          <StatCard icon={CartIcon} tone="orange" label={t('common.totalSales')} value={money(totals?.sales)} delta={previous ? change(totals?.sales, previous.sales) : undefined} loading={loading} />
           <StatCard
             icon={WalletIcon}
             tone="red"
-            label="Total Expenses"
+            label={t('common.totalExpenses')}
             value={money(totals?.expenses)}
             delta={previous ? change(totals?.expenses, previous.expenses) : undefined}
             invertDelta
@@ -121,40 +124,40 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
           <StatCard
             icon={BoxIcon}
             tone="amber"
-            label="Cost of Goods Sold"
+            label={t('operations.costOfGoodsSold')}
             value={canProfit ? money(totals?.productCost) : '—'}
             delta={previous && canProfit ? change(totals?.productCost, previous.productCost) : undefined}
             invertDelta
-            sub={canProfit ? undefined : PROFIT_HIDDEN}
+            sub={canProfit ? undefined : profitHidden()}
             loading={loading}
           />
           <StatCard
             icon={BarChartIcon}
             tone="emerald"
-            label="Net Profit"
+            label={t('operations.netProfit')}
             value={canProfit ? money(totals?.netProfit) : '—'}
             negative={(totals?.netProfit ?? 0) < 0}
             delta={previous && canProfit ? change(totals?.netProfit, previous.netProfit) : undefined}
-            sub={canProfit ? (totals?.netMargin != null ? `${totals.netMargin}% margin` : undefined) : PROFIT_HIDDEN}
+            sub={canProfit ? (totals?.netMargin != null ? t('operations.netmarginPercentMargin', { netMargin: totals.netMargin }) : undefined) : profitHidden()}
             loading={loading}
           />
-          <StatCard icon={ShoppingBagIcon} tone="violet" label="Orders" value={count(totals?.orders)} delta={previous ? change(totals?.orders, previous.orders) : undefined} loading={loading} />
+          <StatCard icon={ShoppingBagIcon} tone="violet" label={t('common.orders')} value={count(totals?.orders)} delta={previous ? change(totals?.orders, previous.orders) : undefined} loading={loading} />
           <StatCard
             icon={WalletIcon}
             tone="sky"
-            label="Collection"
+            label={t('operations.collection')}
             value={money(totals?.collection)}
             delta={previous ? change(totals?.collection, previous.collection) : undefined}
-            sub={totals ? `Cash ${money(totals.cashCollection)} · Online ${money(totals.onlineCollection)}` : undefined}
+            sub={totals ? t('operations.cashCashcollectionOnlineOnlinecollection', { cashCollection: money(totals.cashCollection), onlineCollection: money(totals.onlineCollection) }) : undefined}
             loading={loading}
           />
         </StatGrid>
 
-        <OpsCard title="Store-wise performance" description="Each store's share of the combined totals. Tap one to open its own dashboard.">
+        <OpsCard title={t('operations.storeWisePerformance')} description={t('operations.eachStoresShareOfTheCombined')}>
           {loading ? (
             <ListSkeleton rows={3} height={64} />
           ) : !data?.stores.length ? (
-            <EmptyState icon={StoreIcon} title="No stores yet" text="Create a store to start seeing its performance here." />
+            <EmptyState icon={StoreIcon} title={t('common.noStoresYet')} text={t('operations.createAStoreToStartSeeing')} />
           ) : (
             <View style={styles.stores}>
               {data.stores.map(entry => (
@@ -164,12 +167,12 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
           )}
         </OpsCard>
 
-        <OpsCard title="Combined inventory" description="Stock alerts across every store.">
+        <OpsCard title={t('operations.combinedInventory')} description={t('operations.stockAlertsAcrossEveryStore')}>
           <StatGrid>
-            <StatCard icon={AlertCircleIcon} tone="amber" label="Low stock" value={count(data?.alerts.lowStock)} loading={loading} />
-            <StatCard icon={BoxIcon} tone="red" label="Out of stock" value={count(data?.alerts.outOfStock)} loading={loading} />
-            <StatCard icon={TruckIcon} tone="sky" label="Pending stock orders" value={count(data?.alerts.pendingStockOrders)} loading={loading} />
-            <StatCard icon={TruckIcon} tone="slate" label="Delayed stock orders" value={count(data?.alerts.delayedStockOrders)} loading={loading} />
+            <StatCard icon={AlertCircleIcon} tone="amber" label={t('common.lowStock2')} value={count(data?.alerts.lowStock)} loading={loading} />
+            <StatCard icon={BoxIcon} tone="red" label={t('common.outOfStock2')} value={count(data?.alerts.outOfStock)} loading={loading} />
+            <StatCard icon={TruckIcon} tone="sky" label={t('operations.pendingStockOrders')} value={count(data?.alerts.pendingStockOrders)} loading={loading} />
+            <StatCard icon={TruckIcon} tone="slate" label={t('operations.delayedStockOrders')} value={count(data?.alerts.delayedStockOrders)} loading={loading} />
           </StatGrid>
         </OpsCard>
       </ScrollView>
@@ -178,13 +181,14 @@ export function AllStoresScreen({ navigation }: ScreenProps<'AllStores'>) {
 }
 
 function StoreRow({ entry, totalSales, canProfit, onOpen }: { entry: ConsolidatedStore; totalSales: number; canProfit: boolean; onOpen: () => void }) {
+  const { t } = useTranslation();
   const share = totalSales > 0 ? (entry.metrics.sales / totalSales) * 100 : 0;
   const profit = entry.metrics.netProfit;
   const delta = change(entry.metrics.sales, entry.previous.sales);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${entry.store.name}, ${money(entry.metrics.sales)} sales`}
+      accessibilityLabel={t('operations.nameSalesSales', { name: entry.store.name, sales: money(entry.metrics.sales) })}
       onPress={onOpen}
       style={({ pressed }) => [styles.storeRow, pressed && styles.pressed]}
     >
@@ -198,12 +202,12 @@ function StoreRow({ entry, totalSales, canProfit, onOpen }: { entry: Consolidate
         <View style={styles.track}>
           <View style={[styles.fill, { width: `${Math.min(share, 100)}%` }]} />
         </View>
-        <Text style={opsStyles.meta}>{`${share.toFixed(1)}% of sales · ${count(entry.metrics.orders)} orders`}</Text>
+        <Text style={opsStyles.meta}>{t('operations.fixedPercentOfSalesOrdersOrders', { fixed: share.toFixed(1), orders: count(entry.metrics.orders) })}</Text>
       </View>
       <View style={styles.right}>
         <Text style={opsStyles.amount}>{money(entry.metrics.sales)}</Text>
         <Text style={[styles.profit, !canProfit ? styles.mutedText : (profit ?? 0) < 0 ? opsStyles.danger : opsStyles.success]}>
-          {canProfit ? `${money(profit)} profit` : '—'}
+          {canProfit ? t('common.profitProfit', { profit: money(profit) }) : '—'}
         </Text>
         {delta !== null ? (
           <Text style={[styles.delta, delta >= 0 ? opsStyles.success : opsStyles.danger]}>{`${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(1)}%`}</Text>

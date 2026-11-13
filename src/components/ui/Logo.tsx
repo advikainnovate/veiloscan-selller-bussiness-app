@@ -1,6 +1,8 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, fonts } from '../../theme';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const markColor = require('../../assets/brand/logo-mark-color.png');
 const markWhite = require('../../assets/brand/logo-mark-white.png');
@@ -20,9 +22,10 @@ export function Logo({
   layout = 'horizontal',
   size = 40,
   showWordmark = true,
-  tagline = 'D2C E-Commerce Platform',
+  tagline = i18n.t('ui.d2cECommercePlatform'),
   style,
 }: LogoProps) {
+  const { t } = useTranslation();
   const isWhite = variant === 'white';
   const isStacked = layout === 'stacked';
   const wordSize = Math.max(20, Math.round(size * 0.55));
@@ -33,7 +36,7 @@ export function Logo({
       {showWordmark ? (
         <View style={isStacked ? styles.center : null}>
           <Text style={[styles.wordmark, { fontSize: wordSize, color: isWhite ? colors.white : colors.text }]}>
-            Veilo<Text style={styles.accent}>Scan</Text>
+            {t('common.veilo')}<Text style={styles.accent}>{t('common.scan')}</Text>
           </Text>
           {tagline ? (
             <Text style={[styles.tagline, isWhite ? styles.taglineWhite : null]}>

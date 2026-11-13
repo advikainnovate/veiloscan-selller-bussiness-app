@@ -10,6 +10,7 @@ import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
 import { opsStyles } from '../operations/OpsParts';
 import { AlertCircleIcon, ArrowDownIcon, ArrowUpIcon, AwardIcon, CheckCircleIcon, StarIcon } from '../icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Change plan, as the panel's dialog: pick monthly or yearly, then a plan,
@@ -18,6 +19,7 @@ import { AlertCircleIcon, ArrowDownIcon, ArrowUpIcon, AwardIcon, CheckCircleIcon
  * what's over; that message is shown as sent.
  */
 export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visible: boolean; current: CurrentPlan; onClose: () => void; onChanged: () => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const [cycle, setCycle] = useState<BillingCycle>(current.billingCycle ?? 'MONTHLY');
   const [picked, setPicked] = useState<CataloguePlan | null>(null);
@@ -43,7 +45,7 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
     setError('');
     try {
       const result = current.isDefault ? await subscriptionService.start(picked.planCode, cycle) : await subscriptionService.change(picked.planCode, cycle);
-      toast(`You're now on ${result.planName}`);
+      toast(t('subscription.youReNowOnPlanname', { planName: result.planName }));
       onChanged();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -59,19 +61,19 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
   return (
     <Sheet
       visible={visible}
-      title={picked ? 'Confirm your new plan' : current.isDefault ? 'Choose a plan' : 'Change your plan'}
+      title={picked ? t('subscription.confirmYourNewPlan') : current.isDefault ? t('subscription.chooseAPlan') : t('subscription.changeYourPlan')}
       subtitle={
-        picked ? undefined : current.isDefault ? 'Pick the plan that fits your business. Every paid plan starts on a free trial.' : `You are on ${current.planName}. Pick another plan to move to.`
+        picked ? undefined : current.isDefault ? t('subscription.pickThePlanThatFitsYour') : t('subscription.youAreOnPlannamePickAnother', { planName: current.planName })
       }
       onClose={close}
       footer={
         picked ? (
           <View style={styles.footer}>
             <Pressable accessibilityRole="button" disabled={saving} onPress={() => setPicked(null)} style={styles.back}>
-              <Text style={opsStyles.smallBtnText}>Back</Text>
+              <Text style={opsStyles.smallBtnText}>{t('common.back')}</Text>
             </Pressable>
             <View style={styles.flex}>
-              <Button title={move === 'downgrade' ? `Downgrade to ${picked.planName}` : `Confirm ${picked.planName}`} loading={saving} onPress={confirm} />
+              <Button title={move === 'downgrade' ? t('subscription.downgradeToPlanname', { planName: picked.planName }) : t('subscription.confirmPlanname', { planName: picked.planName })} loading={saving} onPress={confirm} />
             </View>
           </View>
         ) : undefined
@@ -81,9 +83,9 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
         <>
           <View style={styles.summary}>
             {[
-              ['FROM', current.planName],
-              ['TO', picked.planName],
-              ['NEW PRICE', price ? `${money(price.amount as number, price.currency)} / ${cycleNoun(cycle)}` : '—'],
+              [t('subscription.fromLabel'), current.planName],
+              [t('subscription.toLabel'), picked.planName],
+              [t('subscription.newPrice'), price ? `${money(price.amount as number, price.currency)} / ${cycleNoun(cycle)}` : '—'],
             ].map(([k, v]) => (
               <View key={k} style={styles.flex}>
                 <Text style={styles.kicker}>{k}</Text>
@@ -93,17 +95,17 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
           </View>
           <Text style={opsStyles.meta}>
             {move === 'downgrade'
-              ? 'You will keep fewer features and lower limits. If this account already holds more than the new plan allows, the change is refused and we will tell you what to remove first.'
-              : 'The change takes effect immediately — your new features are available as soon as you confirm.'}
+              ? t('subscription.youWillKeepFewerFeaturesAnd')
+              : t('subscription.theChangeTakesEffectImmediatelyYour')}
           </Text>
           <Text style={opsStyles.muted}>
             {current.isDefault
               ? price && price.trialDays > 0
-                ? `Your ${price.trialDays}-day free trial starts now. No card is taken and nothing is charged automatically.`
-                : 'No card is taken and nothing is charged automatically.'
+                ? t('subscription.yourTrialdaysDayFreeTrialStarts', { trialDays: price.trialDays })
+                : t('subscription.noCardIsTakenAndNothing')
               : current.status === 'TRIALING'
-                ? 'Your free trial carries over and keeps its original end date — switching does not start a new one.'
-                : 'Nothing is charged right now.'}
+                ? t('subscription.yourFreeTrialCarriesOverAnd')
+                : t('subscription.nothingIsChargedRightNow')}
           </Text>
           {error ? (
             <View style={opsStyles.error}>
@@ -119,17 +121,17 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
               const on = cycle === c;
               return (
                 <Pressable key={c} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setCycle(c)} style={[styles.cycleBtn, on && styles.cycleOn]}>
-                  <Text style={[styles.cycleText, on && styles.cycleTextOn]}>{c === 'MONTHLY' ? 'Monthly' : 'Yearly'}</Text>
+                  <Text style={[styles.cycleText, on && styles.cycleTextOn]}>{c === 'MONTHLY' ? t('common.monthly') : t('common.yearly')}</Text>
                 </Pressable>
               );
             })}
           </View>
           {loading ? (
-            <Text style={[opsStyles.muted, styles.center]}>Loading plans…</Text>
+            <Text style={[opsStyles.muted, styles.center]}>{t('subscription.loadingPlans')}</Text>
           ) : loadError || !plans.length ? (
             <View style={styles.warn}>
               <AwardIcon size={16} color={colors.warningDark} />
-              <Text style={[styles.warnText, styles.flex]}>Plans are unavailable right now. Please try again shortly.</Text>
+              <Text style={[styles.warnText, styles.flex]}>{t('subscription.plansAreUnavailableRightNowPlease')}</Text>
             </View>
           ) : (
             plans.map(plan => (
@@ -152,6 +154,7 @@ export function ChangePlanSheet({ visible, current, onClose, onChanged }: { visi
 }
 
 function PlanCard({ plan, cycle, move, onPick }: { plan: CataloguePlan; cycle: BillingCycle; move: Move; onPick: () => void }) {
+  const { t } = useTranslation();
   const price = priceOn(plan, cycle);
   const trialDays = price?.trialDays ?? plan.trialDays;
   const actionable = move === 'upgrade' || move === 'downgrade' || move === 'cycle';
@@ -162,12 +165,12 @@ function PlanCard({ plan, cycle, move, onPick }: { plan: CataloguePlan; cycle: B
         {move === 'current' ? (
           <View style={[styles.pill, styles.pillCurrent]}>
             <CheckCircleIcon size={11} color="#047857" />
-            <Text style={[styles.pillText, styles.green]}>Current</Text>
+            <Text style={[styles.pillText, styles.green]}>{t('common.current')}</Text>
           </View>
         ) : plan.isRecommended ? (
           <View style={[styles.pill, styles.pillPopular]}>
             <StarIcon size={11} color="#b45309" />
-            <Text style={[styles.pillText, styles.amber]}>Most popular</Text>
+            <Text style={[styles.pillText, styles.amber]}>{t('subscription.mostPopular')}</Text>
           </View>
         ) : null}
       </View>
@@ -176,11 +179,11 @@ function PlanCard({ plan, cycle, move, onPick }: { plan: CataloguePlan; cycle: B
         {price
           ? `${money(price.amount as number, price.currency)}`
           : plan.pricingModel === 'CUSTOM'
-            ? 'Priced to your requirements'
-            : `Not sold ${cycle === 'YEARLY' ? 'yearly' : 'monthly'}`}
+            ? t('subscription.pricedToYourRequirements')
+            : cycle === 'YEARLY' ? t('subscription.notSoldYearly') : t('subscription.notSoldMonthly')}
         {price ? <Text style={styles.per}>{` / ${cycleNoun(cycle)}`}</Text> : null}
       </Text>
-      {price && trialDays > 0 ? <Text style={styles.trial}>{`${trialDays}-day free trial`}</Text> : null}
+      {price && trialDays > 0 ? <Text style={styles.trial}>{t('subscription.trialdaysDayFreeTrial', { trialDays })}</Text> : null}
       {plan.highlights.length ? (
         <View style={styles.highlights}>
           {plan.highlights.slice(0, 4).map(h => (
@@ -194,7 +197,7 @@ function PlanCard({ plan, cycle, move, onPick }: { plan: CataloguePlan; cycle: B
       {actionable ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${MOVE_LABEL[move]} to ${plan.planName}`}
+          accessibilityLabel={t('subscription.moveLabelToPlanname', { MOVE_LABEL: MOVE_LABEL[move], planName: plan.planName })}
           onPress={onPick}
           style={[move === 'downgrade' ? opsStyles.smallBtn : opsStyles.primaryBtn, styles.action]}
         >

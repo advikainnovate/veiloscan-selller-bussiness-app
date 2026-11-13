@@ -18,20 +18,23 @@ import { EmptyState, ErrorState, ListSkeleton, SearchBar } from '../../component
 import { confirmAction, opsStyles } from '../../components/operations/OpsParts';
 import { ChevronRightIcon, PercentIcon, PlusIcon, TicketIcon, TrashIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 // Shown 10 at a time; more load as the list scrolls.
 const PAGE_SIZE = 10;
 
 // Each state's count doubles as its filter.
 const STATE_TILES: { state: SchemeState; hint: string; color: string; tint: string }[] = [
-  { state: 'RUNNING', hint: 'Discounting orders now', color: '#059669', tint: '#ecfdf5' },
-  { state: 'SCHEDULED', hint: 'Start at a later date', color: '#0284c7', tint: '#f0f9ff' },
-  { state: 'ENDED', hint: 'Past their end date', color: '#64748b', tint: '#f1f5f9' },
-  { state: 'INACTIVE', hint: 'Switched off by you', color: '#d97706', tint: '#fffbeb' },
+  { state: 'RUNNING', get hint() { return i18n.t('pricing.discountingOrdersNow'); }, color: '#059669', tint: '#ecfdf5' },
+  { state: 'SCHEDULED', get hint() { return i18n.t('pricing.startAtALaterDate'); }, color: '#0284c7', tint: '#f0f9ff' },
+  { state: 'ENDED', get hint() { return i18n.t('pricing.pastTheirEndDate'); }, color: '#64748b', tint: '#f1f5f9' },
+  { state: 'INACTIVE', get hint() { return i18n.t('pricing.switchedOffByYou'); }, color: '#d97706', tint: '#fffbeb' },
 ];
 
 /** Pricing & Discounts › Quantity Discount Slabs: every scheme, with its slabs at a glance. */
 export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const toast = useToast();
   const insets = useSafeAreaInsets();
@@ -59,17 +62,17 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="Quantity Discount Slabs" onBack={navigation.goBack} />
-        <ComingSoon label="Quantity Discount Slabs" icon={PercentIcon} allowed={false} />
+        <AppHeader title={tr('common.quantityDiscountSlabs')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.quantityDiscountSlabs')} icon={PercentIcon} allowed={false} />
       </View>
     );
   }
 
   async function remove(row: SchemeListRow) {
-    if (!(await confirmAction(`Delete "${row.schemeName}"?`, 'Orders already placed keep their discount.', 'Delete', true))) return;
+    if (!(await confirmAction(tr('pricing.deleteSchemename', { schemeName: row.schemeName }), tr('pricing.ordersAlreadyPlacedKeepTheirDiscount'), tr('common.delete'), true))) return;
     try {
       await quantityDiscountService.remove(row.id);
-      toast('Quantity discount deleted');
+      toast(tr('pricing.quantityDiscountDeleted'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -80,11 +83,11 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
     setState(cur => (cur === s ? '' : s));
     setShown(PAGE_SIZE);
   };
-  const hint = state ? STATE_TILES.find(t => t.state === state)!.hint : "Buy more, pay less — applies by itself in the shop and at the counter once a customer's quantity reaches a slab.";
+  const hint = state ? STATE_TILES.find(t => t.state === state)!.hint : tr('pricing.buyMorePayLessAppliesBy');
 
   return (
     <View style={opsStyles.screen}>
-      <AppHeader title="Quantity Discount Slabs" subtitle="Pricing & Discounts" onBack={navigation.goBack} />
+      <AppHeader title={tr('common.quantityDiscountSlabs')} subtitle={tr('common.pricingAndDiscounts')} onBack={navigation.goBack} />
 
       {/* Search and the state tiles stay put while the list scrolls. */}
       <View style={styles.top}>
@@ -94,7 +97,7 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
             setSearch(v);
             setShown(PAGE_SIZE);
           }}
-          placeholder="Search by scheme, product or ID…"
+          placeholder={tr('pricing.searchBySchemeProductOrId')}
         />
         <View style={styles.tiles}>
           {STATE_TILES.map(t => {
@@ -129,10 +132,10 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
                 setSearch('');
               }}
             >
-              <Text style={styles.clear}>{`Clear · ${rows.length} of ${all.length}`}</Text>
+              <Text style={styles.clear}>{tr('pricing.clearRowscountOfAllcount', { rowsCount: rows.length, allCount: all.length })}</Text>
             </Pressable>
           ) : (
-            <Text style={opsStyles.muted}>{`${all.length} scheme${all.length === 1 ? '' : 's'}`}</Text>
+            <Text style={opsStyles.muted}>{tr('pricing.schemeCount', { count: all.length })}</Text>
           )}
         </View>
       </View>
@@ -155,8 +158,8 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
               <View style={styles.empty}>
                 <EmptyState
                   icon={PercentIcon}
-                  title={filtered ? 'No schemes match' : 'No quantity discounts yet'}
-                  text={filtered ? 'Try another filter or search term.' : 'Give customers a lower price when they buy more — for example 5% off 5–9 units and 10% off 10 or more.'}
+                  title={filtered ? tr('pricing.noSchemesMatch') : tr('pricing.noQuantityDiscountsYet')}
+                  text={filtered ? tr('common.tryAnotherFilterOrSearchTerm') : tr('pricing.giveCustomersALowerPriceWhen')}
                 />
               </View>
             )
@@ -167,12 +170,12 @@ export function QuantitySlabsScreen({ navigation }: ScreenProps<'QuantitySlabs'>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Create Discount Scheme"
+        accessibilityLabel={tr('pricing.createDiscountScheme')}
         onPress={() => navigation.navigate('QuantitySlabForm')}
         style={({ pressed }) => [styles.fab, { bottom: insets.bottom + 20 }, pressed && opsStyles.pressed]}
       >
         <PlusIcon size={18} color={colors.white} strokeWidth={2.6} />
-        <Text style={styles.fabText}>New Scheme</Text>
+        <Text style={styles.fabText}>{tr('pricing.newScheme')}</Text>
       </Pressable>
     </View>
   );
@@ -184,14 +187,15 @@ function Separator() {
 
 /** One scheme: name and state, what it covers, when and where, then its slab ladder. */
 function SchemeRow({ row, onOpen, onDelete }: { row: SchemeListRow; onOpen: () => void; onDelete: () => void }) {
+  const { t } = useTranslation();
   const badge = STATE_BADGE[row.state];
   const covers = `${TARGET_LABEL[row.targetType]}${row.targetType === 'SPECIFIC_VARIANTS' ? ` (${row.variantCount} of ${row.skuCount})` : ''}${row.aggregationMode === 'COMBINED_PRODUCT' ? ' · quantities combined' : ''}`;
   const when = `${formatDay(row.startsAt)} → ${row.endsAt ? formatDay(row.endsAt) : 'no end'}`;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${row.schemeName}`}
-      accessibilityHint="Opens the scheme to edit it"
+      accessibilityLabel={t('pricing.openSchemename', { schemeName: row.schemeName })}
+      accessibilityHint={t('pricing.opensTheSchemeToEditIt')}
       onPress={onOpen}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
@@ -201,7 +205,7 @@ function SchemeRow({ row, onOpen, onDelete }: { row: SchemeListRow; onOpen: () =
           {row.schemeName}
         </Text>
         <Badge label={badge.label} tone={badge.tone} />
-        <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${row.schemeName}`} hitSlop={10} onPress={onDelete} style={styles.trash}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('pricing.deleteSchemename2', { schemeName: row.schemeName })} hitSlop={10} onPress={onDelete} style={styles.trash}>
           <TrashIcon size={16} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -225,7 +229,7 @@ function SchemeRow({ row, onOpen, onDelete }: { row: SchemeListRow; onOpen: () =
         {row.stackWithCoupons ? (
           <View style={styles.coupons}>
             <TicketIcon size={11} color="#4338ca" />
-            <Text style={styles.couponsText}>Coupons allowed</Text>
+            <Text style={styles.couponsText}>{t('pricing.couponsAllowed')}</Text>
           </View>
         ) : null}
       </View>

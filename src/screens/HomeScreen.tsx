@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatLongDate } from '../lib/date';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, radius, shadow } from '../theme';
@@ -15,6 +16,8 @@ import { QuickAccess } from '../components/home/QuickAccess';
 import { GrowCard } from '../components/home/GrowCard';
 import { ArrowDownIcon, ArrowUpIcon, BoxIcon, PlusIcon, StoreIcon } from '../components/icons';
 import type { TabScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 interface HomeData {
   overview: Overview;
@@ -24,6 +27,7 @@ interface HomeData {
 
 /** Home: a greeting, today's figures, shortcuts, the banner, quick access and a growth nudge. */
 export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
+  const { t } = useTranslation();
   const { hasPermission, user } = useAuth();
   const { refresh: refreshNotifications } = useNotifications();
   const [data, setData] = useState<HomeData | null>(null);
@@ -95,7 +99,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
                 {firstName}
               </Text>
             ) : null}
-            <Text style={styles.date}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+            <Text style={styles.date}>{formatLongDate(new Date())}</Text>
           </View>
           {storeName ? (
             <View style={styles.storeChip}>
@@ -109,8 +113,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
 
         {error && !data ? (
           <Text style={[styles.error, styles.section]} onPress={load} accessibilityRole="button">
-            Couldn't load today's figures. {error} Tap to retry.
-          </Text>
+            {t('home.couldnTLoadTodaysFiguresError', { error })}</Text>
         ) : null}
 
         {/* Today */}
@@ -122,7 +125,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
               {canOrders ? (
                 <>
                   <View style={styles.todayTop}>
-                    <Text style={styles.todayLabel}>Today's sales</Text>
+                    <Text style={styles.todayLabel}>{t('home.todaysSales')}</Text>
                     {salesTrend ? <TrendPill trend={salesTrend} /> : null}
                   </View>
                   <Text style={styles.todayValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
@@ -130,22 +133,22 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
                   </Text>
                 </>
               ) : (
-                <Text style={styles.todayLabel}>Your store today</Text>
+                <Text style={styles.todayLabel}>{t('home.yourStoreToday')}</Text>
               )}
               <View style={styles.todayStats}>
                 {canOrders ? (
                   <TodayStat
-                    label="Orders today"
+                    label={t('home.ordersToday')}
                     value={figure(kpis?.orders ? formatNumber(kpis.orders.value) : undefined)}
-                    hint={ordersTrend ? (ordersTrend.direction === 'flat' ? 'Same as yesterday' : `${ordersTrend.label} vs yesterday`) : undefined}
+                    hint={ordersTrend ? (ordersTrend.direction === 'flat' ? t('home.sameAsYesterday') : t('home.labelVsYesterday', { label: ordersTrend.label })) : undefined}
                     onPress={() => navigation.navigate('Orders')}
                   />
                 ) : null}
                 {canProducts ? (
-                  <TodayStat label="Products" value={figure(kpis?.products ? formatNumber(kpis.products.value) : undefined)} onPress={() => navigation.navigate('Products')} />
+                  <TodayStat label={t('common.products')} value={figure(kpis?.products ? formatNumber(kpis.products.value) : undefined)} onPress={() => navigation.navigate('Products')} />
                 ) : null}
                 {canCustomers ? (
-                  <TodayStat label="Customers" value={figure(data?.customers != null ? formatNumber(data.customers) : undefined)} onPress={() => navigation.navigate('Customers')} />
+                  <TodayStat label={t('common.customers')} value={figure(data?.customers != null ? formatNumber(data.customers) : undefined)} onPress={() => navigation.navigate('Customers')} />
                 ) : null}
               </View>
             </View>
@@ -160,7 +163,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
                 <View style={[styles.shortcutIcon, styles.shortcutIconPrimary]}>
                   <PlusIcon size={18} color={colors.white} strokeWidth={2.4} />
                 </View>
-                <Text style={[styles.shortcutText, styles.shortcutTextPrimary]}>New order</Text>
+                <Text style={[styles.shortcutText, styles.shortcutTextPrimary]}>{t('common.newOrder')}</Text>
               </Pressable>
             ) : null}
             {canProducts ? (
@@ -168,7 +171,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
                 <View style={styles.shortcutIcon}>
                   <BoxIcon size={18} color={colors.secondary} />
                 </View>
-                <Text style={styles.shortcutText}>Add product</Text>
+                <Text style={styles.shortcutText}>{t('common.addProduct')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -194,7 +197,7 @@ export function HomeScreen({ navigation }: TabScreenProps<'Home'>) {
 }
 
 function greeting(hour = new Date().getHours()) {
-  return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  return hour < 12 ? i18n.t('home.goodMorning') : hour < 17 ? i18n.t('home.goodAfternoon') : i18n.t('home.goodEvening');
 }
 
 function TrendPill({ trend: t }: { trend: Trend }) {

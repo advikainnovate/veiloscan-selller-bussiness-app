@@ -17,9 +17,11 @@ import { SectionCard } from '../../components/store/StoreSections';
 import { BanIcon, CheckCircleIcon, EditIcon, SlidersIcon } from '../../components/icons';
 import { useSpecLookups } from './ProductSpecsScreen';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** One product specification: its details and values, with Activate / Deactivate and Edit. */
 export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'ProductSpecDetail'>) {
+  const { t } = useTranslation();
   const { id } = route.params;
   const { hasPermission } = useAuth();
   const toast = useToast();
@@ -27,13 +29,13 @@ export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'Prod
   const { data, error, loading, reload } = useFetch(() => (allowed ? productSpecificationService.get(id) : Promise.resolve(null)), [allowed, id]);
   const look = useSpecLookups(allowed);
 
-  const title = data ? `${look.productName(data.productId) || '—'} — ${look.specTitle(data.specificationId) || '—'}` : 'Product Specification';
-  const header = <AppHeader title={look.specTitle(data?.specificationId) || 'Product Specification'} subtitle="Product Specs" onBack={navigation.goBack} />;
+  const title = data ? `${look.productName(data.productId) || '—'} — ${look.specTitle(data.specificationId) || '—'}` : t('catalog.productSpecification');
+  const header = <AppHeader title={look.specTitle(data?.specificationId) || t('catalog.productSpecification')} subtitle={t('common.productSpecs')} onBack={navigation.goBack} />;
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ComingSoon label="Product Specs" icon={SlidersIcon} allowed={false} />
+        <ComingSoon label={t('common.productSpecs')} icon={SlidersIcon} allowed={false} />
       </View>
     );
   }
@@ -49,7 +51,7 @@ export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'Prod
     return (
       <View style={opsStyles.screen}>
         {header}
-        <ErrorState message={error || 'Not found.'} onRetry={reload} />
+        <ErrorState message={error || t('common.notFound')} onRetry={reload} />
       </View>
     );
   }
@@ -59,10 +61,10 @@ export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'Prod
   const values = specValues(data, look.values);
 
   async function toggle() {
-    if (!(await confirmAction(`${active ? 'Deactivate' : 'Activate'} this specification assignment?`, undefined, active ? 'Deactivate' : 'Activate', active))) return;
+    if (!(await confirmAction(active ? t('catalog.deactivateSpecAssignment') : t('catalog.activateSpecAssignment'), undefined, active ? t('common.deactivate') : t('common.activate'), active))) return;
     try {
       await productSpecificationService.update(id, { status: active ? 0 : 1 });
-      toast(active ? 'Deactivated' : 'Activated');
+      toast(active ? t('catalog.deactivated') : t('catalog.activated'));
       reload();
     } catch (err) {
       toast(extractErrorMessage(err), 'error');
@@ -76,34 +78,34 @@ export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'Prod
         <View style={styles.head}>
           <Text style={styles.title}>{title}</Text>
           <View style={opsStyles.row}>
-            <Badge label={active ? 'Active' : 'Inactive'} tone={active ? 'green' : 'slate'} />
-            <Text style={opsStyles.muted}>{`${values.length} value${values.length === 1 ? '' : 's'}`}</Text>
+            <Badge label={active ? t('common.active') : t('common.inactive')} tone={active ? 'green' : 'slate'} />
+            <Text style={opsStyles.muted}>{t('common.valueCount', { count: values.length })}</Text>
           </View>
         </View>
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={toggle} style={[opsStyles.smallBtn, styles.grow]}>
             {active ? <BanIcon size={14} color={colors.text} /> : <CheckCircleIcon size={14} color={colors.text} />}
-            <Text style={opsStyles.smallBtnText}>{active ? 'Deactivate' : 'Activate'}</Text>
+            <Text style={opsStyles.smallBtnText}>{active ? t('common.deactivate') : t('common.activate')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={() => navigation.navigate('ProductSpecForm', { id })} style={[opsStyles.primaryBtn, styles.grow]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.edit')} onPress={() => navigation.navigate('ProductSpecForm', { id })} style={[opsStyles.primaryBtn, styles.grow]}>
             <EditIcon size={14} color={colors.white} />
-            <Text style={opsStyles.primaryBtnText}>Edit</Text>
+            <Text style={opsStyles.primaryBtnText}>{t('common.edit')}</Text>
           </Pressable>
         </View>
-        <SectionCard icon={SlidersIcon} title="Details">
-          <Detail label="Product" value={look.productName(data.productId)} />
-          <Detail label="Specification" value={look.specTitle(data.specificationId)} />
-          <Detail label="Type" value={String(spec?.type ?? '')} />
-          <Detail label="Required" value={spec?.isRequired ? 'Yes' : 'No'} />
-          <Detail label="Created" value={formatDay(data.createdAt)} />
-          <Detail label="Updated" value={formatDay(data.updatedAt)} />
+        <SectionCard icon={SlidersIcon} title={t('common.details')}>
+          <Detail label={t('common.product')} value={look.productName(data.productId)} />
+          <Detail label={t('catalog.specification')} value={look.specTitle(data.specificationId)} />
+          <Detail label={t('common.type')} value={String(spec?.type ?? '')} />
+          <Detail label={t('common.required')} value={spec?.isRequired ? 'Yes' : 'No'} />
+          <Detail label={t('common.created')} value={formatDay(data.createdAt)} />
+          <Detail label={t('common.updated')} value={formatDay(data.updatedAt)} />
         </SectionCard>
         <SectionCard
           icon={SlidersIcon}
-          title="Values"
+          title={t('catalog.values')}
           action={
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('ProductSpecForm', { id })}>
-              <Text style={styles.link}>Manage Values</Text>
+              <Text style={styles.link}>{t('catalog.manageValues')}</Text>
             </Pressable>
           }
         >
@@ -112,11 +114,11 @@ export function ProductSpecDetailScreen({ navigation, route }: ScreenProps<'Prod
               <View key={String(v.id)} style={styles.value}>
                 <Text style={styles.seq}>{String(v.sequence ?? i + 1)}</Text>
                 <Text style={[opsStyles.title, styles.flex]}>{specValueLabel(v, look.optionTitle) || '—'}</Text>
-                <Badge label={v.status === undefined || isActiveRow(v) ? 'Active' : 'Inactive'} tone={v.status === undefined || isActiveRow(v) ? 'green' : 'slate'} />
+                <Badge label={v.status === undefined || isActiveRow(v) ? t('common.active') : t('common.inactive')} tone={v.status === undefined || isActiveRow(v) ? 'green' : 'slate'} />
               </View>
             ))
           ) : (
-            <Text style={opsStyles.muted}>No values added yet.</Text>
+            <Text style={opsStyles.muted}>{t('catalog.noValuesAddedYet')}</Text>
           )}
         </SectionCard>
       </ScrollView>

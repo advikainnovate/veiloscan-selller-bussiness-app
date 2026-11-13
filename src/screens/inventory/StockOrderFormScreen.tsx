@@ -19,6 +19,7 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, BoxIcon, PlusIcon, TrashIcon, TruckIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const SEARCH_DELAY_MS = 250;
 const fromDay = (d: string) => {
@@ -28,6 +29,7 @@ const fromDay = (d: string) => {
 
 /** New Stock Order, as the panel's form: the supplier, the warehouse it arrives into, dates, products and their cost. */
 export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOrderForm'>) {
+  const { t: tr } = useTranslation();
   const { hasPermission } = useAuth();
   const { current } = useStore();
   const toast = useToast();
@@ -36,7 +38,7 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
   const today = todayDay();
   const prefill = route.params?.variantIds ?? [];
   const warehouses = useFetch(() => (storeId ? warehouseService.list() : Promise.resolve([])), [storeId]);
-  const options = useMemo(() => (warehouses.data ?? []).filter(w => Number(w.status ?? 1) === 1).map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? 'Warehouse') })), [warehouses.data]);
+  const options = useMemo(() => (warehouses.data ?? []).filter(w => Number(w.status ?? 1) === 1).map(w => ({ value: String(w.id), label: String(w.facilityTitle ?? tr('common.warehouse')) })), [warehouses.data, tr]);
   const fallback = useMemo(() => {
     const list = (warehouses.data ?? []).filter(w => Number(w.status ?? 1) === 1);
     return list.length ? String((list.find(w => w.isDefault) ?? list[0]).id) : '';
@@ -94,7 +96,7 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
     setSaving(true);
     try {
       const order = await storeOperationsService.createStockOrder(storeId, stockOrderPayload(f, lines));
-      toast(`Stock order ${order.idd} created`);
+      toast(tr('inventory.stockOrderIddCreated', { idd: order.idd }));
       navigation.replace('StockOrderDetail', { id: order.id });
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -107,47 +109,47 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
-        <AppHeader title="New Stock Order" onBack={navigation.goBack} />
-        <ComingSoon label="Pending Stock" icon={TruckIcon} allowed={false} />
+        <AppHeader title={tr('inventory.newStockOrder')} onBack={navigation.goBack} />
+        <ComingSoon label={tr('common.pendingStock')} icon={TruckIcon} allowed={false} />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title="New Stock Order" subtitle="Pending Stock" onBack={navigation.goBack} />
+      <AppHeader title={tr('inventory.newStockOrder')} subtitle={tr('common.pendingStock')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <SectionCard icon={TruckIcon} title="Supplier & delivery">
-          <Field label="Supplier" required>
-            <Input value={form.supplierName} onChangeText={v => set('supplierName', v)} placeholder="e.g. ABC Garments" maxLength={150} accessibilityLabel="Supplier" />
+        <SectionCard icon={TruckIcon} title={tr('inventory.supplierAndDelivery')}>
+          <Field label={tr('common.supplier')} required>
+            <Input value={form.supplierName} onChangeText={v => set('supplierName', v)} placeholder="e.g. ABC Garments" maxLength={150} accessibilityLabel={tr('common.supplier')} />
           </Field>
-          <Field label="Supplier Phone">
-            <Input value={form.supplierPhone} onChangeText={v => set('supplierPhone', v)} keyboardType="phone-pad" maxLength={20} accessibilityLabel="Supplier Phone" />
+          <Field label={tr('inventory.supplierPhone')}>
+            <Input value={form.supplierPhone} onChangeText={v => set('supplierPhone', v)} keyboardType="phone-pad" maxLength={20} accessibilityLabel={tr('inventory.supplierPhone')} />
           </Field>
           <SelectField
-            label="Receive Into Warehouse"
+            label={tr('inventory.receiveIntoWarehouse')}
             required
             value={warehouseId}
             options={options}
             onChange={v => set('warehouseId', v)}
-            placeholder={warehouses.loading ? 'Loading…' : 'Select…'}
-            emptyText="No active warehouses. Add one under Warehouses first."
+            placeholder={warehouses.loading ? tr('common.loading') : tr('common.select')}
+            emptyText={tr('inventory.noActiveWarehousesAddOneUnder')}
           />
-          <Field label="Supplier PO / Invoice No.">
-            <Input value={form.referenceNumber} onChangeText={v => set('referenceNumber', v)} maxLength={100} accessibilityLabel="Reference" />
+          <Field label={tr('inventory.supplierPoInvoiceNo')}>
+            <Input value={form.referenceNumber} onChangeText={v => set('referenceNumber', v)} maxLength={100} accessibilityLabel={tr('common.reference')} />
           </Field>
-          <DateField label="Order Date" value={form.orderDate} onChange={v => set('orderDate', v)} maximumDate={new Date()} />
-          <DateField label="Expected Date" value={form.expectedDate} onChange={v => set('expectedDate', v)} minimumDate={form.orderDate ? fromDay(form.orderDate) : undefined} />
+          <DateField label={tr('inventory.orderDate')} value={form.orderDate} onChange={v => set('orderDate', v)} maximumDate={new Date()} />
+          <DateField label={tr('inventory.expectedDate')} value={form.expectedDate} onChange={v => set('expectedDate', v)} minimumDate={form.orderDate ? fromDay(form.orderDate) : undefined} />
         </SectionCard>
 
-        <SectionCard icon={BoxIcon} title="Products" subtitle={lines.length ? `${lines.length} product${lines.length === 1 ? '' : 's'}` : undefined}>
-          <SearchBar value={term} onChange={setTerm} placeholder="Search product or SKU to add…" />
+        <SectionCard icon={BoxIcon} title={tr('common.products')} subtitle={lines.length ? tr('common.productCount', { count: lines.length }) : undefined}>
+          <SearchBar value={term} onChange={setTerm} placeholder={tr('inventory.searchProductOrSkuToAdd')} />
           {term.trim().length >= 2 ? (
             <View style={styles.results}>
               {searching && !results.length ? (
-                <Text style={[opsStyles.muted, styles.pad]}>Searching…</Text>
+                <Text style={[opsStyles.muted, styles.pad]}>{tr('common.searching')}</Text>
               ) : !results.length ? (
-                <Text style={[opsStyles.muted, styles.pad]}>No products found</Text>
+                <Text style={[opsStyles.muted, styles.pad]}>{tr('common.noProductsFound')}</Text>
               ) : (
                 results.map(s => {
                   const added = lines.some(l => l.sku.id === s.id);
@@ -155,7 +157,7 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
                     <Pressable
                       key={s.id}
                       accessibilityRole="button"
-                      accessibilityLabel={`Add ${s.productName}`}
+                      accessibilityLabel={tr('inventory.addProductname', { productName: s.productName })}
                       disabled={added}
                       onPress={() => {
                         setLines(ls => [...ls, lineFrom(s)]);
@@ -171,7 +173,7 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
                           {variantLabel(s.combination) || s.sku}
                         </Text>
                       </View>
-                      <Text style={opsStyles.muted}>{added ? 'Added' : `${qty(s.available)} ${s.uom} in stock`}</Text>
+                      <Text style={opsStyles.muted}>{added ? tr('common.added') : tr('inventory.availableUomInStock', { available: qty(s.available), uom: s.uom })}</Text>
                       {!added ? <PlusIcon size={16} color={colors.secondary} /> : null}
                     </Pressable>
                   );
@@ -187,41 +189,41 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
                     <Text style={opsStyles.title} numberOfLines={1}>
                       {l.sku.productName}
                     </Text>
-                    <Text style={opsStyles.muted} numberOfLines={1}>{`${variantLabel(l.sku.combination) || l.sku.sku} · ${qty(l.sku.available)} ${l.sku.uom} now`}</Text>
+                    <Text style={opsStyles.muted} numberOfLines={1}>{tr('inventory.countAvailableUomNow', { count: variantLabel(l.sku.combination) || l.sku.sku, available: qty(l.sku.available), uom: l.sku.uom })}</Text>
                   </View>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${l.sku.productName}`} hitSlop={8} onPress={() => setLines(ls => ls.filter((_, j) => j !== i))}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={tr('common.removeProductname', { productName: l.sku.productName })} hitSlop={8} onPress={() => setLines(ls => ls.filter((_, j) => j !== i))}>
                     <TrashIcon size={17} color={colors.textMuted} />
                   </Pressable>
                 </View>
                 <View style={styles.row}>
                   <View style={styles.flex}>
-                    <Text style={styles.small}>{`Quantity (${l.sku.uom})`}</Text>
-                    <Input value={l.quantity} onChangeText={v => setLine(i, { quantity: v.replace(/[^\d.]/g, '') })} keyboardType="decimal-pad" placeholder="0" accessibilityLabel={`Quantity for ${l.sku.productName}`} />
+                    <Text style={styles.small}>{tr('inventory.quantityUom', { uom: l.sku.uom })}</Text>
+                    <Input value={l.quantity} onChangeText={v => setLine(i, { quantity: v.replace(/[^\d.]/g, '') })} keyboardType="decimal-pad" placeholder="0" accessibilityLabel={tr('inventory.quantityForProductname', { productName: l.sku.productName })} />
                   </View>
                   <View style={styles.flex}>
-                    <Text style={styles.small}>Unit Cost (₹)</Text>
-                    <Input value={l.unitCost} onChangeText={v => setLine(i, { unitCost: v.replace(/[^\d.]/g, '') })} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={`Unit cost for ${l.sku.productName}`} />
+                    <Text style={styles.small}>{tr('inventory.unitCostRs')}</Text>
+                    <Input value={l.unitCost} onChangeText={v => setLine(i, { unitCost: v.replace(/[^\d.]/g, '') })} keyboardType="decimal-pad" placeholder="0.00" accessibilityLabel={tr('inventory.unitCostForProductname', { productName: l.sku.productName })} />
                   </View>
                 </View>
               </View>
             ))
           ) : (
-            <Text style={opsStyles.muted}>No products yet. Search above to add them.</Text>
+            <Text style={opsStyles.muted}>{tr('inventory.noProductsYetSearchAboveTo')}</Text>
           )}
         </SectionCard>
 
-        <SectionCard icon={TruckIcon} title="Amount & notes">
-          <Field label="Order Amount (₹)" hint="Leave empty to use quantity × unit cost">
+        <SectionCard icon={TruckIcon} title={tr('inventory.amountAndNotes')}>
+          <Field label={tr('inventory.orderAmountRs')} hint={tr('inventory.leaveEmptyToUseQuantityUnit')}>
             <Input
               value={form.orderAmount}
               onChangeText={v => set('orderAmount', v.replace(/[^\d.]/g, ''))}
               keyboardType="decimal-pad"
-              placeholder={computed > 0 ? `${computed.toFixed(2)} (qty × cost)` : '0.00'}
-              accessibilityLabel="Order Amount"
+              placeholder={computed > 0 ? tr('inventory.fixedQtyCost', { fixed: computed.toFixed(2) }) : '0.00'}
+              accessibilityLabel={tr('inventory.orderAmount')}
             />
           </Field>
-          <Field label="Notes">
-            <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={2000} multiline style={styles.notes} accessibilityLabel="Notes" />
+          <Field label={tr('common.notes')}>
+            <Input value={form.notes} onChangeText={v => set('notes', v)} maxLength={2000} multiline style={styles.notes} accessibilityLabel={tr('common.notes')} />
           </Field>
         </SectionCard>
 
@@ -233,8 +235,8 @@ export function StockOrderFormScreen({ navigation, route }: ScreenProps<'StockOr
         ) : null}
       </ScrollView>
       <FormFooter
-        summary={lines.length ? `${lines.length} product${lines.length === 1 ? '' : 's'}${computed > 0 ? ` · ₹${computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : ''}` : 'Add at least one product'}
-        title="Create Stock Order"
+        summary={lines.length ? `${tr('common.productCount', { count: lines.length })}${computed > 0 ? ` · ₹${computed.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : ''}` : tr('inventory.addAtLeastOneProduct')}
+        title={tr('inventory.createStockOrder')}
         loading={saving}
         onSave={save}
         onCancel={navigation.goBack}

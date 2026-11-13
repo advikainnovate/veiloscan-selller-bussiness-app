@@ -20,11 +20,13 @@ import { opsStyles } from '../../components/operations/OpsParts';
 import { SectionCard } from '../../components/store/StoreSections';
 import { AlertCircleIcon, HelpCircleIcon, UserIcon } from '../../components/icons';
 import type { ScreenProps } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 const DELAY_MS = 300;
 
 /** Log a ticket: the store's own request to VeiloScan, or one for a customer or guest who got in touch. */
 export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'SupportTicketForm'>) {
+  const { t: tr } = useTranslation();
   const relatedTo = route.params?.relatedTo ?? null;
   const { hasPermission } = useAuth();
   const { stores, current } = useStore();
@@ -96,7 +98,7 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
     setSaving(true);
     try {
       const created = await supportService.create(ticketPayload({ ...form, relatedTicketId: related?.id ?? '' }, showRelated));
-      toast(`Ticket ${created.ticketNumber} created`);
+      toast(tr('support.ticketTicketnumberCreated', { ticketNumber: created.ticketNumber }));
       navigation.replace('SupportTicket', { id: created.id });
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -106,12 +108,12 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
     }
   }
 
-  const title = relatedTo ? `Follow-up to ${relatedTo.ticketNumber}` : 'New Ticket';
+  const title = relatedTo ? tr('support.followUpToTicketnumber', { ticketNumber: relatedTo.ticketNumber }) : tr('support.newTicket');
   if (!allowed) {
     return (
       <View style={opsStyles.screen}>
         <AppHeader title={title} onBack={navigation.goBack} />
-        <ComingSoon label="Support Tickets" icon={HelpCircleIcon} allowed={false} />
+        <ComingSoon label={tr('common.supportTickets')} icon={HelpCircleIcon} allowed={false} />
       </View>
     );
   }
@@ -120,73 +122,72 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
   const storeRequest = form.requester === 'store';
   return (
     <KeyboardAvoidingView style={opsStyles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} subtitle="Support Tickets" onBack={navigation.goBack} />
+      <AppHeader title={title} subtitle={tr('common.supportTickets')} onBack={navigation.goBack} />
       <ScrollView ref={scroll} contentContainerStyle={[opsStyles.content, styles.content]} keyboardShouldPersistTaps="handled">
-        <SectionCard icon={HelpCircleIcon} title="Ticket" subtitle={type ? `${type.purpose}.${needsOrder ? ' Needs the order.' : ''}${needsRelated ? ' Needs the earlier ticket.' : ''}` : undefined}>
-          <SelectField label="Ticket type" required value={form.ticketType} options={shownTypes.map(t => ({ value: t.code, label: t.name }))} onChange={chooseType} />
-          <Field label="Who is it for">
+        <SectionCard icon={HelpCircleIcon} title={tr('support.ticket')} subtitle={type ? `${type.purpose}.${needsOrder ? ' Needs the order.' : ''}${needsRelated ? ' Needs the earlier ticket.' : ''}` : undefined}>
+          <SelectField label={tr('support.ticketType')} required value={form.ticketType} options={shownTypes.map(t => ({ value: t.code, label: t.name }))} onChange={chooseType} />
+          <Field label={tr('support.whoIsItFor')}>
             <FilterChips options={REQUESTERS} value={form.requester} onChange={v => chooseRequester(v as Requester)} />
           </Field>
         </SectionCard>
 
-        <SectionCard icon={UserIcon} title={storeRequest ? 'Your store' : guest ? 'Guest' : 'Customer'}>
+        <SectionCard icon={UserIcon} title={storeRequest ? tr('common.yourStore') : guest ? tr('support.guest') : tr('common.customer')}>
           {storeRequest ? (
             <Text style={styles.info}>
-              No customer needed: this goes to VeiloScan support as your store's own request — for example a missing category, a catalogue change, a payment or account problem. Your team is told about every reply.
-            </Text>
+              {tr('support.noCustomerNeededThisGoesTo')}</Text>
           ) : guest ? (
             <>
-              <Field label="Name">
-                <Input value={form.contactName} onChangeText={set('contactName')} maxLength={150} placeholder="Their name" accessibilityLabel="Guest name" />
+              <Field label={tr('common.name')}>
+                <Input value={form.contactName} onChangeText={set('contactName')} maxLength={150} placeholder={tr('support.theirName')} accessibilityLabel={tr('support.guestName')} />
               </Field>
-              <Field label="Phone" hint="Phone or email — how you'll reply">
-                <Input value={form.contactPhone} onChangeText={set('contactPhone')} maxLength={20} keyboardType="phone-pad" placeholder="+91…" accessibilityLabel="Guest phone" />
+              <Field label={tr('common.phone')} hint={tr('support.phoneOrEmailHowYouLl')}>
+                <Input value={form.contactPhone} onChangeText={set('contactPhone')} maxLength={20} keyboardType="phone-pad" placeholder="+91…" accessibilityLabel={tr('support.guestPhone')} />
               </Field>
-              <Field label="Email (optional)">
-                <Input value={form.contactEmail} onChangeText={set('contactEmail')} maxLength={255} keyboardType="email-address" autoCapitalize="none" accessibilityLabel="Guest email" />
+              <Field label={tr('common.emailOptional')}>
+                <Input value={form.contactEmail} onChangeText={set('contactEmail')} maxLength={255} keyboardType="email-address" autoCapitalize="none" accessibilityLabel={tr('support.guestEmail')} />
               </Field>
-              {needsOrder ? <Text style={styles.warn}>This ticket type needs an order. A guest's order can be linked on the Seller Panel, or pick a customer with an account.</Text> : null}
+              {needsOrder ? <Text style={styles.warn}>{tr('support.thisTicketTypeNeedsAnOrder')}</Text> : null}
             </>
           ) : (
             <>
-              <SearchBar value={customerQuery} onChange={setCustomerQuery} placeholder="Find customer by name, email or phone…" />
+              <SearchBar value={customerQuery} onChange={setCustomerQuery} placeholder={tr('support.findCustomerByNameEmailOr')} />
               <SelectField
-                label="Customer"
+                label={tr('common.customer')}
                 required
                 value={form.customerId}
                 options={(customers.data ?? []).map(c => ({ value: c.id, label: `${[c.firstName, c.lastName].filter(Boolean).join(' ') || '—'} · ${c.email ?? c.phoneNumber ?? ''}` }))}
                 onChange={v => setForm(f => ({ ...f, customerId: v, orderId: '' }))}
-                placeholder="Choose the customer"
-                emptyText={customers.loading ? 'Loading…' : 'No customers match'}
+                placeholder={tr('support.chooseTheCustomer')}
+                emptyText={customers.loading ? tr('common.loading') : tr('common.noCustomersMatch')}
               />
               <SelectField
-                label={needsOrder ? 'Order' : 'Related order (optional)'}
+                label={needsOrder ? tr('common.order') : tr('support.relatedOrderOptional')}
                 required={needsOrder}
                 value={form.orderId}
                 options={(orders.data ?? []).map(o => ({ value: String(o.id), label: [String(o.uniqueOrderId ?? o.orderNumber ?? o.id), o.createdAt ? formatDay(o.createdAt) : null].filter(Boolean).join(' · ') }))}
                 onChange={set('orderId')}
-                placeholder={form.customerId ? (needsOrder ? 'Choose…' : 'No order') : 'Choose the customer first'}
-                allowClear={needsOrder ? undefined : 'No order'}
+                placeholder={form.customerId ? (needsOrder ? tr('support.choose') : tr('support.noOrder')) : tr('support.chooseTheCustomerFirst')}
+                allowClear={needsOrder ? undefined : tr('support.noOrder')}
                 disabled={!form.customerId}
               />
             </>
           )}
         </SectionCard>
 
-        <SectionCard icon={HelpCircleIcon} title="Routing">
-          {stores.length ? <SelectField label="Store" required value={form.storeId} options={stores.map(s => ({ value: s.id, label: s.name }))} onChange={set('storeId')} placeholder="Choose…" /> : null}
-          <SelectField label="Category" required value={form.categoryId} options={categoryChoices} onChange={set('categoryId')} placeholder="Choose…" />
-          <Field label="Source">
+        <SectionCard icon={HelpCircleIcon} title={tr('support.routing')}>
+          {stores.length ? <SelectField label={tr('common.store')} required value={form.storeId} options={stores.map(s => ({ value: s.id, label: s.name }))} onChange={set('storeId')} placeholder={tr('support.choose')} /> : null}
+          <SelectField label={tr('common.category')} required value={form.categoryId} options={categoryChoices} onChange={set('categoryId')} placeholder={tr('support.choose')} />
+          <Field label={tr('support.source')}>
             <FilterChips options={STAFF_SOURCES.map(s => ({ value: s, label: SOURCE_LABEL[s] ?? s }))} value={form.source} onChange={set('source')} />
           </Field>
-          <Field label="Priority">
+          <Field label={tr('common.priority')}>
             <FilterChips
-              options={[{ value: '', label: type?.defaultPriority ? `Default (${priorityLabel(type.defaultPriority)})` : 'Category default' }, ...PRIORITIES.map(p => ({ value: p, label: priorityLabel(p) }))]}
+              options={[{ value: '', label: type?.defaultPriority ? tr('support.defaultDefaultpriority', { defaultPriority: priorityLabel(type.defaultPriority) }) : tr('support.categoryDefault') }, ...PRIORITIES.map(p => ({ value: p, label: priorityLabel(p) }))]}
               value={form.priority}
               onChange={set('priority')}
             />
           </Field>
-          {needsRelated ? null : <Checkbox label="Follows up an earlier ticket" checked={linkEarlier} onChange={setLinkEarlier} />}
+          {needsRelated ? null : <Checkbox label={tr('support.followsUpAnEarlierTicket')} checked={linkEarlier} onChange={setLinkEarlier} />}
           {showRelated ? (
             related ? (
               <View style={styles.related}>
@@ -196,15 +197,14 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
                 </Text>
                 {relatedTo ? null : (
                   <Text style={styles.link} onPress={() => setRelated(null)}>
-                    Change
-                  </Text>
+                    {tr('common.change')}</Text>
                 )}
               </View>
             ) : (
               <View style={styles.gap}>
-                <SearchBar value={ticketQuery} onChange={setTicketQuery} placeholder="Earlier ticket: number, subject or customer" />
+                <SearchBar value={ticketQuery} onChange={setTicketQuery} placeholder={tr('support.earlierTicketNumberSubjectOrCustomer')} />
                 {(matches.data ?? []).map(m => (
-                  <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Link ${m.ticketNumber}`} onPress={() => setRelated({ id: m.id, ticketNumber: m.ticketNumber, subject: m.subject })} style={styles.match}>
+                  <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={tr('support.linkTicketnumber', { ticketNumber: m.ticketNumber })} onPress={() => setRelated({ id: m.id, ticketNumber: m.ticketNumber, subject: m.subject })} style={styles.match}>
                     <Text style={styles.flex} numberOfLines={1}>
                       <Text style={styles.number}>{m.ticketNumber}</Text>
                       {` · ${m.subject}`}
@@ -212,32 +212,32 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
                     <Text style={opsStyles.muted}>{statusOf(m.status).label}</Text>
                   </Pressable>
                 ))}
-                {ticketSearch && !matches.loading && !(matches.data ?? []).length ? <Text style={opsStyles.muted}>No tickets match.</Text> : null}
-                <Text style={opsStyles.muted}>The new ticket takes its store, order and customer unless you set them here.</Text>
+                {ticketSearch && !matches.loading && !(matches.data ?? []).length ? <Text style={opsStyles.muted}>{tr('support.noTicketsMatch')}</Text> : null}
+                <Text style={opsStyles.muted}>{tr('support.theNewTicketTakesItsStore')}</Text>
               </View>
             )
           ) : null}
         </SectionCard>
 
-        <SectionCard icon={HelpCircleIcon} title="What happened">
-          <Field label="Subject" required>
+        <SectionCard icon={HelpCircleIcon} title={tr('support.whatHappened')}>
+          <Field label={tr('support.subject')} required>
             <Input
               value={form.subject}
               onChangeText={set('subject')}
               maxLength={200}
-              placeholder={form.ticketType === 'CATEGORY_REQUEST' ? 'The category you need, e.g. Ayurvedic Hair Oils' : 'Short summary'}
-              accessibilityLabel="Subject"
+              placeholder={form.ticketType === 'CATEGORY_REQUEST' ? tr('support.theCategoryYouNeedEG') : tr('support.shortSummary')}
+              accessibilityLabel={tr('support.subject')}
             />
           </Field>
-          <Field label="Description" required>
+          <Field label={tr('common.description')} required>
             <Input
               value={form.description}
               onChangeText={set('description')}
               multiline
               maxLength={10000}
               style={styles.textArea}
-              placeholder={form.ticketType === 'CATEGORY_REQUEST' ? 'The products you want to list, where the category should sit, links or brands…' : storeRequest ? 'What you need from VeiloScan…' : 'What they reported…'}
-              accessibilityLabel="Description"
+              placeholder={form.ticketType === 'CATEGORY_REQUEST' ? tr('support.theProductsYouWantToList') : storeRequest ? tr('support.whatYouNeedFromVeiloscan') : tr('support.whatTheyReported')}
+              accessibilityLabel={tr('common.description')}
             />
           </Field>
         </SectionCard>
@@ -249,7 +249,7 @@ export function SupportTicketFormScreen({ navigation, route }: ScreenProps<'Supp
           </View>
         ) : null}
       </ScrollView>
-      <FormFooter title="Create Ticket" loading={saving} onSave={save} onCancel={navigation.goBack} />
+      <FormFooter title={tr('support.createTicket')} loading={saving} onSave={save} onCancel={navigation.goBack} />
     </KeyboardAvoidingView>
   );
 }

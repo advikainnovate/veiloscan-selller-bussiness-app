@@ -10,9 +10,11 @@ import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { TextField } from '../components/ui/TextField';
 import type { ScreenProps } from '../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 /** Step 1 of a password reset: email a 6-digit code to the account. */
 export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotPassword'>) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState(route.params?.email ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +23,7 @@ export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotP
     if (isLoading) return;
     const trimmed = email.trim();
     if (!EMAIL_PATTERN.test(trimmed)) {
-      setError('Enter a valid email address.');
+      setError(t('common.enterAValidEmailAddress2'));
       return;
     }
     setError(null);
@@ -43,8 +45,8 @@ export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotP
           <View style={styles.badge}>
             <LockIcon size={28} color={colors.secondary} />
           </View>
-          <Text style={styles.title}>Forgot Password</Text>
-          <Text style={styles.subtitle}>Enter your account email and we'll send you a 6-digit code to reset your password.</Text>
+          <Text style={styles.title}>{t('auth.forgotPassword')}</Text>
+          <Text style={styles.subtitle}>{t('auth.enterYourAccountEmailAndWe')}</Text>
         </View>
 
         {error ? (
@@ -55,8 +57,8 @@ export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotP
 
         <View style={styles.form}>
           <TextField
-            label="Email Address"
-            placeholder="Enter your email address"
+            label={t('common.emailAddress')}
+            placeholder={t('auth.enterYourEmailAddress')}
             icon={<MailIcon size={18} color={colors.textMuted} />}
             value={email}
             onChangeText={setEmail}
@@ -70,8 +72,8 @@ export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotP
             onSubmitEditing={handleSubmit}
           />
           <Button
-            title="Send Code"
-            loadingTitle="Sending..."
+            title={t('common.sendCode')}
+            loadingTitle={t('auth.sending')}
             loading={isLoading}
             onPress={handleSubmit}
             icon={<ArrowRightIcon size={18} color={colors.white} />}
@@ -80,7 +82,7 @@ export function ForgotPasswordScreen({ navigation, route }: ScreenProps<'ForgotP
 
         <Pressable hitSlop={8} onPress={navigation.goBack} style={styles.backLink}>
           <Text style={styles.backText}>
-            Remembered it? <Text style={styles.link}>Back to Sign In</Text>
+            {t('auth.rememberedIt')}{' '}<Text style={styles.link}>{t('auth.backToSignIn')}</Text>
           </Text>
         </Pressable>
       </AuthCard>

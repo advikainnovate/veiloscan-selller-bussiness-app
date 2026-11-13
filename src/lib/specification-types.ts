@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+import { monthShort } from './date';
 // Ported from the Seller Panel's src/lib/specification-types.ts — keep the two in step.
 // Mirrors eshop-backend src/modules/specifications/enums/specification-type.enum.ts.
 
@@ -24,72 +26,72 @@ export interface SpecificationTypeMeta {
 export const SPECIFICATION_TYPES: SpecificationTypeMeta[] = [
   {
     value: 'TEXT',
-    label: 'Text',
-    purpose: 'Free text value',
-    example: 'Model Number → ABC-123',
+    get label() { return i18n.t('products.text'); },
+    get purpose() { return i18n.t('products.freeTextValue'); },
+    get example() { return i18n.t('products.modelNumberAbc123'); },
     pill: 'bg-sky-50 text-sky-700 ring-sky-200',
   },
   {
     value: 'NUMBER',
-    label: 'Number',
-    purpose: 'Whole number',
-    example: 'Weight → 500',
+    get label() { return i18n.t('products.number'); },
+    get purpose() { return i18n.t('products.wholeNumber'); },
+    get example() { return i18n.t('products.weight500'); },
     pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   },
   {
     value: 'SELECT',
-    label: 'Select',
-    purpose: 'Select one option',
-    example: 'Material → Steel',
+    get label() { return i18n.t('products.select'); },
+    get purpose() { return i18n.t('products.selectOneOption'); },
+    get example() { return i18n.t('products.materialSteel'); },
     pill: 'bg-amber-50 text-amber-700 ring-amber-200',
   },
   {
     value: 'MULTI_SELECT',
     label: 'Multi-select',
-    purpose: 'Select multiple options',
-    example: 'Usage → Home, Industrial',
+    get purpose() { return i18n.t('products.selectMultipleOptions'); },
+    get example() { return i18n.t('products.usageHomeIndustrial'); },
     pill: 'bg-orange-50 text-orange-700 ring-orange-200',
   },
   {
     value: 'BOOLEAN',
-    label: 'Yes / No',
-    purpose: 'Yes or No',
-    example: 'Waterproof → Yes',
+    get label() { return i18n.t('products.yesNo'); },
+    get purpose() { return i18n.t('products.yesOrNo'); },
+    get example() { return i18n.t('products.waterproofYes'); },
     pill: 'bg-teal-50 text-teal-700 ring-teal-200',
   },
   {
     value: 'TEXTAREA',
-    label: 'Long text',
-    purpose: 'Long text',
-    example: 'Care Instructions',
+    get label() { return i18n.t('products.longText'); },
+    get purpose() { return i18n.t('products.longText'); },
+    get example() { return i18n.t('products.careInstructions'); },
     pill: 'bg-violet-50 text-violet-700 ring-violet-200',
   },
   {
     value: 'DATE',
-    label: 'Date',
-    purpose: 'Date value',
-    example: 'Warranty Start Date',
+    get label() { return i18n.t('common.date'); },
+    get purpose() { return i18n.t('products.dateValue'); },
+    get example() { return i18n.t('products.warrantyStartDate'); },
     pill: 'bg-rose-50 text-rose-700 ring-rose-200',
   },
   {
     value: 'DECIMAL',
-    label: 'Decimal',
-    purpose: 'Decimal number',
-    example: 'Load Capacity → 12.5',
+    get label() { return i18n.t('products.decimal'); },
+    get purpose() { return i18n.t('products.decimalNumber'); },
+    get example() { return i18n.t('products.loadCapacity125'); },
     pill: 'bg-lime-50 text-lime-700 ring-lime-200',
   },
   {
     value: 'MEASUREMENT',
-    label: 'Measurement',
-    purpose: 'Number with a unit',
-    example: 'Product Weight → 500 g',
+    get label() { return i18n.t('products.measurement'); },
+    get purpose() { return i18n.t('products.numberWithAUnit'); },
+    get example() { return i18n.t('products.productWeight500G'); },
     pill: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
   },
   {
     value: 'RANGE',
-    label: 'Range',
-    purpose: 'From – to',
-    example: 'Operating Temperature → -20 to 80 °C',
+    get label() { return i18n.t('products.range'); },
+    get purpose() { return i18n.t('products.fromTo'); },
+    get example() { return i18n.t('products.operatingTemperature20To80C'); },
     pill: 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200',
   },
 ];
@@ -138,14 +140,11 @@ export function formatSpecificationValue(
 ): string {
   if (value === null || value === undefined || value === '') return '—';
   if (type === 'BOOLEAN')
-    return value === 'true' ? 'Yes' : value === 'false' ? 'No' : value;
+    return value === 'true' ? i18n.t('common.yes') : value === 'false' ? i18n.t('common.no') : value;
   if (type === 'DATE' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [y, m, d] = value.split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    // 05 Mar 2026
+    return `${String(d).padStart(2, '0')} ${monthShort(m - 1)} ${y}`;
   }
   return value;
 }
@@ -161,17 +160,17 @@ export const SPECIFICATION_SCOPES: {
 }[] = [
   {
     value: 'PRODUCT',
-    label: 'Same for all variants',
-    hint: 'Entered once per product (Brand, Processor).',
+    get label() { return i18n.t('products.sameForAllVariants'); },
+    get hint() { return i18n.t('products.enteredOncePerProductBrandProcessor'); },
   },
   {
     value: 'VARIANT',
-    label: 'Per variant',
-    hint: 'Entered for each SKU (RAM that differs between storage options).',
+    get label() { return i18n.t('products.perVariant'); },
+    get hint() { return i18n.t('products.enteredForEachSkuRamThat'); },
   },
   {
     value: 'BOTH',
-    label: 'Shared, can differ',
-    hint: 'A product value each SKU may override.',
+    get label() { return i18n.t('products.sharedCanDiffer'); },
+    get hint() { return i18n.t('products.aProductValueEachSkuMay'); },
   },
 ];

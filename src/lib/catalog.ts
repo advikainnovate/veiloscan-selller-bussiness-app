@@ -4,6 +4,7 @@
 import type { BadgeTone } from '../components/ui/Badge';
 import type { Row } from '../services/products-service';
 import type { StockBalance } from '../services/stock-service';
+import i18n from '../i18n';
 
 export const isActiveRow = (r: Record<string, unknown>) => Number(r.status) === 1;
 const text = (v: unknown) => (v == null ? '' : String(v));
@@ -11,9 +12,9 @@ const text = (v: unknown) => (v == null ? '' : String(v));
 // ── Warehouses ───────────────────────────────────────────────────────────
 
 export const WAREHOUSE_TYPES = [
-  { value: 'WAREHOUSE', label: 'Warehouse' },
-  { value: 'RETAIL_STORE', label: 'Retail Store' },
-  { value: 'DARK_STORE', label: 'Dark Store' },
+  { value: 'WAREHOUSE', get label() { return i18n.t('common.warehouse'); } },
+  { value: 'RETAIL_STORE', get label() { return i18n.t('catalog.retailStore'); } },
+  { value: 'DARK_STORE', get label() { return i18n.t('catalog.darkStore'); } },
 ];
 export const warehouseTypeLabel = (t: unknown) => WAREHOUSE_TYPES.find(o => o.value === t)?.label ?? text(t);
 
@@ -21,13 +22,13 @@ export const warehouseTypeLabel = (t: unknown) => WAREHOUSE_TYPES.find(o => o.va
 export type WarehouseLifecycle = 'PENDING_APPROVAL' | 'UNDER_REVIEW' | 'INFO_REQUESTED' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | 'INACTIVE';
 
 export const WAREHOUSE_STATUS: Record<WarehouseLifecycle, { label: string; tone: BadgeTone; hint: string }> = {
-  PENDING_APPROVAL: { label: 'Awaiting approval', tone: 'amber', hint: "VeiloScan is reviewing this warehouse. You can add stock to it once it's approved." },
-  UNDER_REVIEW: { label: 'Under review', tone: 'blue', hint: "A reviewer is checking this warehouse's address and details." },
-  INFO_REQUESTED: { label: 'Info needed', tone: 'amber', hint: 'VeiloScan needs more information. Update the warehouse, then resubmit it.' },
-  ACTIVE: { label: 'Active', tone: 'green', hint: 'Approved and in use.' },
-  REJECTED: { label: 'Rejected', tone: 'red', hint: 'Fix the issues below, then resubmit the warehouse for review.' },
-  SUSPENDED: { label: 'Suspended', tone: 'red', hint: 'VeiloScan has suspended this warehouse. Contact support to have it reviewed.' },
-  INACTIVE: { label: 'Inactive', tone: 'slate', hint: 'Switched off. Its history is kept.' },
+  PENDING_APPROVAL: { get label() { return i18n.t('common.awaitingApproval'); }, tone: 'amber', get hint() { return i18n.t('catalog.veiloscanIsReviewingThisWarehouseYou'); } },
+  UNDER_REVIEW: { get label() { return i18n.t('common.underReview'); }, tone: 'blue', get hint() { return i18n.t('catalog.aReviewerIsCheckingThisWarehouses'); } },
+  INFO_REQUESTED: { get label() { return i18n.t('catalog.infoNeeded'); }, tone: 'amber', get hint() { return i18n.t('catalog.veiloscanNeedsMoreInformationUpdateThe'); } },
+  ACTIVE: { get label() { return i18n.t('common.active'); }, tone: 'green', get hint() { return i18n.t('catalog.approvedAndInUse'); } },
+  REJECTED: { get label() { return i18n.t('common.rejected'); }, tone: 'red', get hint() { return i18n.t('catalog.fixTheIssuesBelowThenResubmit'); } },
+  SUSPENDED: { get label() { return i18n.t('common.suspended'); }, tone: 'red', get hint() { return i18n.t('catalog.veiloscanHasSuspendedThisWarehouseContact'); } },
+  INACTIVE: { get label() { return i18n.t('common.inactive'); }, tone: 'slate', get hint() { return i18n.t('catalog.switchedOffItsHistoryIsKept'); } },
 };
 
 /** The lifecycle, falling back to the plain on/off status for older responses. */
@@ -41,28 +42,28 @@ export const canResubmit = (s: WarehouseLifecycle) => s === 'REJECTED' || s === 
 export const canToggle = (s: WarehouseLifecycle) => s === 'ACTIVE' || s === 'INACTIVE';
 
 export const WAREHOUSE_HISTORY: Record<string, string> = {
-  SUBMITTED: 'Submitted for approval',
-  AUTO_APPROVED: 'Approved automatically',
-  SENT_TO_REVIEW: "Sent to VeiloScan's review team",
-  CREATED_BY_ADMIN: 'Added by VeiloScan',
-  REVIEW_STARTED: 'Review started',
-  INFO_REQUESTED: 'More information requested',
-  RESUBMITTED: 'Resubmitted',
-  APPROVED: 'Approved',
-  REJECTED: 'Not approved',
-  SUSPENDED: 'Suspended by VeiloScan',
-  REINSTATED: 'Reinstated',
-  DEACTIVATED: 'Switched off',
-  REACTIVATED: 'Switched back on',
-  REVERIFIED: 'Address change checked and approved',
-  REVERIFICATION_REQUIRED: 'Address changed — sent for approval',
+  get SUBMITTED() { return i18n.t('common.submittedForApproval'); },
+  get AUTO_APPROVED() { return i18n.t('catalog.approvedAutomatically'); },
+  get SENT_TO_REVIEW() { return i18n.t('catalog.sentToVeiloscansReviewTeam'); },
+  get CREATED_BY_ADMIN() { return i18n.t('catalog.addedByVeiloscan'); },
+  get REVIEW_STARTED() { return i18n.t('catalog.reviewStarted'); },
+  get INFO_REQUESTED() { return i18n.t('catalog.moreInformationRequested'); },
+  get RESUBMITTED() { return i18n.t('catalog.resubmitted'); },
+  get APPROVED() { return i18n.t('common.approved'); },
+  get REJECTED() { return i18n.t('common.notApproved'); },
+  get SUSPENDED() { return i18n.t('catalog.suspendedByVeiloscan'); },
+  get REINSTATED() { return i18n.t('catalog.reinstated'); },
+  get DEACTIVATED() { return i18n.t('catalog.switchedOff'); },
+  get REACTIVATED() { return i18n.t('catalog.switchedBackOn'); },
+  get REVERIFIED() { return i18n.t('catalog.addressChangeCheckedAndApproved'); },
+  get REVERIFICATION_REQUIRED() { return i18n.t('catalog.addressChangedSentForApproval'); },
 };
 
 export type WarehouseStock = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
 export const WAREHOUSE_STOCK: Record<WarehouseStock, { label: string; color: string }> = {
-  IN_STOCK: { label: 'In Stock', color: '#059669' },
-  LOW_STOCK: { label: 'Low Stock', color: '#d97706' },
-  OUT_OF_STOCK: { label: 'No Stock', color: '#94a3b8' },
+  IN_STOCK: { get label() { return i18n.t('catalog.inStock'); }, color: '#059669' },
+  LOW_STOCK: { get label() { return i18n.t('common.lowStock'); }, color: '#d97706' },
+  OUT_OF_STOCK: { get label() { return i18n.t('catalog.noStock'); }, color: '#94a3b8' },
 };
 
 export interface WarehouseRow extends Row {
@@ -165,13 +166,13 @@ export function warehouseFromRecord(r: Row): WarehouseForm {
 
 /** The panel's required fields, plus the formats its inputs take. */
 export function warehouseProblem(f: WarehouseForm): string | null {
-  const missing = [!f.facilityTitle.trim() && 'Warehouse Name', !f.facilityCode.trim() && 'Warehouse Code', !f.facilityType && 'Warehouse Type'].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) return 'Enter a valid email address';
+  const missing = [!f.facilityTitle.trim() && i18n.t('catalog.warehouseName'), !f.facilityCode.trim() && i18n.t('catalog.warehouseCode'), !f.facilityType && i18n.t('catalog.warehouseType')].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) return i18n.t('common.enterAValidEmailAddress');
   const lat = f.latitude.trim();
   const lng = f.longitude.trim();
-  if (lat && !(Number(lat) >= -90 && Number(lat) <= 90)) return 'Latitude must be between -90 and 90';
-  if (lng && !(Number(lng) >= -180 && Number(lng) <= 180)) return 'Longitude must be between -180 and 180';
+  if (lat && !(Number(lat) >= -90 && Number(lat) <= 90)) return i18n.t('common.latitudeMustBeBetween90And');
+  if (lng && !(Number(lng) >= -180 && Number(lng) <= 180)) return i18n.t('common.longitudeMustBeBetween180And');
   return null;
 }
 
@@ -188,17 +189,17 @@ export const warehouseAddress = (w: Row) =>
 
 export const BRAND_STATUS = { PENDING: 0, APPROVED: 1, REJECTED: 2 } as const;
 export const BRAND_STATUS_LABEL: Record<number, { label: string; tone: BadgeTone; hint: string }> = {
-  0: { label: 'Awaiting review', tone: 'amber', hint: 'VeiloScan is checking the documents.' },
-  1: { label: 'Approved', tone: 'green', hint: "You can list this brand's products in the category." },
-  2: { label: 'Changes needed', tone: 'red', hint: 'Fix what the reviewer asked for and resubmit.' },
+  0: { get label() { return i18n.t('common.awaitingReview'); }, tone: 'amber', get hint() { return i18n.t('catalog.veiloscanIsCheckingTheDocuments'); } },
+  1: { get label() { return i18n.t('common.approved'); }, tone: 'green', get hint() { return i18n.t('catalog.youCanListThisBrandsProducts'); } },
+  2: { get label() { return i18n.t('catalog.changesNeeded'); }, tone: 'red', get hint() { return i18n.t('catalog.fixWhatTheReviewerAskedFor'); } },
 };
 
 export const SALES_CHANNELS = [
-  { value: 'NOT_APPLICABLE', label: 'Not applicable' },
-  { value: 'WHOLESALE', label: 'Wholesale Distribution' },
-  { value: 'BRICK_AND_MORTAR', label: 'Brick & Mortar Shop' },
-  { value: 'OTHER_MARKETPLACES', label: 'Other Online Marketplaces' },
-  { value: 'BRAND_WEBSITE', label: 'Brand Retail Website' },
+  { value: 'NOT_APPLICABLE', get label() { return i18n.t('catalog.notApplicable'); } },
+  { value: 'WHOLESALE', get label() { return i18n.t('catalog.wholesaleDistribution'); } },
+  { value: 'BRICK_AND_MORTAR', get label() { return i18n.t('catalog.brickAndMortarShop'); } },
+  { value: 'OTHER_MARKETPLACES', get label() { return i18n.t('catalog.otherOnlineMarketplaces'); } },
+  { value: 'BRAND_WEBSITE', get label() { return i18n.t('catalog.brandRetailWebsite'); } },
 ];
 export const channelLabel = (v: string) => SALES_CHANNELS.find(c => c.value === v)?.label ?? v;
 
@@ -260,14 +261,14 @@ export interface BrandChecklist {
 export function brandChecklist(c: BrandChecklist) {
   const isNew = c.brandMode === 'new';
   return [
-    { label: 'Child category', done: c.isResubmit || !!c.categoryId },
-    { label: 'Brand', done: c.isResubmit || (isNew ? !!c.newBrandTitle.trim() : c.hasBrand) },
-    { label: 'Stores', done: c.isResubmit || c.storeCount > 0 },
-    { label: "Where it's sold today", done: c.salesChannels.length > 0 },
-    { label: 'Brand ownership', done: c.isBrandOwner !== null },
-    ...(c.isBrandOwner ? [{ label: 'Trademark details', done: !!(c.applicationNumber.trim() && c.registeredClass.trim() && c.registeredDate) }] : []),
-    { label: 'Registered document', done: c.hasDocument },
-    ...(isNew ? [{ label: 'Brand logo', done: c.hasLogo }] : []),
+    { label: i18n.t('common.childCategory'), done: c.isResubmit || !!c.categoryId },
+    { label: i18n.t('common.brand'), done: c.isResubmit || (isNew ? !!c.newBrandTitle.trim() : c.hasBrand) },
+    { label: i18n.t('common.stores'), done: c.isResubmit || c.storeCount > 0 },
+    { label: i18n.t('catalog.whereItsSoldToday'), done: c.salesChannels.length > 0 },
+    { label: i18n.t('catalog.brandOwnership'), done: c.isBrandOwner !== null },
+    ...(c.isBrandOwner ? [{ label: i18n.t('catalog.trademarkDetails'), done: !!(c.applicationNumber.trim() && c.registeredClass.trim() && c.registeredDate) }] : []),
+    { label: i18n.t('catalog.registeredDocument'), done: c.hasDocument },
+    ...(isNew ? [{ label: i18n.t('catalog.brandLogo'), done: c.hasLogo }] : []),
   ];
 }
 
@@ -351,14 +352,14 @@ export function skuFromRecord(r: Row): SkuForm {
 const money = (v: string) => v.trim() === '' || (Number(v) >= 0 && !Number.isNaN(Number(v)));
 
 export function skuProblem(f: SkuForm): string | null {
-  const missing = [!f.productId && 'Product', !f.skuItemNumber.trim() && 'SKU Item Number', !f.businessPrice.trim() && 'Selling Price'].filter(Boolean);
-  if (missing.length) return `Please fill in: ${missing.join(', ')}`;
-  if (!f.attributes.some(a => a.key.trim())) return 'Add at least one variant attribute (e.g. Color: Black).';
-  if (!money(f.businessPrice) || !money(f.mrp) || !money(f.costPrice)) return 'Prices must be amounts of 0 or more';
+  const missing = [!f.productId && i18n.t('common.product'), !f.skuItemNumber.trim() && i18n.t('catalog.skuItemNumber'), !f.businessPrice.trim() && i18n.t('catalog.sellingPrice')].filter(Boolean);
+  if (missing.length) return i18n.t('common.pleaseFillInJoin', { join: missing.join(', ') });
+  if (!f.attributes.some(a => a.key.trim())) return i18n.t('catalog.addAtLeastOneVariantAttribute');
+  if (!money(f.businessPrice) || !money(f.mrp) || !money(f.costPrice)) return i18n.t('catalog.pricesMustBeAmountsOf0');
   if (f.quantityPriceType === 'SLAB') {
     for (const [i, t] of f.tiers.entries()) {
-      if ((t.lowerBound === '') !== (t.price === '')) return `Tier ${i + 1}: enter both the minimum quantity and the price`;
-      if (!money(t.price) || !money(t.lowerBound)) return `Tier ${i + 1}: quantity and price must be 0 or more`;
+      if ((t.lowerBound === '') !== (t.price === '')) return i18n.t('catalog.tierIEnterBothTheMinimum', { i: i + 1 });
+      if (!money(t.price) || !money(t.lowerBound)) return i18n.t('catalog.tierIQuantityAndPriceMust', { i: i + 1 });
     }
   }
   return null;

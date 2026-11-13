@@ -34,17 +34,19 @@ import { SupplierFormSheet } from '../../components/expenses/SupplierFormSheet';
 import { AlertCircleIcon, FileTextIcon, FilterIcon, PlusIcon, RefreshIcon, TruckIcon, WalletIcon } from '../../components/icons';
 import type { RootStackParamList } from '../../navigation/types';
 import type { ListPreset } from './ExpensesScreen';
+import { Trans, useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 const PAGE_SIZE = 20;
 const SEARCH_DELAY_MS = 300;
 
 const SORTS = [
-  { value: 'date_desc', label: 'Newest first' },
-  { value: 'date_asc', label: 'Oldest first' },
-  { value: 'amount_desc', label: 'Highest amount' },
-  { value: 'amount_asc', label: 'Lowest amount' },
-  { value: 'outstanding_desc', label: 'Most outstanding' },
-  { value: 'due_asc', label: 'Due soonest' },
+  { value: 'date_desc', get label() { return i18n.t('expenses.newestFirst'); } },
+  { value: 'date_asc', get label() { return i18n.t('expenses.oldestFirst'); } },
+  { value: 'amount_desc', get label() { return i18n.t('expenses.highestAmount'); } },
+  { value: 'amount_asc', get label() { return i18n.t('expenses.lowestAmount'); } },
+  { value: 'outstanding_desc', get label() { return i18n.t('expenses.mostOutstanding'); } },
+  { value: 'due_asc', get label() { return i18n.t('expenses.dueSoonest'); } },
 ];
 
 interface Filters {
@@ -61,6 +63,7 @@ const useStackNav = () => useNavigation<NavigationProp<RootStackParamList>>();
 
 /** Expenses › All Expenses: search, filters, sort and the period's totals. */
 export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: ListPreset }) {
+  const { t: tr } = useTranslation();
   const navigation = useStackNav();
   const toast = useToast();
   const { hasPermission } = useAuth();
@@ -116,7 +119,7 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
   const filterCount = Object.values(filters).filter(Boolean).length;
   const filtered = !!(search || status || paymentType || filterCount);
   const items = list.data?.items ?? [];
-  const amountProblem = draft.minAmount && draft.maxAmount && Number(draft.maxAmount) < Number(draft.minAmount) ? "Max can't be below min" : '';
+  const amountProblem = draft.minAmount && draft.maxAmount && Number(draft.maxAmount) < Number(draft.minAmount) ? tr('expenses.maxCanTBeBelowMin') : '';
 
   async function exportPdf() {
     setExporting(true);
@@ -133,27 +136,27 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
     <View style={styles.headerBlock}>
       <View style={opsStyles.row}>
         {canCreate ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Add Expense" onPress={() => navigation.navigate('ExpenseForm', {})} style={opsStyles.primaryBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('expenses.addExpense')} onPress={() => navigation.navigate('ExpenseForm', {})} style={opsStyles.primaryBtn}>
             <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-            <Text style={opsStyles.primaryBtnText}>Add Expense</Text>
+            <Text style={opsStyles.primaryBtnText}>{tr('expenses.addExpense')}</Text>
           </Pressable>
         ) : null}
         <Pressable accessibilityRole="button" disabled={exporting || !list.data?.total} onPress={exportPdf} style={[opsStyles.smallBtn, !list.data?.total && styles.disabled]}>
           <FileTextIcon size={15} color={colors.text} />
-          <Text style={opsStyles.smallBtnText}>{exporting ? 'Exporting…' : 'PDF'}</Text>
+          <Text style={opsStyles.smallBtnText}>{exporting ? tr('expenses.exporting') : 'PDF'}</Text>
         </Pressable>
       </View>
       {range ? <RangeChips today={today} value={range} onChange={setRange} /> : null}
       <Pressable accessibilityRole="button" onPress={() => setRange(range ? null : presetRange(today, 'month'))} style={[styles.allDates, !range && styles.allDatesOn]}>
-        <Text style={[styles.allDatesText, !range && styles.allDatesTextOn]}>{range ? 'Show all dates' : 'All dates · pick a range'}</Text>
+        <Text style={[styles.allDatesText, !range && styles.allDatesTextOn]}>{range ? tr('expenses.showAllDates') : tr('expenses.allDatesPickARange')}</Text>
       </Pressable>
       <View style={opsStyles.row}>
         <View style={styles.flex}>
-          <SearchBar value={queryText} onChange={setQueryText} placeholder="Search title, supplier, bill no., ID…" />
+          <SearchBar value={queryText} onChange={setQueryText} placeholder={tr('expenses.searchTitleSupplierBillNoId')} />
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={filterCount ? `Filters, ${filterCount} applied` : 'Filters'}
+          accessibilityLabel={filterCount ? tr('expenses.filtersFiltercountApplied', { filterCount }) : tr('common.filters')}
           onPress={() => {
             setDraft(filters);
             setFiltersOpen(true);
@@ -166,8 +169,8 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
       </View>
       <FilterChips
         options={[
-          { value: '', label: 'All statuses' },
-          { value: 'OPEN', label: 'Still owed' },
+          { value: '', label: tr('common.allStatuses') },
+          { value: 'OPEN', label: tr('expenses.stillOwed') },
           ...(Object.keys(EXPENSE_STATUS) as ExpenseStatus[]).map(s => ({ value: s, label: EXPENSE_STATUS[s].label })),
         ]}
         value={status}
@@ -175,9 +178,9 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
       />
       <FilterChips
         options={[
-          { value: '', label: 'Paid & credit' },
-          { value: 'PAID', label: 'Paid' },
-          { value: 'CREDIT', label: 'Credit' },
+          { value: '', label: tr('expenses.paidAndCredit') },
+          { value: 'PAID', label: tr('common.paid') },
+          { value: 'CREDIT', label: tr('common.credit') },
         ]}
         value={paymentType}
         onChange={setPaymentType}
@@ -188,9 +191,13 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
           {`${range ? rangeLabel(range) : 'All dates'} · `}
           {list.data ? (
             <>
-              <Text style={styles.strong}>{`${list.data.total} expense${list.data.total === 1 ? '' : 's'} · ${money(list.data.netAmount)}`}</Text>
-              {` · paid ${money(list.data.paidAmount)} · outstanding `}
-              <Text style={list.data.outstandingAmount ? styles.owed : undefined}>{money(list.data.outstandingAmount)}</Text>
+              <Text style={styles.strong}>{`${tr('expenses.expenseCount', { count: list.data.total })} · ${money(list.data.netAmount)}`}</Text>
+              {' · '}
+              <Trans
+                i18nKey="expenses.paidAndOutstanding"
+                values={{ paid: money(list.data.paidAmount), outstanding: money(list.data.outstandingAmount) }}
+                components={{ owed: <Text style={list.data.outstandingAmount ? styles.owed : undefined} /> }}
+              />
             </>
           ) : (
             '…'
@@ -198,7 +205,7 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
         </Text>
         {filtered ? (
           <LinkButton
-            label="Clear filters"
+            label={tr('expenses.clearFilters')}
             onPress={() => {
               setFilters(NO_FILTERS);
               setStatus('');
@@ -228,8 +235,8 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
           ) : (
             <EmptyState
               icon={WalletIcon}
-              title={filtered ? 'No expenses match' : 'No expenses in this period'}
-              text={filtered ? 'Try other filters.' : 'Record rent, salaries, bills and supplier credit to track what you spend and owe.'}
+              title={filtered ? tr('expenses.noExpensesMatch') : tr('expenses.noExpensesInThisPeriod')}
+              text={filtered ? tr('expenses.tryOtherFilters') : tr('expenses.recordRentSalariesBillsAndSupplier')}
             />
           )
         }
@@ -253,13 +260,13 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
       />
       <Sheet
         visible={filtersOpen}
-        title="Filters"
+        title={tr('common.filters')}
         onClose={() => setFiltersOpen(false)}
         footer={
           <View style={opsStyles.row}>
-            <Button title="Reset" variant="ghost" onPress={() => setDraft(NO_FILTERS)} style={styles.flex} />
+            <Button title={tr('common.reset')} variant="ghost" onPress={() => setDraft(NO_FILTERS)} style={styles.flex} />
             <Button
-              title="Apply"
+              title={tr('common.apply')}
               disabled={!!amountProblem}
               onPress={() => {
                 setFilters(draft);
@@ -271,41 +278,41 @@ export function ExpenseListTab({ storeId, preset }: { storeId: string; preset: L
         }
       >
         <SelectField
-          label="Category"
+          label={tr('common.category')}
           value={draft.categoryId}
           options={(categories.data ?? []).map(c => ({ value: c.id, label: c.name }))}
           onChange={v => setDraft(d => ({ ...d, categoryId: v }))}
-          placeholder="All categories"
-          allowClear="All categories"
+          placeholder={tr('common.allCategories')}
+          allowClear={tr('common.allCategories')}
         />
         <SelectField
-          label="Supplier"
+          label={tr('common.supplier')}
           value={draft.supplierId}
           options={(suppliers.data?.items ?? []).map(s => ({ value: s.id, label: s.name }))}
           onChange={v => setDraft(d => ({ ...d, supplierId: v }))}
-          placeholder="All suppliers"
-          allowClear="All suppliers"
+          placeholder={tr('expenses.allSuppliers')}
+          allowClear={tr('expenses.allSuppliers')}
         />
-        <Field label="Payment method">
-          <Choices options={[{ value: '', label: 'Any' }, ...PAYMENT_MODES]} value={draft.paymentMode} onChange={v => setDraft(d => ({ ...d, paymentMode: v }))} />
+        <Field label={tr('expenses.paymentMethod')}>
+          <Choices options={[{ value: '', label: tr('expenses.any') }, ...PAYMENT_MODES]} value={draft.paymentMode} onChange={v => setDraft(d => ({ ...d, paymentMode: v }))} />
         </Field>
         <SelectField
-          label="Added by"
+          label={tr('expenses.addedBy2')}
           value={draft.createdBy}
           options={(contributors.data ?? []).map(u => ({ value: u.id, label: u.name }))}
           onChange={v => setDraft(d => ({ ...d, createdBy: v }))}
-          placeholder="Anyone"
-          allowClear="Anyone"
+          placeholder={tr('expenses.anyone')}
+          allowClear={tr('expenses.anyone')}
         />
         <View style={opsStyles.row}>
           <View style={styles.flex}>
-            <Field label="Min ₹">
-              <Input value={draft.minAmount} onChangeText={v => setDraft(d => ({ ...d, minAmount: v.replace(/[^\d.]/g, '') }))} keyboardType="decimal-pad" accessibilityLabel="Minimum amount" />
+            <Field label={tr('expenses.minRs')}>
+              <Input value={draft.minAmount} onChangeText={v => setDraft(d => ({ ...d, minAmount: v.replace(/[^\d.]/g, '') }))} keyboardType="decimal-pad" accessibilityLabel={tr('expenses.minimumAmount')} />
             </Field>
           </View>
           <View style={styles.flex}>
-            <Field label="Max ₹" error={amountProblem || null}>
-              <Input value={draft.maxAmount} onChangeText={v => setDraft(d => ({ ...d, maxAmount: v.replace(/[^\d.]/g, '') }))} keyboardType="decimal-pad" accessibilityLabel="Maximum amount" />
+            <Field label={tr('expenses.maxRs')} error={amountProblem || null}>
+              <Input value={draft.maxAmount} onChangeText={v => setDraft(d => ({ ...d, maxAmount: v.replace(/[^\d.]/g, '') }))} keyboardType="decimal-pad" accessibilityLabel={tr('expenses.maximumAmount')} />
             </Field>
           </View>
         </View>
@@ -319,6 +326,7 @@ function Separator() {
 }
 
 function ExpenseRow({ expense: e, onPress }: { expense: Expense; onPress: () => void }) {
+  const { t } = useTranslation();
   const s = expenseStatus(e.status);
   const due = dueText(e.dueInDays, e.dueDate);
   const cancelled = e.status === 'CANCELLED';
@@ -338,17 +346,18 @@ function ExpenseRow({ expense: e, onPress }: { expense: Expense; onPress: () => 
         {e.recurringId ? <RefreshIcon size={12} color={colors.textMuted} /> : null}
         {e.attachmentCount ? <FileTextIcon size={12} color={colors.textMuted} /> : null}
       </View>
-      <Text style={opsStyles.meta}>{`${e.idd} · ${e.paymentType === 'CREDIT' ? 'Credit' : e.paymentMode ? paymentModeLabel(e.paymentMode) : 'Paid'}${e.returnedAmount ? ` · ${money(e.returnedAmount)} returned` : ''}`}</Text>
+      <Text style={opsStyles.meta}>{`${e.idd} · ${e.paymentType === 'CREDIT' ? t('common.credit') : e.paymentMode ? paymentModeLabel(e.paymentMode) : t('common.paid')}${e.returnedAmount ? ` · ${t('expenses.amountReturned', { amount: money(e.returnedAmount) })}` : ''}`}</Text>
       {e.outstandingAmount > 0 ? (
-        <Text style={[styles.owedLine, e.dueInDays !== null && e.dueInDays < 0 && opsStyles.danger]}>{`${money(e.outstandingAmount)} owed${due ? ` · ${due}` : ''}`}</Text>
+        <Text style={[styles.owedLine, e.dueInDays !== null && e.dueInDays < 0 && opsStyles.danger]}>{[t('expenses.amountOwed', { amount: money(e.outstandingAmount) }), due].filter(Boolean).join(' · ')}</Text>
       ) : null}
-      {e.refundDue ? <Text style={[styles.owedLine, opsStyles.success]}>{`${money(e.refundDue)} refund due`}</Text> : null}
+      {e.refundDue ? <Text style={[styles.owedLine, opsStyles.success]}>{t('expenses.refunddueRefundDue', { refundDue: money(e.refundDue) })}</Text> : null}
     </Pressable>
   );
 }
 
 /** Expenses › Suppliers: what's owed to each, and their ledgers. */
 export function SuppliersTab({ storeId }: { storeId: string }) {
+  const { t: tr } = useTranslation();
   const navigation = useStackNav();
   const { hasPermission } = useAuth();
   const [queryText, setQueryText] = useState('');
@@ -374,26 +383,26 @@ export function SuppliersTab({ storeId }: { storeId: string }) {
         ListHeaderComponent={
           <View style={styles.headerBlock}>
             <StatGrid>
-              <StatCard icon={WalletIcon} tone="amber" label="Owed to Suppliers" value={money(data?.totals.outstanding)} sub="Expenses and stock bills" loading={loading} />
-              <StatCard icon={AlertCircleIcon} tone="red" label="Overdue" value={money(data?.totals.overdue)} loading={loading} />
-              <StatCard icon={TruckIcon} tone="sky" label="Suppliers Owed" value={String(data?.totals.owing ?? '—')} loading={loading} />
-              <StatCard icon={WalletIcon} tone="emerald" label="Refunds Due to You" value={money(data?.totals.refundDue)} sub="Returns on paid bills" loading={loading} />
+              <StatCard icon={WalletIcon} tone="amber" label={tr('expenses.owedToSuppliers')} value={money(data?.totals.outstanding)} sub={tr('expenses.expensesAndStockBills')} loading={loading} />
+              <StatCard icon={AlertCircleIcon} tone="red" label={tr('common.overdue')} value={money(data?.totals.overdue)} loading={loading} />
+              <StatCard icon={TruckIcon} tone="sky" label={tr('expenses.suppliersOwed')} value={String(data?.totals.owing ?? '—')} loading={loading} />
+              <StatCard icon={WalletIcon} tone="emerald" label={tr('expenses.refundsDueToYou')} value={money(data?.totals.refundDue)} sub={tr('expenses.returnsOnPaidBills')} loading={loading} />
             </StatGrid>
             {hasPermission('store-expenses:create') ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Add Supplier" onPress={() => setAdding(true)} style={[opsStyles.primaryBtn, styles.selfStart]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={tr('expenses.addSupplier')} onPress={() => setAdding(true)} style={[opsStyles.primaryBtn, styles.selfStart]}>
                 <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-                <Text style={opsStyles.primaryBtnText}>Add Supplier</Text>
+                <Text style={opsStyles.primaryBtnText}>{tr('expenses.addSupplier')}</Text>
               </Pressable>
             ) : null}
-            <SearchBar value={queryText} onChange={setQueryText} placeholder="Search name, phone, GST…" />
-            <ToggleRow label="Only owed" value={owing} onChange={setOwing} />
-            <ToggleRow label="Show inactive" value={inactive} onChange={setInactive} />
+            <SearchBar value={queryText} onChange={setQueryText} placeholder={tr('expenses.searchNamePhoneGst')} />
+            <ToggleRow label={tr('expenses.onlyOwed')} value={owing} onChange={setOwing} />
+            <ToggleRow label={tr('expenses.showInactive')} value={inactive} onChange={setInactive} />
           </View>
         }
         renderItem={({ item: s }) => (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${s.name}, ${money(s.outstanding)} outstanding`}
+            accessibilityLabel={tr('expenses.nameOutstandingOutstanding', { name: s.name, outstanding: money(s.outstanding) })}
             onPress={() => navigation.navigate('SupplierLedger', { id: s.id })}
             style={({ pressed }) => [styles.row, !s.isActive && styles.inactive, pressed && styles.pressed]}
           >
@@ -402,15 +411,15 @@ export function SuppliersTab({ storeId }: { storeId: string }) {
                 <Text style={opsStyles.title} numberOfLines={1}>
                   {s.name}
                 </Text>
-                <Text style={opsStyles.meta} numberOfLines={1}>{`${s.idd}${s.gstNumber ? ` · GST ${s.gstNumber}` : ''}${!s.isActive ? ' · inactive' : ''}${s.phone ? ` · ${s.phone}` : ''}`}</Text>
+                <Text style={opsStyles.meta} numberOfLines={1}>{[s.idd, s.gstNumber ? tr('expenses.gstNumber', { gst: s.gstNumber }) : null, !s.isActive ? tr('expenses.inactiveLower') : null, s.phone].filter(Boolean).join(' · ')}</Text>
               </View>
               <View style={styles.right}>
                 <Text style={[opsStyles.amount, s.outstanding ? styles.owed : styles.mutedText]}>{money(s.outstanding)}</Text>
-                {s.overdue ? <Text style={[styles.small, opsStyles.danger]}>{`${money(s.overdue)} overdue`}</Text> : null}
+                {s.overdue ? <Text style={[styles.small, opsStyles.danger]}>{tr('expenses.overdueOverdue', { overdue: money(s.overdue) })}</Text> : null}
               </View>
             </View>
             <Text style={opsStyles.meta}>
-              {`${s.bills} bill${s.bills === 1 ? '' : 's'} · credit ${money(s.creditTotal)} · paid ${money(s.paid)} · returns ${money(s.returned)} · last bill ${s.lastBillDate ? day(s.lastBillDate) : '—'}`}
+              {[tr('expenses.billCount', { count: s.bills }), tr('expenses.creditAmount', { amount: money(s.creditTotal) }), tr('expenses.paidAmount', { amount: money(s.paid) }), tr('expenses.returnsAmount', { amount: money(s.returned) }), tr('expenses.lastBillOn', { date: s.lastBillDate ? day(s.lastBillDate) : '—' })].join(' · ')}
             </Text>
           </Pressable>
         )}
@@ -421,7 +430,7 @@ export function SuppliersTab({ storeId }: { storeId: string }) {
           ) : error && !data ? (
             <ErrorState message={error} onRetry={() => reload()} />
           ) : (
-            <EmptyState icon={TruckIcon} title="No suppliers yet" text="Suppliers are added when you record a credit expense or a stock bill, or here." />
+            <EmptyState icon={TruckIcon} title={tr('expenses.noSuppliersYet')} text={tr('expenses.suppliersAreAddedWhenYouRecord')} />
           )
         }
         contentContainerStyle={opsStyles.content}
@@ -455,6 +464,7 @@ const PER_MONTH: Record<RecurringFrequency, number> = { WEEKLY: 52 / 12, MONTHLY
 
 /** Expenses › Recurring: rent, salaries, electricity… recorded each time they come round. */
 export function RecurringTab({ storeId, openList }: { storeId: string; openList: (p: ListPreset) => void }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const { hasPermission } = useAuth();
   const { data, error, loading, refreshing, reload } = useFetch(() => expensesService.recurring(storeId), [storeId]);
@@ -480,16 +490,14 @@ export function RecurringTab({ storeId, openList }: { storeId: string; openList:
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => reload(true)} tintColor={colors.secondary} colors={[colors.secondary]} />}
       >
         <View style={styles.intro}>
-          <Text style={opsStyles.title}>Recurring Expenses</Text>
+          <Text style={opsStyles.title}>{t('expenses.recurringExpenses')}</Text>
           <Text style={opsStyles.meta}>
-            {'Each one is recorded on its date every period — paid with the saved method, or as a credit bill with a due date. About '}
-            <Text style={styles.strong}>{money(Math.round(monthly))}</Text>
-            {' a month.'}
+            <Trans i18nKey="expenses.recurringEachRecordedAboutMonthly" values={{ amount: money(Math.round(monthly)) }} components={{ b: <Text style={styles.strong} /> }} />
           </Text>
           {hasPermission('store-expenses:create') ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Add Recurring" onPress={() => setEditing('new')} style={[opsStyles.primaryBtn, styles.selfStart]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('expenses.addRecurring')} onPress={() => setEditing('new')} style={[opsStyles.primaryBtn, styles.selfStart]}>
               <PlusIcon size={15} color={colors.white} strokeWidth={2.4} />
-              <Text style={opsStyles.primaryBtnText}>Add Recurring</Text>
+              <Text style={opsStyles.primaryBtnText}>{t('expenses.addRecurring')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -498,7 +506,7 @@ export function RecurringTab({ storeId, openList }: { storeId: string; openList:
         ) : loading ? (
           <ListSkeleton height={150} />
         ) : !items.length ? (
-          <EmptyState icon={RefreshIcon} title="No recurring expenses" text="Set up monthly rent, salaries or bills once and they're recorded for you." />
+          <EmptyState icon={RefreshIcon} title={t('expenses.noRecurringExpenses')} text={t('expenses.setUpMonthlyRentSalariesOr')} />
         ) : (
           items.map(r => (
             <View key={r.id} style={[styles.row, !r.isActive && styles.inactive]}>
@@ -514,24 +522,27 @@ export function RecurringTab({ storeId, openList }: { storeId: string; openList:
               <View style={styles.metaRow}>
                 <Badge label={FREQUENCY_LABEL[r.frequency]} tone="orange" />
                 <Badge
-                  label={r.paymentType === 'CREDIT' ? `Credit · due in ${r.creditTermsDays ?? 0} days` : `Paid · ${r.paymentMethod ? paymentModeLabel(r.paymentMethod) : ''}`}
+                  label={r.paymentType === 'CREDIT' ? t('expenses.creditDueInCredittermsdaysDays', { creditTermsDays: r.creditTermsDays ?? 0 }) : t('expenses.paidValue', { value: r.paymentMethod ? paymentModeLabel(r.paymentMethod) : '' })}
                   tone={r.paymentType === 'CREDIT' ? 'blue' : 'green'}
                 />
-                {!r.isActive ? <Badge label="Paused" tone="slate" /> : null}
+                {!r.isActive ? <Badge label={t('common.paused')} tone="slate" /> : null}
               </View>
               <Text style={opsStyles.meta}>
-                {`Next ${r.isActive && r.nextRunDate ? day(r.nextRunDate) : r.nextRunDate ? 'paused' : 'ended'} · recorded ${r.occurrences}× (${money(r.totalRecorded)}) · from ${day(r.startDate)} · ends ${
-                  r.endDate ? day(r.endDate) : 'never'
-                }`}
+                {[
+                  t('expenses.nextRun', { when: r.isActive && r.nextRunDate ? day(r.nextRunDate) : r.nextRunDate ? t('expenses.pausedLower') : t('expenses.endedLower') }),
+                  t('expenses.recordedTimes', { count: r.occurrences, amount: money(r.totalRecorded) }),
+                  t('expenses.fromDate', { date: day(r.startDate) }),
+                  t('expenses.endsOn', { date: r.endDate ? day(r.endDate) : t('expenses.never') }),
+                ].join(' · ')}
               </Text>
               <View style={styles.actions}>
-                <LinkButton label="History" onPress={() => openList({ search: r.title })} />
+                <LinkButton label={t('common.history')} onPress={() => openList({ search: r.title })} />
                 {hasPermission('store-expenses:edit') ? (
                   <>
-                    <LinkButton label="Edit" onPress={() => setEditing(r)} />
+                    <LinkButton label={t('common.edit')} onPress={() => setEditing(r)} />
                     <LinkButton
-                      label={r.isActive ? 'Pause' : 'Resume'}
-                      onPress={() => run(() => expensesService.updateRecurring(storeId, r.id, { isActive: !r.isActive }), r.isActive ? 'Paused' : 'Resumed')}
+                      label={r.isActive ? t('expenses.pause') : t('expenses.resume')}
+                      onPress={() => run(() => expensesService.updateRecurring(storeId, r.id, { isActive: !r.isActive }), r.isActive ? t('common.paused') : t('expenses.resumed'))}
                     />
                   </>
                 ) : null}
@@ -539,12 +550,12 @@ export function RecurringTab({ storeId, openList }: { storeId: string; openList:
                   <Pressable
                     accessibilityRole="button"
                     onPress={async () =>
-                      (await confirmAction(`Delete "${r.title}"?`, 'Expenses already recorded stay.', 'Delete', true)) &&
-                      run(() => expensesService.removeRecurring(storeId, r.id), 'Recurring expense deleted')
+                      (await confirmAction(t('expenses.deleteTitle', { title: r.title }), t('expenses.expensesAlreadyRecordedStay'), t('common.delete'), true)) &&
+                      run(() => expensesService.removeRecurring(storeId, r.id), t('expenses.recurringExpenseDeleted'))
                     }
                     style={styles.pushRight}
                   >
-                    <Text style={[styles.actionText, opsStyles.danger]}>Delete</Text>
+                    <Text style={[styles.actionText, opsStyles.danger]}>{t('common.delete')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -579,6 +590,7 @@ function RecurringFormSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const today = todayDay();
   const categories = useFetch(() => (visible ? expensesService.categories(storeId) : Promise.resolve([])), [storeId, visible]);
@@ -614,10 +626,10 @@ function RecurringFormSheet({
   const total = base > 0 ? Math.round(base * 100 + Math.round(base * 100 * (Number(form.taxRate) || 0)) / 100) / 100 : 0;
 
   async function save() {
-    if (!form.title.trim()) return setError('Give it a name, e.g. Shop rent');
-    if (!form.categoryId) return setError('Pick a category');
-    if (!(base > 0)) return setError('Enter the amount');
-    if (form.endDate && form.endDate < form.startDate) return setError("The end date can't be before the start date");
+    if (!form.title.trim()) return setError(t('expenses.giveItANameEG'));
+    if (!form.categoryId) return setError(t('common.pickACategory'));
+    if (!(base > 0)) return setError(t('expenses.enterTheAmount'));
+    if (form.endDate && form.endDate < form.startDate) return setError(t('common.theEndDateCanTBe'));
     setError('');
     setSaving(true);
     const payload = {
@@ -635,7 +647,7 @@ function RecurringFormSheet({
     try {
       if (recurring) await expensesService.updateRecurring(storeId, recurring.id, payload);
       else await expensesService.createRecurring(storeId, { ...payload, frequency: form.frequency, startDate: form.startDate });
-      toast(recurring ? 'Recurring expense updated' : form.startDate <= today ? 'Set up — due dates up to today are recorded' : 'Recurring expense set up');
+      toast(recurring ? t('expenses.recurringExpenseUpdated') : form.startDate <= today ? t('expenses.setUpDueDatesUpTo') : t('expenses.recurringExpenseSetUp'));
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -646,30 +658,30 @@ function RecurringFormSheet({
 
   const fromISO = (s: string) => new Date(`${s}T00:00:00`);
   return (
-    <Sheet visible={visible} title={recurring ? 'Edit Recurring Expense' : 'Add Recurring Expense'} onClose={onClose} footer={<Button title="Save" onPress={save} loading={saving} />}>
-      <Field label="Name" required>
+    <Sheet visible={visible} title={recurring ? t('expenses.editRecurringExpense') : t('expenses.addRecurringExpense')} onClose={onClose} footer={<Button title={t('common.save')} onPress={save} loading={saving} />}>
+      <Field label={t('common.name')} required>
         <Input value={form.title} onChangeText={v => set('title', v)} placeholder="e.g. Shop rent, Staff salary – Ravi" maxLength={150} />
       </Field>
-      <SelectField label="Category" required value={form.categoryId} options={(categories.data ?? []).map(c => ({ value: c.id, label: c.name }))} onChange={v => set('categoryId', v)} />
+      <SelectField label={t('common.category')} required value={form.categoryId} options={(categories.data ?? []).map(c => ({ value: c.id, label: c.name }))} onChange={v => set('categoryId', v)} />
       <SelectField
-        label="Supplier (optional)"
+        label={t('expenses.supplierOptional')}
         value={form.supplierId}
         options={(suppliers.data?.items ?? []).map(s => ({ value: s.id, label: s.name }))}
         onChange={v => set('supplierId', v)}
-        placeholder="None"
-        allowClear="No supplier"
+        placeholder={t('common.none')}
+        allowClear={t('expenses.noSupplier')}
       />
-      <Field label="Amount before GST (₹)" required hint={total ? `Each time: ${money(total)}` : undefined}>
-        <Input value={form.baseAmount} onChangeText={v => set('baseAmount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel="Amount before GST" />
+      <Field label={t('expenses.amountBeforeGstRs')} required hint={total ? t('expenses.eachTimeTotal', { total: money(total) }) : undefined}>
+        <Input value={form.baseAmount} onChangeText={v => set('baseAmount', v.replace(/[^\d.]/g, ''))} keyboardType="decimal-pad" accessibilityLabel={t('expenses.amountBeforeGst')} />
       </Field>
       <Field label="GST">
         <Choices
-          options={[{ value: '', label: 'No GST' }, ...['5', '12', '18', '28'].map(r => ({ value: r, label: `${r}%` }))]}
+          options={[{ value: '', label: t('expenses.noGst') }, ...['5', '12', '18', '28'].map(r => ({ value: r, label: `${r}%` }))]}
           value={form.taxRate}
           onChange={v => set('taxRate', v)}
         />
       </Field>
-      <Field label="Repeats" hint={recurring ? "Can't be changed once set up" : undefined}>
+      <Field label={t('expenses.repeats')} hint={recurring ? t('expenses.canTBeChangedOnceSet') : undefined}>
         <Choices
           options={(Object.keys(FREQUENCY_LABEL) as RecurringFrequency[]).map(f => ({ value: f, label: FREQUENCY_LABEL[f] }))}
           value={form.frequency}
@@ -677,32 +689,32 @@ function RecurringFormSheet({
           disabled={!!recurring}
         />
       </Field>
-      <Field label="Recorded as">
+      <Field label={t('expenses.recordedAs')}>
         <Choices
           options={[
-            { value: 'PAID', label: 'Paid (automatically)' },
-            { value: 'CREDIT', label: 'Credit bill, to pay later' },
+            { value: 'PAID', label: t('expenses.paidAutomatically') },
+            { value: 'CREDIT', label: t('expenses.creditBillToPayLater') },
           ]}
           value={form.paymentType}
           onChange={v => set('paymentType', v)}
         />
       </Field>
       {isCredit ? (
-        <Field label="Due after">
-          <Choices options={[0, ...CREDIT_TERMS].map(d => ({ value: String(d), label: d === 0 ? 'Same day' : `${d} days` }))} value={form.creditTermsDays} onChange={v => set('creditTermsDays', v)} />
+        <Field label={t('common.dueAfter')}>
+          <Choices options={[0, ...CREDIT_TERMS].map(d => ({ value: String(d), label: d === 0 ? t('expenses.sameDay') : t('common.dDays', { d }) }))} value={form.creditTermsDays} onChange={v => set('creditTermsDays', v)} />
         </Field>
       ) : (
-        <Field label="Paid by">
+        <Field label={t('common.paidBy')}>
           <Choices options={PAYMENT_MODES} value={form.paymentMethod} onChange={v => set('paymentMethod', v)} />
         </Field>
       )}
-      <Field label="Payment Account">
-        <Input value={form.accountLabel} onChangeText={v => set('accountLabel', v)} placeholder="Optional" maxLength={100} />
+      <Field label={t('expenses.paymentAccount')}>
+        <Input value={form.accountLabel} onChangeText={v => set('accountLabel', v)} placeholder={t('common.optional2')} maxLength={100} />
       </Field>
       {recurring ? null : (
-        <DateField label="First Date" required value={form.startDate} onChange={v => set('startDate', v || today)} hint={form.startDate <= today ? 'Dates up to today are recorded when you save' : undefined} />
+        <DateField label={t('expenses.firstDate')} required value={form.startDate} onChange={v => set('startDate', v || today)} hint={form.startDate <= today ? t('expenses.datesUpToTodayAreRecorded') : undefined} />
       )}
-      <DateField label="End Date (optional)" value={form.endDate} onChange={v => set('endDate', v)} minimumDate={fromISO(form.startDate)} />
+      <DateField label={t('expenses.endDateOptional')} value={form.endDate} onChange={v => set('endDate', v)} minimumDate={fromISO(form.startDate)} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </Sheet>
   );
@@ -710,6 +722,7 @@ function RecurringFormSheet({
 
 /** Expenses › Categories: the store's own, next to the built-in ones. */
 export function CategoriesTab({ storeId }: { storeId: string }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const { hasPermission } = useAuth();
   const { data, error, loading, refreshing, reload } = useFetch(() => expensesService.categories(storeId), [storeId]);
@@ -742,18 +755,18 @@ export function CategoriesTab({ storeId }: { storeId: string }) {
     >
       {error && !data ? <ErrorState message={error} onRetry={() => reload()} /> : null}
       <View style={styles.card}>
-        <Text style={opsStyles.title}>Your Categories</Text>
-        <Text style={opsStyles.meta}>Add categories that fit your shop; they're only used by this store</Text>
+        <Text style={opsStyles.title}>{t('expenses.yourCategories')}</Text>
+        <Text style={opsStyles.meta}>{t('expenses.addCategoriesThatFitYourShop')}</Text>
         {hasPermission('store-expenses:create') ? (
           <View style={[opsStyles.row, styles.addRow]}>
             <View style={styles.flex}>
-              <Input value={name} onChangeText={setName} placeholder="New category, e.g. Security Guard" maxLength={80} accessibilityLabel="New category name" />
+              <Input value={name} onChangeText={setName} placeholder={t('expenses.newCategoryEGSecurityGuard')} maxLength={80} accessibilityLabel={t('expenses.newCategoryName')} />
             </View>
             <Button
-              title="Add"
+              title={t('common.add')}
               disabled={busy || !name.trim()}
               onPress={async () => {
-                if (await run(() => expensesService.createCategory(storeId, name.trim()), 'Category added')) setName('');
+                if (await run(() => expensesService.createCategory(storeId, name.trim()), t('expenses.categoryAdded'))) setName('');
               }}
               style={styles.addBtn}
             />
@@ -762,35 +775,35 @@ export function CategoriesTab({ storeId }: { storeId: string }) {
         {loading ? (
           <ListSkeleton rows={2} height={44} />
         ) : !own.length ? (
-          <Text style={opsStyles.muted}>None yet.</Text>
+          <Text style={opsStyles.muted}>{t('expenses.noneYet')}</Text>
         ) : (
           own.map((c, i) => (
             <View key={c.id} style={[opsStyles.rowBetween, i > 0 && opsStyles.listRow, styles.catRow]}>
               <Text style={[styles.flex, styles.catName]}>
                 {c.name}
-                <Text style={opsStyles.muted}>{` · ${c.expenseCount} expense${c.expenseCount === 1 ? '' : 's'}`}</Text>
+                <Text style={opsStyles.muted}>{` · ${t('expenses.expenseCount', { count: c.expenseCount })}`}</Text>
               </Text>
-              {hasPermission('store-expenses:edit') ? <LinkButton label="Rename" onPress={() => setRenaming({ id: c.id, name: c.name })} /> : null}
+              {hasPermission('store-expenses:edit') ? <LinkButton label={t('expenses.rename')} onPress={() => setRenaming({ id: c.id, name: c.name })} /> : null}
               {hasPermission('store-expenses:delete') ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Delete ${c.name}`}
+                  accessibilityLabel={t('expenses.deleteName', { name: c.name })}
                   disabled={busy || c.expenseCount > 0}
-                  onPress={async () => (await confirmAction(`Delete "${c.name}"?`, undefined, 'Delete', true)) && run(() => expensesService.removeCategory(storeId, c.id), 'Category deleted')}
+                  onPress={async () => (await confirmAction(t('expenses.deleteName2', { name: c.name }), undefined, t('common.delete'), true)) && run(() => expensesService.removeCategory(storeId, c.id), t('expenses.categoryDeleted'))}
                   style={c.expenseCount > 0 ? styles.disabled : undefined}
                 >
-                  <Text style={[styles.actionText, opsStyles.danger]}>Delete</Text>
+                  <Text style={[styles.actionText, opsStyles.danger]}>{t('common.delete')}</Text>
                 </Pressable>
               ) : null}
             </View>
           ))
         )}
-        {own.some(c => c.expenseCount > 0) ? <Text style={opsStyles.muted}>A category in use can't be deleted: move its expenses first.</Text> : null}
+        {own.some(c => c.expenseCount > 0) ? <Text style={opsStyles.muted}>{t('expenses.aCategoryInUseCanT')}</Text> : null}
       </View>
 
       <View style={styles.card}>
-        <Text style={opsStyles.title}>Built-in Categories</Text>
-        <Text style={opsStyles.meta}>Shared by every store; managed by VeiloScan</Text>
+        <Text style={opsStyles.title}>{t('expenses.builtInCategories')}</Text>
+        <Text style={opsStyles.meta}>{t('expenses.sharedByEveryStoreManagedBy')}</Text>
         <View style={[opsStyles.chipRow, styles.addRow]}>
           {categories
             .filter(c => c.isSystem)
@@ -800,26 +813,26 @@ export function CategoriesTab({ storeId }: { storeId: string }) {
               </View>
             ))}
         </View>
-        <Text style={opsStyles.muted}>Stock bought for resale isn't an expense category: record it in Pending Stock and add its bill there.</Text>
+        <Text style={opsStyles.muted}>{t('expenses.stockBoughtForResaleIsnT')}</Text>
       </View>
 
       <Sheet
         visible={!!renaming}
-        title="Rename category"
+        title={t('expenses.renameCategory')}
         onClose={() => setRenaming(null)}
         footer={
           <Button
-            title="Rename"
+            title={t('expenses.rename')}
             disabled={!renaming?.name.trim()}
             onPress={async () => {
               const r = renaming!;
-              if (await run(() => expensesService.renameCategory(storeId, r.id, r.name.trim()), 'Category renamed')) setRenaming(null);
+              if (await run(() => expensesService.renameCategory(storeId, r.id, r.name.trim()), t('expenses.categoryRenamed'))) setRenaming(null);
             }}
           />
         }
       >
-        <Field label="Category name" required>
-          <Input value={renaming?.name ?? ''} onChangeText={v => setRenaming(r => (r ? { ...r, name: v } : r))} maxLength={80} accessibilityLabel="Category name" />
+        <Field label={t('expenses.categoryName')} required>
+          <Input value={renaming?.name ?? ''} onChangeText={v => setRenaming(r => (r ? { ...r, name: v } : r))} maxLength={80} accessibilityLabel={t('expenses.categoryName')} />
         </Field>
       </Sheet>
     </ScrollView>

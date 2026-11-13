@@ -2,39 +2,40 @@
 // stock-health-tab and pending-stock-tab.
 import type { BadgeTone } from '../components/ui/Badge';
 import type { SkuOption, StockHealthRow, StockOrderStatus } from '../services/store-operations-service';
+import i18n from '../i18n';
 
 export const HEALTH: Record<StockHealthRow['health'], { label: string; tone: BadgeTone; color: string }> = {
-  out: { label: 'Out of Stock', tone: 'red', color: '#dc2626' },
-  low: { label: 'Low', tone: 'amber', color: '#b45309' },
-  healthy: { label: 'Healthy', tone: 'green', color: '#0f172a' },
+  out: { get label() { return i18n.t('common.outOfStock'); }, tone: 'red', color: '#dc2626' },
+  low: { get label() { return i18n.t('inventory.low'); }, tone: 'amber', color: '#b45309' },
+  healthy: { get label() { return i18n.t('inventory.healthy'); }, tone: 'green', color: '#0f172a' },
 };
 
 export const HEALTH_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'low', label: 'Low Stock' },
-  { value: 'out', label: 'Out of Stock' },
-  { value: 'healthy', label: 'Healthy' },
+  { value: 'all', get label() { return i18n.t('common.all'); } },
+  { value: 'low', get label() { return i18n.t('common.lowStock'); } },
+  { value: 'out', get label() { return i18n.t('common.outOfStock'); } },
+  { value: 'healthy', get label() { return i18n.t('inventory.healthy'); } },
 ] as const;
 export type HealthFilter = (typeof HEALTH_FILTERS)[number]['value'];
 
 export const STOCK_ORDER_STATUS: Record<StockOrderStatus, { label: string; tone: BadgeTone }> = {
-  ORDERED: { label: 'Ordered', tone: 'slate' },
-  IN_TRANSIT: { label: 'In Transit', tone: 'blue' },
-  PARTIALLY_RECEIVED: { label: 'Partially Received', tone: 'amber' },
-  RECEIVED: { label: 'Received', tone: 'green' },
-  CANCELLED: { label: 'Cancelled', tone: 'red' },
+  ORDERED: { get label() { return i18n.t('inventory.ordered'); }, tone: 'slate' },
+  IN_TRANSIT: { get label() { return i18n.t('inventory.inTransit'); }, tone: 'blue' },
+  PARTIALLY_RECEIVED: { get label() { return i18n.t('inventory.partiallyReceived'); }, tone: 'amber' },
+  RECEIVED: { get label() { return i18n.t('inventory.received'); }, tone: 'green' },
+  CANCELLED: { get label() { return i18n.t('common.cancelled'); }, tone: 'red' },
 };
 
 /** The panel's tabs; `count` is the key in the list's counts. */
 export const ORDER_FILTERS: { value: string; label: string; count?: 'open' | 'delayed' | 'received' | 'cancelled' | 'all' }[] = [
-  { value: 'open', label: 'Open', count: 'open' },
-  { value: 'delayed', label: 'Delayed', count: 'delayed' },
-  { value: 'ORDERED', label: 'Ordered' },
-  { value: 'IN_TRANSIT', label: 'In Transit' },
-  { value: 'PARTIALLY_RECEIVED', label: 'Partially Received' },
-  { value: 'RECEIVED', label: 'Received', count: 'received' },
-  { value: 'CANCELLED', label: 'Cancelled', count: 'cancelled' },
-  { value: 'all', label: 'All', count: 'all' },
+  { value: 'open', get label() { return i18n.t('common.open'); }, count: 'open' },
+  { value: 'delayed', get label() { return i18n.t('inventory.delayed'); }, count: 'delayed' },
+  { value: 'ORDERED', get label() { return i18n.t('inventory.ordered'); } },
+  { value: 'IN_TRANSIT', get label() { return i18n.t('inventory.inTransit'); } },
+  { value: 'PARTIALLY_RECEIVED', get label() { return i18n.t('inventory.partiallyReceived'); } },
+  { value: 'RECEIVED', get label() { return i18n.t('inventory.received'); }, count: 'received' },
+  { value: 'CANCELLED', get label() { return i18n.t('common.cancelled'); }, count: 'cancelled' },
+  { value: 'all', get label() { return i18n.t('common.all'); }, count: 'all' },
 ];
 
 export const OPEN_STATUSES: StockOrderStatus[] = ['ORDERED', 'IN_TRANSIT', 'PARTIALLY_RECEIVED'];
@@ -69,14 +70,14 @@ export interface StockOrderForm {
 
 /** The panel's checks, plus amounts that read as numbers and dates in order. */
 export function stockOrderProblem(f: StockOrderForm, lines: OrderLine[], today: string): string | null {
-  if (!f.warehouseId) return 'Pick the warehouse the stock goes to';
-  if (!f.supplierName.trim()) return 'Enter the supplier';
-  if (!lines.length) return 'Add at least one product';
-  if (lines.some(l => !(Number(l.quantity) > 0))) return 'Enter a quantity for every product';
-  if (lines.some(l => l.unitCost.trim() !== '' && !(Number(l.unitCost) >= 0))) return 'Unit costs must be 0 or more';
-  if (f.orderAmount.trim() && !(Number(f.orderAmount) >= 0)) return 'The order amount must be 0 or more';
-  if (f.orderDate && f.orderDate > today) return "The order date can't be in the future";
-  if (f.expectedDate && f.orderDate && f.expectedDate < f.orderDate) return "The expected date can't be before the order date";
+  if (!f.warehouseId) return i18n.t('inventory.pickTheWarehouseTheStockGoes');
+  if (!f.supplierName.trim()) return i18n.t('inventory.enterTheSupplier');
+  if (!lines.length) return i18n.t('inventory.addAtLeastOneProduct');
+  if (lines.some(l => !(Number(l.quantity) > 0))) return i18n.t('inventory.enterAQuantityForEveryProduct');
+  if (lines.some(l => l.unitCost.trim() !== '' && !(Number(l.unitCost) >= 0))) return i18n.t('inventory.unitCostsMustBe0Or');
+  if (f.orderAmount.trim() && !(Number(f.orderAmount) >= 0)) return i18n.t('inventory.theOrderAmountMustBe0');
+  if (f.orderDate && f.orderDate > today) return i18n.t('inventory.theOrderDateCanTBe');
+  if (f.expectedDate && f.orderDate && f.expectedDate < f.orderDate) return i18n.t('inventory.theExpectedDateCanTBe');
   return null;
 }
 
@@ -97,12 +98,12 @@ export function stockOrderPayload(f: StockOrderForm, lines: OrderLine[]) {
 /** What arrived, per item: never more than is still pending. */
 export function receiptProblem(receiving: Record<string, string>, items: { id: string; productName: string; pendingQty: number }[]): string | null {
   const lines = Object.entries(receiving).filter(([, v]) => v.trim() !== '');
-  if (!lines.some(([, v]) => Number(v) > 0)) return 'Enter what arrived for at least one product';
+  if (!lines.some(([, v]) => Number(v) > 0)) return i18n.t('inventory.enterWhatArrivedForAtLeast');
   for (const [id, v] of lines) {
     const item = items.find(i => i.id === id);
     const n = Number(v);
-    if (Number.isNaN(n) || n < 0) return 'Quantities must be 0 or more';
-    if (item && n > item.pendingQty) return `${item.productName}: only ${qty(item.pendingQty)} is still pending`;
+    if (Number.isNaN(n) || n < 0) return i18n.t('inventory.quantitiesMustBe0OrMore');
+    if (item && n > item.pendingQty) return i18n.t('inventory.productnameOnlyPendingqtyIsStillPending', { productName: item.productName, pendingQty: qty(item.pendingQty) });
   }
   return null;
 }
