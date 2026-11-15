@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   banner: { marginTop: 16 },
   greeting: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingHorizontal: 16, paddingTop: 8 },
   hello: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary },
-  name: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: colors.text },
+  name: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.5, color: colors.text,textTransform: 'capitalize' },
   date: { marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5, color: colors.textMuted },
   storeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '45%', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: colors.secondaryLight },
   storeText: { flexShrink: 1, fontFamily: fonts.semibold, fontSize: 12, color: colors.secondaryDark },

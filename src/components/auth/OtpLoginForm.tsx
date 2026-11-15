@@ -1,11 +1,18 @@
+
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '../../theme';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+
+import {  fonts } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth-service';
-import { ArrowRightIcon, MailIcon } from '../icons';
+import { ArrowRightIcon, MobileIcon } from '../icons';
 import { Alert } from '../ui/Alert';
-import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import { OtpInput } from '../ui/OtpInput';
 import { TextField } from '../ui/TextField';
@@ -13,14 +20,29 @@ import { useTranslation } from 'react-i18next';
 
 const RESEND_SECONDS = 30;
 
-/**
- * Sign in with a one-time code instead of the password: enter the account's
- * email or mobile number, then the code sent to its email and phone. Errors
- * go to the login card, which knows how to show "onboarding pending".
- */
-export function OtpLoginForm({ onError, onClearError }: { onError: (error: unknown) => void; onClearError: () => void }) {
+const UI = {
+  orange: '#FF8500',
+  orangeDark: '#FF6500',
+  white: '#FFFFFF',
+  inputBackground: '#E7F1FF',
+  text: '#F8FAFC',
+  muted: '#AEBBD1',
+  border: '#52708F',
+  navy: '#09264A',
+};
+
+type OtpLoginFormProps = {
+  onError: (error: unknown) => void;
+  onClearError: () => void;
+};
+
+export function OtpLoginForm({
+  onError,
+  onClearError,
+}: OtpLoginFormProps) {
   const { t } = useTranslation();
   const { loginWithOtp } = useAuth();
+
   const [identifier, setIdentifier] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [otp, setOtp] = useState('');
@@ -31,25 +53,35 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 
   useEffect(() => {
     if (resendIn <= 0) return;
-    const timer = setTimeout(() => setResendIn(s => s - 1), 1000);
+
+    const timer = setTimeout(() => {
+      setResendIn(value => value - 1);
+    }, 1000);
+
     return () => clearTimeout(timer);
   }, [resendIn]);
 
   async function sendCode() {
-    if (!identifier.trim()) {
+    const value = identifier.trim();
+
+    if (!value) {
       onError(new Error(t('auth.enterYourEmailAddressOrMobile')));
       return;
     }
+
     onClearError();
     setIsLoading(true);
+    setInfo(null);
+
     try {
-      const { message } = await authService.sendLoginOtp(identifier.trim());
-      setInfo(message);
+      const response = await authService.sendLoginOtp(value);
+
+      setInfo(response.message);
       setCodeSent(true);
       setOtp('');
       setResendIn(RESEND_SECONDS);
-    } catch (err) {
-      onError(err);
+    } catch (error) {
+      onError(error);
     } finally {
       setIsLoading(false);
     }
@@ -57,76 +89,125 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
 
   async function verify(code = otp) {
     if (isLoading) return;
+
     if (code.length !== 6) {
       onError(new Error(t('auth.enterThe6DigitCode')));
       return;
     }
+
     onClearError();
     setIsLoading(true);
+
     try {
       await loginWithOtp(identifier.trim(), code, remember);
-    } catch (err) {
-      onError(err);
+    } catch (error) {
+      onError(error);
       setOtp('');
       setIsLoading(false);
     }
   }
 
+  function changeIdentifier() {
+    setCodeSent(false);
+    setInfo(null);
+    setOtp('');
+    setResendIn(0);
+    onClearError();
+  }
+
+  function renderPrimaryButton(
+    title: string,
+    onPress: () => void,
+    loading = false,
+    disabled = false,
+  ) {
+    return (
+      <Pressable
+        onPress={onPress}
+        disabled={loading || disabled}
+        style={({ pressed }) => [
+          styles.primaryButton,
+          pressed && styles.buttonPressed,
+          (loading || disabled) && styles.buttonDisabled,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={UI.white} size="small" />
+        ) : (
+          <>
+            <Text style={styles.primaryButtonText}>{title}</Text>
+            <ArrowRightIcon size={22} color={UI.white} />
+          </>
+        )}
+      </Pressable>
+    );
+  }
+
+  // STEP 1: Enter mobile number and request OTP
   if (!codeSent) {
     return (
       <View style={styles.form}>
         <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>
+            {t('auth.mobileNumber')}
+          </Text>
+
           <TextField
-            label={t('auth.mobileNumberOrEmail')}
+            label={t('auth.mobileNumber')}
             hideLabel
-            placeholder={t('auth.enterMobileNumberOrEmail')}
-            icon={<MailIcon size={20} color={colors.primary} />}
+            placeholder={t('auth.enterMobileNumber')}
+            icon={
+              <MobileIcon size={21} color="#344C68" />
+            }
             fieldStyle={styles.field}
             style={styles.input}
-            placeholderTextColor="#64748b"
+            placeholderTextColor="#718096"
             value={identifier}
             onChangeText={setIdentifier}
             autoCapitalize="none"
             autoCorrect={false}
-            keyboardType="email-address"
-            textContentType="username"
-            autoComplete="username"
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
             returnKeyType="send"
             onSubmitEditing={sendCode}
           />
+
           <Text style={styles.hint}>
-            {t('auth.weLlSendA6Digit')}</Text>
+            {t('auth.weLlSendOtpToMobile')}
+          </Text>
         </View>
-        <Button
-          title={t('auth.sendOtp')}
-          loadingTitle={t('auth.sending')}
-          loading={isLoading}
-          onPress={sendCode}
-          icon={<ArrowRightIcon size={18} color={colors.white} />}
-        style={styles.sendButton}
-        />
+
+        {renderPrimaryButton(
+          t('auth.sendOtp'),
+          sendCode,
+          isLoading,
+        )}
       </View>
     );
   }
 
+  // STEP 2: Verify OTP
   return (
     <View style={styles.form}>
-      {info ? <Alert variant="success" message={info} /> : null}
+      {info ? (
+        <Alert variant="success" message={info} />
+      ) : null}
+
       <View style={styles.codeGroup}>
         <View style={styles.row}>
           <Text style={styles.codeFor} numberOfLines={1}>
-            {t('auth.codeForTrim', { trim: identifier.trim() })}</Text>
-          <Pressable
-            hitSlop={8}
-            onPress={() => {
-              setCodeSent(false);
-              setInfo(null);
-              onClearError();
-            }}
-          >
-            <Text style={styles.link}>{t('common.change')}</Text>
+            {t('auth.codeForTrim', {
+              trim: identifier.trim(),
+            })}
+          </Text>
+
+          <Pressable onPress={changeIdentifier} hitSlop={10}>
+            <Text style={styles.link}>
+              {t('common.change')}
+            </Text>
           </Pressable>
         </View>
+
         <OtpInput
           value={otp}
           autoFocus
@@ -134,7 +215,10 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
           disabled={isLoading}
           onChange={next => {
             setOtp(next);
-            if (next.length === 6) verify(next);
+
+            if (next.length === 6) {
+              verify(next);
+            }
           }}
         />
       </View>
@@ -144,54 +228,137 @@ export function OtpLoginForm({ onError, onClearError }: { onError: (error: unkno
           label={t('auth.rememberMe')}
           checked={remember}
           onChange={setRemember}
-          labelColor="#d3dced"
+          labelColor={UI.muted}
         />
+
         {resendIn > 0 ? (
-          <Text style={styles.muted}>{t('auth.resendInResendinS', { resendIn })}</Text>
+          <Text style={styles.muted}>
+            {t('auth.resendInResendinS', {
+              resendIn,
+            })}
+          </Text>
         ) : (
-          <Pressable hitSlop={8} onPress={sendCode} disabled={isLoading}>
-            <Text style={styles.link}>{t('auth.resendCode')}</Text>
+          <Pressable
+            onPress={sendCode}
+            disabled={isLoading}
+            hitSlop={10}
+          >
+            <Text style={styles.link}>
+              {t('auth.resendCode')}
+            </Text>
           </Pressable>
         )}
       </View>
 
-      <Button
-        title={t('auth.verifyAndLogin')}
-        loadingTitle={t('auth.verifying')}
-        loading={isLoading}
-        onPress={() => verify()}
-        icon={<ArrowRightIcon size={18} color={colors.white} />}
-      />
+      {renderPrimaryButton(
+        t('auth.verifyAndLogin'),
+        () => verify(),
+        isLoading,
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  form: { marginTop: 48, gap: 20 },
-  field: { height: 62, borderRadius: 18, paddingHorizontal: 16, gap: 12, borderColor: '#cbd5e1', backgroundColor: colors.white },
-  input: { fontSize: 16, letterSpacing: -0.1, color: colors.primary },
-  fieldLabel: { fontFamily: fonts.semibold, fontSize: 15, color: '#d3dced', marginBottom: -10 },
-  sendButton: { height: 64, borderRadius: 20 },
+  form: {
+    marginTop: 16,
+    gap: 14,
+    width: '100%',
+  },
+
+  fieldGroup: {
+    gap: 7,
+  },
+
+  fieldLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: UI.text,
+    marginBottom: 1,
+  },
+
+  field: {
+    height: 50,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#D8E5F5',
+    backgroundColor: UI.inputBackground,
+  },
+
+  input: {
+    fontSize: 16,
+    letterSpacing: 0,
+    color: UI.navy,
+    fontFamily: fonts.regular,
+  },
+
   hint: {
     fontFamily: fonts.regular,
-    fontSize: 12.5,
+    fontSize: 12,
     lineHeight: 18,
-    color: '#aebbd1',
+    color: UI.muted,
   },
+
+  primaryButton: {
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: UI.orangeDark,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 20,
+    shadowColor: UI.orange,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+
+  primaryButtonText: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: UI.white,
+  },
+
+  buttonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
+  },
+
+  buttonDisabled: {
+    opacity: 0.65,
+  },
+
+  codeGroup: {
+    gap: 18,
+  },
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
+
   codeFor: {
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.semibold,
-    color: '#e6edf8',
+    color: '#E6EDF8',
   },
-  link: { fontSize: 14, fontFamily: fonts.semibold, color: '#ff9a4d' },
-  muted: { fontFamily: fonts.regular, fontSize: 14, color: '#aebbd1' },
-  fieldGroup: { gap: 6 },
-  codeGroup: { gap: 10 },
+
+  link: {
+    fontSize: 14,
+    fontFamily: fonts.semibold,
+    color: '#FF9A4D',
+  },
+
+  muted: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: UI.muted,
+  },
 });

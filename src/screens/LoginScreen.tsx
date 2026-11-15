@@ -17,6 +17,8 @@ import {
   LockIcon,
   MailIcon,
   MobileIcon,
+  QrCodeIcon,
+  ShieldCheckIcon,
   type IconProps,
 } from '../components/icons';
 import { Logo } from '../components/ui/Logo';
@@ -135,18 +137,19 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
                 accessible
                 accessibilityLabel={t('common.veiloscanBusiness')}
               >
-                <Logo variant="white" layout="stacked" size={82} tagline={null} />
+                <Logo variant="white" layout="stacked" size={68} tagline={null} />
                 <View style={styles.sellerTitleRow}>
-                  {/* <View style={styles.sellerTitleRule} /> */}
                   <Text style={styles.sellerTitle}>{t('auth.bussiness')}</Text>
-                  {/* <View style={styles.sellerTitleRule} /> */}
                 </View>
+                <Text style={styles.brandTagline}>{t('auth.sellManageGrow')}</Text>
               </View>
             )}
           </View>
 
           <View style={[styles.card, typing && styles.cardTyping]}>
             <View style={styles.cardAccent} />
+            <Text style={styles.cardTitle}>{t('auth.loginToYourAccount')}</Text>
+            <Text style={styles.cardSubtitle}>{t('auth.accessYourDashboard')}</Text>
             <View accessibilityRole="tablist" style={styles.tabs}>
               {MODES.map(([key, labelKey, Icon]) => {
                 const label = t(labelKey);
@@ -267,6 +270,31 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
                 />
               </View>
             )}
+            {mode === 'otp' ? (
+              <>
+                {/* <View style={styles.dividerRow}>
+                  <View style={styles.divider} />
+                  <Text style={styles.orText}>{t('auth.or')}</Text>
+                  <View style={styles.divider} />
+                </View> */}
+                {/* <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('auth.loginWithQrCode')}
+                  onPress={() => setError(t('auth.qrLoginUnavailable'))}
+                  style={styles.qrButton}
+                >
+                  <QrCodeIcon size={20} color="#e5edf8" />
+                  <Text style={styles.qrButtonText}>{t('auth.loginWithQrCode')}</Text>
+                </Pressable> */}
+                <View style={styles.securityRow}>
+                  <ShieldCheckIcon size={30} color="#e5edf8" />
+                  <View style={styles.securityCopy}>
+                    <Text style={styles.securityTitle}>{t('auth.secureEncryptedLogin')}</Text>
+                    <Text style={styles.securitySubtitle}>{t('auth.dataProtected')}</Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
           </View>
         </View>
 
@@ -276,24 +304,27 @@ export function LoginScreen({ navigation, route }: ScreenProps<'Login'>) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#031b43'},
+  screen: { flex: 1, backgroundColor: '#031b43' },
   scroll: { flexGrow: 1 },
   // The logo and card sit in the middle of the space above the waves.
   main: { flexGrow: 1, justifyContent: 'center' },
   top: { paddingHorizontal: 22 },
   brand: { alignItems: 'center' },
+  brandTagline: { marginTop: 14, color: '#cbd6e8', fontSize: 13, fontFamily: fonts.medium },
   sellerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 },
   sellerTitleRule: { height: 1.5, width: 44, backgroundColor: '#899bb9' },
-  sellerTitle: { fontFamily: fonts.semibold, fontSize: 22, letterSpacing: -0.5, color: colors.white },
+  sellerTitle: { fontFamily: fonts.semibold, fontSize: 16, letterSpacing: -0.3, color: colors.white },
   card: {
     overflow: 'hidden',
-    marginTop: 54,
-    marginHorizontal: 20,
-    paddingHorizontal: 0,
-    paddingTop: 0,
+    marginTop: 28,
+    marginHorizontal: 18,
+    paddingHorizontal: 16,
+    paddingTop: 18,
     paddingBottom: 16,
-    borderRadius: 0,
-    backgroundColor: 'transparent',
+    borderRadius: 26,
+    backgroundColor: 'rgba(11, 42, 82, 0.76)',
+    borderWidth: 1,
+    borderColor: 'rgba(138, 175, 220, 0.38)',
   },
   cardTyping: { marginTop: 24 },
   // A thin orange strip along the card's top edge.
@@ -302,9 +333,11 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 0,
-    backgroundColor: 'transparent',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
+  cardTitle: { textAlign: 'center', color: colors.white, fontFamily: fonts.bold, fontSize: 20, letterSpacing: -0.2 },
+  cardSubtitle: { textAlign: 'center', color: '#cbd6e8', fontFamily: fonts.regular, fontSize: 14, marginTop: 5, marginBottom: 16 },
   tabs: {
     flexDirection: 'row',
     padding: 3,
@@ -316,7 +349,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    height: 54,
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -333,15 +366,24 @@ const styles = StyleSheet.create({
   },
   tabTextSelected: { color: colors.white },
   notice: { marginTop: 16 },
-  form: { marginTop: 18, gap: 14 },
-  field: { height: 56, borderRadius: 16, paddingHorizontal: 16, gap: 12, borderColor: '#cbd5e1', backgroundColor: colors.white },
-  input: { fontSize: 15.5, letterSpacing: -0.1, color: colors.primary },
+  form: { marginTop: 16, gap: 12 },
+  field: { height: 50, borderRadius: 14, paddingHorizontal: 14, gap: 10, borderColor: '#cbd5e1', backgroundColor: colors.white },
+  input: { fontSize: 16, letterSpacing: 0, color: colors.primary },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
-  link: { fontSize: 13.5, fontFamily: fonts.semibold, color: '#ff9a4d' },
-  submit: { height: 52, marginTop: 2 },
+  link: { fontSize: 14, fontFamily: fonts.semibold, color: '#ff9a4d' },
+  submit: { height: 48, marginTop: 2 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 20, marginBottom: 18 },
+  divider: { flex: 1, height: 1, backgroundColor: 'rgba(203,214,232,0.38)' },
+  orText: { color: '#d3dced', fontSize: 14, fontFamily: fonts.medium },
+  qrButton: { height: 52, borderRadius: 26, borderWidth: 1, borderColor: 'rgba(203,214,232,0.55)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  qrButtonText: { color: colors.white, fontSize: 16, fontFamily: fonts.semibold },
+  securityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 20 },
+  securityCopy: { gap: 2 },
+  securityTitle: { color: colors.white, fontSize: 14, fontFamily: fonts.semibold },
+  securitySubtitle: { color: '#cbd6e8', fontSize: 12, fontFamily: fonts.regular },
 });
