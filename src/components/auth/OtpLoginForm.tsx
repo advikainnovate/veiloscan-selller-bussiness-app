@@ -11,7 +11,7 @@ import {
 import {  fonts } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth-service';
-import { ArrowRightIcon, MobileIcon } from '../icons';
+import { ArrowRightIcon, MailIcon, MobileIcon } from '../icons';
 import { Alert } from '../ui/Alert';
 import { Checkbox } from '../ui/Checkbox';
 import { OtpInput } from '../ui/OtpInput';
@@ -19,6 +19,20 @@ import { TextField } from '../ui/TextField';
 import { useTranslation } from 'react-i18next';
 
 const RESEND_SECONDS = 30;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^\+?[0-9]{10,15}$/;
+
+// Treat input as an email as soon as it contains a letter or "@".
+function looksLikeEmail(value: string) {
+  return /[a-zA-Z@]/.test(value);
+}
+
+function isValidIdentifier(value: string) {
+  return looksLikeEmail(value)
+    ? EMAIL_PATTERN.test(value)
+    : PHONE_PATTERN.test(value.replace(/[\s-]/g, ''));
+}
 
 const UI = {
   orange: '#FF8500',
@@ -66,6 +80,11 @@ export function OtpLoginForm({
 
     if (!value) {
       onError(new Error(t('auth.enterYourEmailAddressOrMobile')));
+      return;
+    }
+
+    if (!isValidIdentifier(value)) {
+      onError(new Error(t('auth.invalidEmailOrMobile')));
       return;
     }
 
@@ -143,21 +162,27 @@ export function OtpLoginForm({
     );
   }
 
-  // STEP 1: Enter mobile number and request OTP
+  // STEP 1: Enter email or mobile number and request OTP
   if (!codeSent) {
+    const isEmail = looksLikeEmail(identifier);
+
     return (
       <View style={styles.form}>
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>
-            {t('auth.mobileNumber')}
+            {t('auth.emailOrMobile')}
           </Text>
 
           <TextField
-            label={t('auth.mobileNumber')}
+            label={t('auth.emailOrMobile')}
             hideLabel
-            placeholder={t('auth.enterMobileNumber')}
+            placeholder={t('auth.enterEmailOrMobile')}
             icon={
-              <MobileIcon size={21} color="#344C68" />
+              isEmail ? (
+                <MailIcon size={21} color="#344C68" />
+              ) : (
+                <MobileIcon size={21} color="#344C68" />
+              )
             }
             fieldStyle={styles.field}
             style={styles.input}
@@ -166,14 +191,15 @@ export function OtpLoginForm({
             onChangeText={setIdentifier}
             autoCapitalize="none"
             autoCorrect={false}
-            keyboardType="phone-pad"
-            textContentType="telephoneNumber"
+            keyboardType="email-address"
+            textContentType="username"
+            autoComplete="username"
             returnKeyType="send"
             onSubmitEditing={sendCode}
           />
 
           <Text style={styles.hint}>
-            {t('auth.weLlSendOtpToMobile')}
+            {t('auth.weLlSendOtpToEmailOrMobile')}
           </Text>
         </View>
 
